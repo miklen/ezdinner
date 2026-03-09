@@ -1,24 +1,25 @@
-﻿using Casbin.Adapter.EFCore;
-using Casbin.Adapter.EFCore.Entities;
+﻿using Casbin.Persist.Adapter.EFCore;
+using Casbin.Persist.Adapter.EFCore.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace EzDinner.Infrastructure
 {
-    public class CasbinEntityConfiguration : DefaultCasbinRuleEntityTypeConfiguration<string>
+    public class CasbinEntityConfiguration : DefaultPersistPolicyEntityTypeConfiguration<string>
     {
-        private const string _containerName = "CasbinRules";
-        
+        private const string _containerName = "CasbinRulesV2";
+
         public CasbinEntityConfiguration() : base(_containerName) {}
 
-        public override void Configure(EntityTypeBuilder<CasbinRule<string>> builder)
+        public override void Configure(EntityTypeBuilder<EFCorePersistPolicy<string>> builder)
         {
             base.Configure(builder);
             builder.ToContainer(_containerName);
             builder.HasPartitionKey(p => p.Id);
+            // EF Core Cosmos provider does not support index definitions - remove any added by base class
+            foreach (var index in builder.Metadata.GetIndexes().ToList())
+                builder.Metadata.RemoveIndex(index);
         }
     }
 }

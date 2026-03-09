@@ -7,11 +7,9 @@ using EzDinner.Functions.Models.Query;
 using EzDinner.Query.Core.DishQueries;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.Resource;
 
 namespace EzDinner.Functions
 {
@@ -28,15 +26,13 @@ namespace EzDinner.Functions
             _authz = authz;
         }
         
-        [FunctionName(nameof(DishesGet))]
-        [RequiredScope("backendapi")]
+        [Function(nameof(DishesGet))]
         public async Task<IActionResult?> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "dishes/family/{familyId}")] HttpRequest req,
             string familyId
             )
         {
-            var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus) return authenticationResponse;
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Dish, Actions.Read)) return new UnauthorizedResult();
 
             _logger.LogInformation("GetDishes called for familyId " + familyId);

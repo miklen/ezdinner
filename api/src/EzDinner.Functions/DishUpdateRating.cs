@@ -7,11 +7,9 @@ using EzDinner.Core.Aggregates.FamilyAggregate;
 using EzDinner.Functions.Models.Command;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.Resource;
 
 namespace EzDinner.Functions
 {
@@ -30,15 +28,13 @@ namespace EzDinner.Functions
             _familyRepository = familyRepository;
         }
         
-        [FunctionName(nameof(DishUpdateRating))]
-        [RequiredScope("backendapi")]
+        [Function(nameof(DishUpdateRating))]
         public async Task<IActionResult?> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "dishes/{dishId}/rating")] HttpRequest req,
             string dishId
             )
         {
-            var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus) return authenticationResponse;
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             var dish = await _dishRepository.GetDishAsync(Guid.Parse(dishId));
             if (dish is null) return new BadRequestObjectResult("DISH_NOT_FOUND");
             var userId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId()!);

@@ -1,15 +1,15 @@
-name: Build and deploy .NET Core Function App to func-ezdinner-prod-01
+name: Build and deploy .NET Function App to func-ezdinner-prod-02
 on:
   push:
     branches:
-      - main
+      - update-backend
 env:
-  AZURE_FUNCTIONAPP_NAME: func-ezdinner-prod-01
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: src\EzDinner.Functions\published
-  AZURE_FUNCTIONAPP_PUBLISH_PROFILE: ${{ secrets.FUNC_EZDINNER_PROD_01_FFFF }}
+  AZURE_FUNCTIONAPP_NAME: func-ezdinner-prod-02
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: src/EzDinner.Functions/published
+  AZURE_FUNCTIONAPP_PUBLISH_PROFILE: ${{ secrets.FUNC_EZDINNER_PROD_02_PUBLISH_PROFILE }}
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 10.0.x
-  WORKING_DIRECTORY: api\src\EzDinner.Functions
+  WORKING_DIRECTORY: api/src/EzDinner.Functions
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

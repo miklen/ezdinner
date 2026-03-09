@@ -1,8 +1,7 @@
-﻿using Casbin.Adapter.EFCore;
+﻿using Casbin;
+using Casbin.Persist.Adapter.EFCore;
 using EzDinner.Authorization.Core;
 using EzDinner.Infrastructure;
-using NetCasbin;
-using NetCasbin.Model;
 using System;
 using System.Threading.Tasks;
 using Xunit;

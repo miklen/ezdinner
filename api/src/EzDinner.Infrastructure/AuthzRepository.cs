@@ -1,10 +1,6 @@
-﻿using EzDinner.Authorization.Core;
-using NetCasbin;
-using NetCasbin.Model;
-using System;
-using System.IO;
-using System.Reflection;
-using System.Threading.Tasks;
+﻿using Casbin;
+using Casbin.Model;
+using EzDinner.Authorization.Core;
 
 namespace EzDinner.Infrastructure
 {
@@ -66,9 +62,9 @@ m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && (r.obj == p.obj || p.obj == ""*"
         {
             return _enforcer.Enforce(userId, familyId, resource, action);
         }
-        public static Model GetRbacWithDomainsModel()
-        {         
-            return Model.CreateDefaultFromText(RBAC_WITH_DOMAINS_MODEL);
+        public static IModel GetRbacWithDomainsModel()
+        {
+            return DefaultModel.CreateFromText(RBAC_WITH_DOMAINS_MODEL);
         }
     }
 }

@@ -1,8 +1,16 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "AzureWebJobsStorageConnectionStringValue",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet"
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "CosmosDb:ConnectionString": "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+    "CosmosDb:Database": "EzDinner",
+    "AzureAdB2C:Instance": "https://ezlifehacks.b2clogin.com/",
+    "AzureAdB2C:TenantId": "38e340f0-ec74-4a95-b4df-949aaf0af92d",
+    "AzureAdB2C:ClientId": "98d97e1a-7c16-4f2f-89e3-ca839335a122",
+    "AzureAdB2C:Domain": "ezlifehacks.onmicrosoft.com",
+    "AzureAdB2C:SignUpSignInPolicyId": "B2C_1A_signup_signin",
+    "AzureAdB2C:ClientSecret": "1B_8Hm-Q~SR2Z_D7zjj4~7mSLK6EA1fEZU"
   },
   "Host": {
     "CORS": "*"
