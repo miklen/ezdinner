@@ -2,6 +2,16 @@ import { DateTime } from 'luxon'
 import type { Dish, DishStats } from '~/types'
 
 type ApiFetch = <T>(path: string, options?: Parameters<typeof $fetch>[1]) => Promise<T>
+type LocalDateLike = string | { year: number; month: number; day: number }
+
+function normalizeLocalDate(date: LocalDateLike): string {
+  if (typeof date === 'string') return date
+  return DateTime.fromObject({
+    year: date.year,
+    month: date.month,
+    day: date.day,
+  }).toISODate() ?? ''
+}
 
 export class DishesRepository {
   constructor(private apiFetch: ApiFetch) {}
@@ -18,6 +28,12 @@ export class DishesRepository {
     const result = await this.apiFetch<Dish>(`/api/dishes/${dishId}/full/family/${familyId}`)
     if (result.dishStats?.lastUsed) {
       result.dishStats.lastUsed = DateTime.fromISO(result.dishStats.lastUsed as unknown as string)
+    }
+    if (result.dates?.length) {
+      result.dates = result.dates.map((date) => ({
+        ...date,
+        date: normalizeLocalDate(date.date as LocalDateLike),
+      }))
     }
     return result
   }

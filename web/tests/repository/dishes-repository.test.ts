@@ -46,6 +46,24 @@ describe('DishesRepository', () => {
       expect(dish.dishStats.lastUsed).toBeUndefined()
     })
 
+    it('normalizes dinner dates returned as LocalDate objects', async () => {
+      const apiFetch = makeFetch({
+        id: 'dish-2',
+        name: 'Pizza',
+        url: '',
+        notes: '',
+        rating: 3,
+        tags: [],
+        dates: [{ date: { year: 2025, month: 3, day: 12 }, daysSinceLast: 7 }],
+        ratings: [],
+        dishStats: { dishId: 'dish-2', lastUsed: undefined, timesUsed: 0 },
+      })
+      const repo = new DishesRepository(apiFetch)
+      const dish = await repo.getFull('dish-2', 'family-1')
+
+      expect(dish.dates[0].date).toBe('2025-03-12')
+    })
+
     it('calls the correct endpoint', async () => {
       const apiFetch = makeFetch({ dishStats: {} })
       const repo = new DishesRepository(apiFetch)
