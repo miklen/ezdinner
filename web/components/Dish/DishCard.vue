@@ -46,12 +46,12 @@
 
       <v-card-text>
         <v-row>
-          <v-col v-if="dishStats.timesUsed > 0">
+          <v-col v-if="effectiveStats.timesUsed > 0">
             You've had {{ name }} for dinner {{ timesUsedText }}
           </v-col>
         </v-row>
         <v-row>
-          <v-col v-if="dishStats.lastUsed">
+          <v-col v-if="effectiveStats.lastUsed">
             Last was {{ daysAgo }} days ago on {{ lastUsedFormatted }}
           </v-col>
           <v-col v-else>Never been planned for dinner</v-col>
@@ -73,7 +73,7 @@
 
     <v-dialog v-model="moveDialog" width="400">
       <v-card>
-        <v-card-title>Move {{ dishStats.timesUsed }} dinner occurrences?</v-card-title>
+        <v-card-title>Move {{ effectiveStats.timesUsed }} dinner occurrences?</v-card-title>
         <v-card-text>
           Move all tracked dinner occurrences of {{ dish.name }} to be tracked as
           <v-autocomplete
