@@ -7,7 +7,7 @@
       <v-container :fluid="md">
         <v-row>
           <v-col v-if="!smAndDown" cols="2">
-            <v-list nav color="transparent">
+            <v-list nav color="primary">
               <v-list-item
                 v-for="item in links"
                 :key="item.to"
