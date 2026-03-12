@@ -43,7 +43,7 @@ namespace EzDinner.Functions
 
             var pattern = LocalDatePattern.Iso;
             var parsedId = Guid.Parse(familyId);
-            var dinners = _dinnerService.GetAsync(parsedId, pattern.Parse(fromDate).GetValueOrThrow(), pattern.Parse(toDate).GetValueOrThrow()).Select(_mapper.Map<DinnersQueryModel>);
+            var dinners = await _dinnerService.GetAsync(parsedId, pattern.Parse(fromDate).GetValueOrThrow(), pattern.Parse(toDate).GetValueOrThrow()).Select(_mapper.Map<DinnersQueryModel>).ToListAsync();
             return new OkObjectResult(dinners);
         }
     }

@@ -1,14 +1,14 @@
 <template>
-  <div>
-    <v-timeline-item class="mb-4" :dot-color="dinner.isPlanned ? 'green' : 'grey'" size="small">
-      <v-row
+  <div class="dinner-row" :class="{ 'font-weight-bold': isToday }">
+    <div class="dinner-dot" :style="{ backgroundColor: dinner.isPlanned ? 'rgb(var(--v-theme-success))' : '#bdbdbd' }" />
+    <div class="dinner-content">
+      <div
         v-show="!selected"
+        class="dinner-content-row"
         style="cursor: pointer"
-        justify="space-between"
-        :class="isToday ? 'font-weight-bold' : ''"
         @click="emit('dinner:clicked')"
       >
-        <v-col cols="6">
+        <span>
           {{ title }}
           <v-chip
             v-for="tag in dinner.tags"
@@ -19,20 +19,20 @@
           >
             {{ tag.value }}
           </v-chip>
-        </v-col>
-        <v-col class="text-right" cols="5">
+        </span>
+        <span class="text-right">
           {{ formatDay(dinner.date) }}
           <span class="text-caption">{{ formatDate(dinner.date) }}</span>
-        </v-col>
-      </v-row>
+        </span>
+      </div>
 
-      <PlannedDinnerDetails
+      <PlanPlannedDinnerDetails
         v-show="selected"
         :dinner="dinner"
         @dinner:close="emit('dinner:close')"
         @dinner:menuupdated="emit('dinner:menuupdated', $event)"
       />
-    </v-timeline-item>
+    </div>
   </div>
 </template>
 
@@ -70,7 +70,30 @@ function formatDay(date: DateTime) {
 </script>
 
 <style scoped>
-.v-timeline-item {
-  padding-bottom: 0;
+.dinner-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 6px 0;
+  position: relative;
+}
+.dinner-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 16px;
+  margin-top: 1px;
+  position: relative;
+  z-index: 1;
+}
+.dinner-content {
+  flex: 1;
+  min-width: 0;
+}
+.dinner-content-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  width: 100%;
 }
 </style>

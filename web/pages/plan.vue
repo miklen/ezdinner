@@ -24,17 +24,13 @@
     </v-row>
     <v-row>
       <v-col>
-        <v-timeline density="compact">
+        <div class="dinner-timeline">
           <template v-for="(dinner, index) in dinners" :key="index">
-            <v-timeline-item v-if="dinner.date.weekday === 1" class="mb-2" hide-dot>
-              <v-row justify="space-between">
-                <v-col cols="7">Week {{ dinner.date.weekNumber }}</v-col>
-                <v-col cols="5" class="text-right text-caption">
-                  {{ formatWeekDatesString(dinner.date) }}
-                </v-col>
-              </v-row>
-            </v-timeline-item>
-            <PlannedDinner
+            <div v-if="dinner.date.weekday === 1" class="week-header">
+              <span>Week {{ dinner.date.weekNumber }}</span>
+              <span class="text-caption">{{ formatWeekDatesString(dinner.date) }}</span>
+            </div>
+            <PlanPlannedDinner
               :dinner="dinner"
               :selected="isDinnerDateSelected(dinner, selectedDinnerDate)"
               @dinner:clicked="selectedDinnerDate = dinner.date"
@@ -42,11 +38,11 @@
               @dinner:close="selectedDinnerDate = null"
             />
           </template>
-        </v-timeline>
+        </div>
       </v-col>
     </v-row>
     <template #support>
-      <TopDishes />
+      <PlanTopDishes />
     </template>
   </Content>
 </template>
@@ -108,8 +104,23 @@ watch(dateRange, (val) => { if (val.length >= 2) populateDinners() })
 </script>
 
 <style scoped>
-.v-timeline-item {
-  padding-top: 4px;
-  padding-bottom: 4px;
+.dinner-timeline {
+  position: relative;
+  width: 100%;
+}
+.dinner-timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(0, 0, 0, 0.12);
+}
+.week-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0 4px 38px;
+  color: rgba(0, 0, 0, 0.6);
 }
 </style>

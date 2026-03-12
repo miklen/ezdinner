@@ -55,7 +55,7 @@
     </v-row>
 
     <template #support>
-      <TopDishes />
+      <PlanTopDishes />
     </template>
   </Content>
 </template>
