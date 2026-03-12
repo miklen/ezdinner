@@ -74,6 +74,8 @@ cd web && npm run lint
 - Casbin.NET.Adapter.EFCore 2.4.0 requires Casbin.NET >= 2.19.1 (older 2.x versions cause NU1605 downgrade warning and runtime failures).
 - Integration tests are in `api/tests/EzDinner.IntegrationTests` and hit a real CosmosDB — no mocking.
 - The legacy Nuxt 2 app in the repo root is not the active frontend. Use `/web`.
+- MSAL Browser v3 does not populate `idTokenClaims` on accounts returned by `getAllAccounts()` after a page reload. Call `acquireTokenSilent()` first to get a token response with fresh claims. See `web/plugins/msal.client.ts`.
+- Vuetify 3 `v-rating` inter-icon spacing cannot be controlled via `:deep()` scoped CSS. Apply `style="gap: Npx"` directly on the `<v-rating>` element instead (it renders as `inline-flex`).
 
 ## CI/CD
 - `ci.yml` — lint + test `web/` on PR/push to main
