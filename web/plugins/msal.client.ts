@@ -11,6 +11,7 @@ const SCOPES = [
 export class MsalService {
   private instance!: msal.PublicClientApplication
   private options!: { passwordAuthority: string }
+  private cachedClaims: Record<string, any> | null = null
 
   readonly isAuthenticated = ref(false)
   private initPromise!: Promise<void>
@@ -54,9 +55,20 @@ export class MsalService {
     const response = await this.instance.handleRedirectPromise()
     if (response?.account) {
       this.isAuthenticated.value = true
+      this.cachedClaims = response.idTokenClaims as Record<string, any>
     } else {
       const accounts = this.instance.getAllAccounts()
-      this.isAuthenticated.value = accounts.length > 0
+      if (accounts.length > 0) {
+        this.isAuthenticated.value = true
+        // idTokenClaims is not always populated from the cache in MSAL v3 —
+        // acquire a token silently to get fresh claims.
+        try {
+          const tokenResponse = await this.instance.acquireTokenSilent({ account: accounts[0], scopes: SCOPES })
+          this.cachedClaims = tokenResponse.idTokenClaims as Record<string, any>
+        } catch {
+          // Claims unavailable; initials will be empty but auth still works.
+        }
+      }
     }
   }
 
@@ -92,6 +104,7 @@ export class MsalService {
     if (!account) return null
     try {
       const response = await this.instance.acquireTokenSilent({ account, scopes: SCOPES })
+      this.cachedClaims = response.idTokenClaims as Record<string, any>
       return response.accessToken
     } catch (error) {
       if (error instanceof msal.InteractionRequiredAuthError) {
@@ -104,13 +117,11 @@ export class MsalService {
   }
 
   getFirstName(): string | undefined {
-    const claims = this.instance.getAllAccounts()[0]?.idTokenClaims as any
-    return claims?.given_name
+    return this.cachedClaims?.given_name
   }
 
   getLastName(): string | undefined {
-    const claims = this.instance.getAllAccounts()[0]?.idTokenClaims as any
-    return claims?.family_name
+    return this.cachedClaims?.family_name
   }
 
   getObjectId(): string | undefined {

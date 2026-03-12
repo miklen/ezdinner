@@ -3,8 +3,8 @@
     <span class="family-label" @click="menu = !menu">{{ familyName }}</span>
     <v-menu v-model="menu" location="bottom end">
       <template #activator="{ props }">
-        <v-avatar class="text-white" color="primary" size="36" v-bind="props">
-          {{ initials }}
+        <v-avatar color="primary" size="36" v-bind="props">
+          <span style="color: white; font-size: 13px; font-weight: 600; letter-spacing: 0.5px;">{{ initials }}</span>
         </v-avatar>
       </template>
       <v-card min-width="220">
@@ -29,12 +29,17 @@ const familiesStore = useFamiliesStore()
 
 const menu = ref(false)
 
-const initials = computed(() =>
-  ($msal.getFirstName()?.[0]?.toUpperCase() ?? '') +
-  ($msal.getLastName()?.[0]?.toUpperCase() ?? ''),
-)
+const initials = computed(() => {
+  if (!$msal.isAuthenticated.value) return ''
+  return (
+    ($msal.getFirstName()?.[0]?.toUpperCase() ?? '') +
+    ($msal.getLastName()?.[0]?.toUpperCase() ?? '')
+  )
+})
 
-const fullName = computed(() => `${$msal.getFirstName()} ${$msal.getLastName()}`)
+const fullName = computed(() =>
+  $msal.isAuthenticated.value ? `${$msal.getFirstName()} ${$msal.getLastName()}` : '',
+)
 
 const familyName = computed(() =>
   familiesStore.familySelectors.find((f) => f.id === appStore.activeFamilyId)?.name ?? '',
