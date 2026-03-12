@@ -26,6 +26,9 @@ export default defineNuxtConfig({
   vuetify: {
     moduleOptions: {
       importComposables: true,
+      styles: {
+        configFile: 'assets/settings.scss',
+      },
     },
     vuetifyOptions: {
       theme: {

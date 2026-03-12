@@ -4,7 +4,7 @@
     <TopbarSmall v-else :links="links" />
 
     <v-main class="bg-grey-lighten-3">
-      <v-container>
+      <v-container :fluid="md">
         <v-row>
           <v-col v-if="!smAndDown" cols="2">
             <v-list nav color="primary">
@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-const { smAndDown } = useDisplay()
+const { smAndDown, md } = useDisplay()
 const appStore = useAppStore()
 const familiesStore = useFamiliesStore()
 
