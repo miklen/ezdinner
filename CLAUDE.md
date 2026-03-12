@@ -64,6 +64,10 @@ cd web && npm run lint
 - `PUT /api/migrate` seeds authorization policies for existing families — must be called after initial setup or schema changes
 
 ## Non-Obvious Gotchas
+- Azure Functions v4 isolated worker uses System.Text.Json — Newtonsoft `[JsonConverter]` attributes on model classes are silently ignored. Map NodaTime types to strings in AutoMapper using e.g. `LocalDatePattern.Iso.Format(s.Date)`.
+- `IAsyncEnumerable<T>` returned via `OkObjectResult` serializes as `{}` with System.Text.Json — always `.ToListAsync()` before returning.
+- Nuxt 3 auto-import prefixes components by folder: `components/Plan/TopDishes.vue` → `<PlanTopDishes>`. Using the short name silently renders nothing.
+- Vuetify 3 `v-timeline` with `density="compact"` + `side="end"` shrinks to content width (uses `auto` column, not `1fr`). Use a custom CSS timeline (`position: relative`, `::before` for vertical line) instead.
 - EF Core 9 + CosmosDB: avoid LINQ queries with `.Any()` / existence checks — they generate invalid SQL. Use direct insert with conflict handling.
 - `HasNoDiscriminator()` is required on `CasbinEntityConfiguration` for Cosmos — without it EF adds a discriminator field that breaks queries.
 - `HasPartitionKey(p => p.Id)` must match the container's actual partition key path (`/id`) or CosmosDB rejects writes.

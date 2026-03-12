@@ -22,7 +22,18 @@
       "Bash(tr -cs 'A-Za-z0-9.<>\\\\`' ' ')",
       "Bash(xxd)",
       "Bash(awk 'NR>=0x555 && NR<=0x570')",
-      "Read(//c/Users/mikke/.nuget/packages/microsoft.azure.functions.worker.extensions.http.aspnetcore/2.1.0/**)"
+      "Read(//c/Users/mikke/.nuget/packages/microsoft.azure.functions.worker.extensions.http.aspnetcore/2.1.0/**)",
+      "Bash(netstat -ano | grep -E \":3000|:3001\" | grep LISTENING)",
+      "Bash(taskkill /PID 45952 /F && taskkill /PID 41724 /F)",
+      "Bash(cmd //c \"taskkill /PID 45952 /F && taskkill /PID 41724 /F\")",
+      "Bash(git add:*)",
+      "Bash(grep -r \"Linq.Async\\\\|ToListAsync\" /c/code/ezdinner/api/src --include=\"*.csproj\" --include=\"*.cs\" -l 2>/dev/null | head -5)",
+      "Bash(cmd //c \"netstat -ano | findstr :7071 | findstr LISTENING\")",
+      "Bash(cmd //c \"taskkill /PID 37468 /F\")",
+      "Bash(cmd //c \"taskkill /PID 29556 /F\")",
+      "Bash(git commit:*)",
+      "Skill(claude-md-management:revise-claude-md)",
+      "Bash(find /c/code/ezdinner/web/node_modules/vuetify -name \"VAvatar*\" 2>/dev/null | head -5)"
     ]
   }
 }
