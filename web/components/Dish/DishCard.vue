@@ -31,17 +31,7 @@
       </v-card-title>
 
       <v-card-subtitle>
-        <v-rating
-          color="primary"
-          half-increments
-          empty-icon="mdi-heart-outline"
-          full-icon="mdi-heart"
-          half-icon="mdi-heart-half-full"
-          length="5"
-          size="20"
-          :model-value="dish.rating"
-          readonly
-        />
+        <DishRating :model-value="dish.rating" :size="20" />
       </v-card-subtitle>
 
       <v-card-text>

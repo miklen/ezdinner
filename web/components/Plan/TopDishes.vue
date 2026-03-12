@@ -24,18 +24,7 @@
               <td>{{ item.name }}</td>
               <td class="text-center">{{ item.times }}</td>
               <td class="text-center">
-                <v-rating
-                  density="compact"
-                  color="primary"
-                  half-increments
-                  empty-icon="mdi-heart-outline"
-                  full-icon="mdi-heart"
-                  half-icon="mdi-heart-half-full"
-                  length="5"
-                  size="15"
-                  :model-value="item.rating"
-                  readonly
-                />
+                <DishRating :model-value="item.rating" />
               </td>
             </tr>
           </tbody>

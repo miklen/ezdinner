@@ -30,18 +30,7 @@
             <template #item="{ item, props: itemProps }">
               <v-list-item v-bind="itemProps" :title="item.raw.name">
                 <template #append>
-                  <v-rating
-                    density="compact"
-                    color="primary"
-                    half-increments
-                    empty-icon="mdi-heart-outline"
-                    full-icon="mdi-heart"
-                    half-icon="mdi-heart-half-full"
-                    length="5"
-                    size="16"
-                    :model-value="item.raw.rating"
-                    readonly
-                  />
+                  <DishRating :model-value="item.raw.rating" />
                 </template>
               </v-list-item>
             </template>
