@@ -17,6 +17,7 @@ namespace EzDinner.Infrastructure
             base.Configure(builder);
             builder.ToContainer(_containerName);
             builder.HasPartitionKey(p => p.Id);
+            builder.HasNoDiscriminator();
             // EF Core Cosmos provider does not support index definitions - remove any added by base class
             foreach (var index in builder.Metadata.GetIndexes().ToList())
                 builder.Metadata.RemoveIndex(index);
