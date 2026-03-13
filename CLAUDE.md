@@ -76,8 +76,14 @@ cd web && npm run lint
 - The legacy Nuxt 2 app in the repo root is not the active frontend. Use `/web`.
 - MSAL Browser v3 does not populate `idTokenClaims` on accounts returned by `getAllAccounts()` after a page reload. Call `acquireTokenSilent()` first to get a token response with fresh claims. See `web/plugins/msal.client.ts`.
 - Vuetify 3 `v-rating` inter-icon spacing cannot be controlled via `:deep()` scoped CSS. Apply `style="gap: Npx"` directly on the `<v-rating>` element instead (it renders as `inline-flex`).
+- `func-ezdinner-prod-02` requires all `AzureAdB2C:*` settings manually (Instance, TenantId, ClientId, Domain, SignUpSignInPolicyId, ClientSecret) — portal "Advanced edit" export from prod-01 may omit them. Refer to `api/src/EzDinner.Functions/local.settings.json` for the full list of required keys.
 
 ## CI/CD
 - `ci.yml` — lint + test `web/` on PR/push to main
 - `azure-static-web-apps-*.yml` — deploys `web/` to Azure Static Web Apps
 - `func-ezdinner-prod-01.yml` — deploys backend to Azure Functions
+- `func-ezdinner-prod-02.yml` — deploys backend to `func-ezdinner-prod-02` on push to `update-backend` (staging environment)
+- SWA automatically creates preview environments for PRs targeting `main` (free tier limit: 3 concurrent staging envs)
+- CI uses npm 11 (`npm install -g npm@11` step) — lockfile was generated with npm 11 and `npm ci` fails on Node 22's bundled npm 10
+- `npx nuxt prepare` must run before `npm test` in CI to generate `.nuxt/tsconfig.json`
+- `Azure/functions-action` latest is `v1` — `v2` does not exist
