@@ -1,6 +1,38 @@
+<script setup lang="ts">
+const { $msal } = useNuxtApp()
+const appStore = useAppStore()
+const familiesStore = useFamiliesStore()
+
+const menu = shallowRef(false)
+
+const initials = computed(() => {
+  if (!$msal.isAuthenticated.value) return ''
+  return (
+    ($msal.getFirstName()?.[0]?.toUpperCase() ?? '') +
+    ($msal.getLastName()?.[0]?.toUpperCase() ?? '')
+  )
+})
+
+const fullName = computed(() =>
+  $msal.isAuthenticated.value ? `${$msal.getFirstName()} ${$msal.getLastName()}` : '',
+)
+
+const familyName = computed(() =>
+  familiesStore.familySelectors.find((f) => f.id === appStore.activeFamilyId)?.name ?? '',
+)
+</script>
+
 <template>
   <span class="topbar-profile">
-    <span v-if="familyName" class="family-pill" @click="menu = !menu">
+    <span
+      v-if="familyName"
+      class="family-pill"
+      role="button"
+      tabindex="0"
+      @click="menu = !menu"
+      @keydown.enter.prevent="menu = !menu"
+      @keydown.space.prevent="menu = !menu"
+    >
       <v-icon size="14" class="family-pill__icon">mdi-account-group</v-icon>
       <span class="family-pill__name">{{ familyName }}</span>
     </span>
@@ -25,35 +57,12 @@
   </span>
 </template>
 
-<script setup lang="ts">
-const { $msal } = useNuxtApp()
-const appStore = useAppStore()
-const familiesStore = useFamiliesStore()
-
-const menu = ref(false)
-
-const initials = computed(() => {
-  if (!$msal.isAuthenticated.value) return ''
-  return (
-    ($msal.getFirstName()?.[0]?.toUpperCase() ?? '') +
-    ($msal.getLastName()?.[0]?.toUpperCase() ?? '')
-  )
-})
-
-const fullName = computed(() =>
-  $msal.isAuthenticated.value ? `${$msal.getFirstName()} ${$msal.getLastName()}` : '',
-)
-
-const familyName = computed(() =>
-  familiesStore.familySelectors.find((f) => f.id === appStore.activeFamilyId)?.name ?? '',
-)
-</script>
-
 <style scoped>
 .topbar-profile {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .family-pill {
@@ -67,6 +76,9 @@ const familyName = computed(() =>
   cursor: pointer;
   transition: background-color var(--duration-fast) var(--ease-out);
   min-height: 32px;
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
 }
 
 .family-pill:hover {
@@ -84,7 +96,7 @@ const familyName = computed(() =>
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-text-secondary);
-  max-width: 120px;
+  max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

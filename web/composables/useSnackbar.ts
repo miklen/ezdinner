@@ -19,5 +19,9 @@ export function useSnackbar() {
     visible.value = true
   }
 
-  return { show, message, visible, color, timeout }
+  function dismiss() {
+    visible.value = false
+  }
+
+  return { show, dismiss, message, visible, color, timeout }
 }
