@@ -1,9 +1,8 @@
 const LS_KEY = 'ezdinner:activeFamilyId'
 
 export const useAppStore = defineStore('app', () => {
-  const activeFamilyId = ref<string>(
-    import.meta.client ? (localStorage.getItem(LS_KEY) ?? '') : '',
-  )
+  const raw = import.meta.client ? (localStorage.getItem(LS_KEY) ?? '') : ''
+  const activeFamilyId = ref<string>(raw.replace(/^"|"$/g, ''))
 
   function setActiveFamilyId(id: string) {
     activeFamilyId.value = id
