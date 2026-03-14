@@ -29,7 +29,7 @@ Each phase is independently deployable after its prerequisites. Deploy increment
 | 1. Design System Foundation | ✅ Complete | — | Warm palette + fonts, EmptyState, DishPill, snackbar infra, a11y |
 | 2. Layout + Navigation | ✅ Complete | Phase 1 | Bottom nav, icon rail, page transitions |
 | 3. Home Page | ✅ Complete | Phases 1 + 2 | Redesigned home page + home skeleton loaders |
-| 4. Dish Cards + Catalog | Not started | Phase 1 | Redesigned dish cards + catalog + skeleton loaders |
+| 4. Dish Cards + Catalog | ✅ Complete | Phase 1 | Redesigned dish cards + catalog + skeleton loaders |
 | 5. Plan Page | Not started | Phases 1 + 2 | Redesigned plan page + plan skeleton loaders |
 | 6. Dish Detail | Not started | Phase 4 | Redesigned dish detail page + skeleton loader |
 | 7. Landing Page Refresh | Not started | Phase 1 | Redesigned landing page (run alongside or after Phase 1) |
@@ -499,6 +499,13 @@ Recommended approach: Summary line ("Had 12 times in 6 months, roughly every 15 
 ## Learnings Log
 
 Record insights, gotchas, and adjustments discovered during implementation here so future sessions benefit:
+
+### Phase 4 Learnings
+- [2026-03-14] `v-card :to` makes the entire card a router-link; child interactive elements (overflow menu button) need `@click.stop` to prevent navigation on click.
+- [2026-03-14] Overflow button visibility (opacity 0 → 1 on card hover) requires `:deep(.overflow-btn)` in the parent card's scoped CSS since the button lives in a child component.
+- [2026-03-14] `shallowRef` is correct for primitive state (`string`, `boolean`, `null`) — prefer it over `ref` for those types.
+- [2026-03-14] Sort chip direction defaults per key (name → asc, rating/timesUsed/lastUsed → desc) make the first click immediately useful without requiring a second click.
+- [2026-03-14] `class="d-flex"` on the `v-col` + `class="w-100"` on `DishCard` is the idiomatic Vuetify approach to make sibling cards in a row stretch to equal height.
 
 ### Phase 3 Learnings
 - [2026-03-14] `Promise.all` with mixed return types (including `void` from store methods) requires explicit casting of individual results — destructure and cast as needed rather than relying on TS inference.

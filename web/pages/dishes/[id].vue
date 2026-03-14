@@ -5,7 +5,7 @@
       <v-col cols="12" md="8">
         <v-row>
           <v-col>
-            <DishCard v-if="dish" :dish="dish" :dish-stats="dish.dishStats" />
+            <DishCard v-if="dish" :dish="dish" :dish-stats="dish.dishStats" :clickable="false" />
           </v-col>
         </v-row>
         <v-row>
