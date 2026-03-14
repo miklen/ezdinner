@@ -28,7 +28,7 @@ Each phase is independently deployable after its prerequisites. Deploy increment
 |-------|--------|---------------|---------|
 | 1. Design System Foundation | ✅ Complete | — | Warm palette + fonts, EmptyState, DishPill, snackbar infra, a11y |
 | 2. Layout + Navigation | ✅ Complete | Phase 1 | Bottom nav, icon rail, page transitions |
-| 3. Home Page | Not started | Phases 1 + 2 | Redesigned home page + home skeleton loaders |
+| 3. Home Page | ✅ Complete | Phases 1 + 2 | Redesigned home page + home skeleton loaders |
 | 4. Dish Cards + Catalog | Not started | Phase 1 | Redesigned dish cards + catalog + skeleton loaders |
 | 5. Plan Page | Not started | Phases 1 + 2 | Redesigned plan page + plan skeleton loaders |
 | 6. Dish Detail | Not started | Phase 4 | Redesigned dish detail page + skeleton loader |
@@ -500,7 +500,15 @@ Recommended approach: Summary line ("Had 12 times in 6 months, roughly every 15 
 
 Record insights, gotchas, and adjustments discovered during implementation here so future sessions benefit:
 
+### Phase 3 Learnings
+- [2026-03-14] `Promise.all` with mixed return types (including `void` from store methods) requires explicit casting of individual results — destructure and cast as needed rather than relying on TS inference.
+- [2026-03-14] `DishStats.lastUsed` from the API is an ISO string at runtime despite being typed as `DateTime | undefined` — use `DateTime.fromISO(lastUsed as unknown as string)` same as other date fields.
+- [2026-03-14] Nuxt auto-import for `components/Home/DinnerHeroCard.vue` → `<HomeDinnerHeroCard>`, `components/Home/QuickStats.vue` → `<HomeQuickStats>` — consistent with the `Plan/` → `Plan` prefix pattern.
+- [2026-03-14] Nuxt deduplicates folder/filename when they share a prefix: `Dish/DishPill.vue` → `<DishPill>` (not `<DishDishPill>`). Only adds the folder prefix when it differs from the component name: `Plan/TopDishes.vue` → `<PlanTopDishes>`.
+
 ### Phase 2 Learnings
+- [2026-03-14] `v-tooltip` does not work reliably inside `v-navigation-drawer` in rail mode (Vuetify 3.7.x) — neither the activator slot pattern nor `activator="parent"` produced visible tooltips. Workaround: track mouseenter/mouseleave on a wrapper div, store the Y position from `getBoundingClientRect()`, and render a custom `position: fixed` tooltip div outside the drawer entirely.
+- [2026-03-14] `overflow-x: hidden` on `body` breaks Vuetify's `position: fixed` overlays (tooltips, menus, dialogs) in some browsers. Use `overflow-x: clip` instead — it prevents horizontal scroll without affecting fixed-position descendants.
 - [2026-03-14] `mdi-calendar-week-outline` does not exist in MDI — use `mdi-calendar-blank-outline` instead. Check MDI icon list before using `-outline` variants; not all icons have them.
 - [2026-03-14] Do not set `top: Npx !important` on `v-navigation-drawer` — this breaks Vuetify's layout offset calculations. Let `v-app` handle positioning automatically.
 - [2026-03-14] `v-bottom-navigation` with routed `v-btn :to` does not need a `v-model` — Vue Router active state drives the active class natively.

@@ -33,7 +33,11 @@
       "Bash(cmd //c \"taskkill /PID 29556 /F\")",
       "Bash(git commit:*)",
       "Skill(claude-md-management:revise-claude-md)",
-      "Bash(find /c/code/ezdinner/web/node_modules/vuetify -name \"VAvatar*\" 2>/dev/null | head -5)"
+      "Bash(find /c/code/ezdinner/web/node_modules/vuetify -name \"VAvatar*\" 2>/dev/null | head -5)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cd:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }
