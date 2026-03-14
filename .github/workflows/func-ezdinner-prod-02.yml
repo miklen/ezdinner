@@ -2,7 +2,7 @@ name: Build and deploy .NET Function App to func-ezdinner-prod-02
 on:
   push:
     branches:
-      - update-backend
+      - main
 env:
   AZURE_FUNCTIONAPP_NAME: func-ezdinner-prod-02
   AZURE_FUNCTIONAPP_PACKAGE_PATH: src/EzDinner.Functions/published
