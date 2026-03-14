@@ -76,15 +76,16 @@ async function init() {
   if (!appStore.activeFamilyId) return
   await dishesStore.populateDishes()
   const today = DateTime.now()
+  type RawDinner = Omit<Dinner, 'date'> & { date: string }
   const result = await dinnerRepo.getRange(appStore.activeFamilyId, today, today.plus({ days: 1 }))
-  dinners.value = (result as any[]).map((dinner) => {
-    dinner.date = DateTime.fromISO(dinner.date)
-    dinner.menu = dinner.menu.map((item: any) => {
-      item.dishName = dishesStore.dishMap[item.dishId] ?? 'Dish not available'
-      return item
-    })
-    return dinner as Dinner
-  })
+  dinners.value = (result as unknown as RawDinner[]).map((dinner) => ({
+    ...dinner,
+    date: DateTime.fromISO(dinner.date),
+    menu: dinner.menu.map((item) => ({
+      ...item,
+      dishName: dishesStore.dishMap[item.dishId] ?? 'Dish not available',
+    })),
+  }))
 }
 
 onMounted(init)

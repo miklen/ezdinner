@@ -1,4 +1,4 @@
-import { DateTime } from 'luxon'
+import type { DateTime } from 'luxon'
 import type { Dinner } from '~/types'
 
 type ApiFetch = <T>(path: string, options?: Parameters<typeof $fetch>[1]) => Promise<T>

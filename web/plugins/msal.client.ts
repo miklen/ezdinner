@@ -11,7 +11,7 @@ const SCOPES = [
 export class MsalService {
   private instance!: msal.PublicClientApplication
   private options!: { passwordAuthority: string }
-  private cachedClaims: Record<string, any> | null = null
+  private cachedClaims: Record<string, unknown> | null = null
 
   readonly isAuthenticated = ref(false)
   private initPromise!: Promise<void>
@@ -55,7 +55,7 @@ export class MsalService {
     const response = await this.instance.handleRedirectPromise()
     if (response?.account) {
       this.isAuthenticated.value = true
-      this.cachedClaims = response.idTokenClaims as Record<string, any>
+      this.cachedClaims = response.idTokenClaims as Record<string, unknown>
     } else {
       const accounts = this.instance.getAllAccounts()
       if (accounts.length > 0) {
@@ -64,7 +64,7 @@ export class MsalService {
         // acquire a token silently to get fresh claims.
         try {
           const tokenResponse = await this.instance.acquireTokenSilent({ account: accounts[0], scopes: SCOPES })
-          this.cachedClaims = tokenResponse.idTokenClaims as Record<string, any>
+          this.cachedClaims = tokenResponse.idTokenClaims as Record<string, unknown>
         } catch {
           // Claims unavailable; initials will be empty but auth still works.
         }
@@ -76,8 +76,8 @@ export class MsalService {
     await this.initPromise
     try {
       await this.instance.loginRedirect({ scopes: SCOPES })
-    } catch (err: any) {
-      if (err?.message?.includes('AADB2C90118')) {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes('AADB2C90118')) {
         // Password reset flow
         try {
           const result = await this.instance.loginPopup({
@@ -104,7 +104,7 @@ export class MsalService {
     if (!account) return null
     try {
       const response = await this.instance.acquireTokenSilent({ account, scopes: SCOPES })
-      this.cachedClaims = response.idTokenClaims as Record<string, any>
+      this.cachedClaims = response.idTokenClaims as Record<string, unknown>
       return response.accessToken
     } catch (error) {
       if (error instanceof msal.InteractionRequiredAuthError) {
@@ -117,11 +117,11 @@ export class MsalService {
   }
 
   getFirstName(): string | undefined {
-    return this.cachedClaims?.given_name
+    return this.cachedClaims?.given_name as string | undefined
   }
 
   getLastName(): string | undefined {
-    return this.cachedClaims?.family_name
+    return this.cachedClaims?.family_name as string | undefined
   }
 
   getObjectId(): string | undefined {

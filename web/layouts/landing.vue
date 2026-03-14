@@ -25,7 +25,7 @@
                   <span :class="smAndDown ? 'text-h4' : 'text-h3'" class="font-weight-light">
                     EASY
                   </span>
-                  <br />
+                  <br>
                   <span :class="smAndDown ? 'text-h3' : 'text-h2'" class="font-weight-black">
                     DINNER PLANNER
                   </span>

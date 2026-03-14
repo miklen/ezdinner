@@ -97,7 +97,7 @@ async function createDish() {
   const dishName = dishSearch.value
   if (!dishName) return
   dishSearch.value = ''
-  ;(dishSelector.value as any)?.blur()
+  dishSelector.value?.blur()
   const dishId = await dishRepo.create(appStore.activeFamilyId, dishName) as string
   await dishesStore.updateDish(dishId)
   await addDishToMenu(dishId)

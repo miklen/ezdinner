@@ -48,7 +48,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'dinner:clicked': []
   'dinner:close': []
-  'dinner:menuupdated': [event: any]
+  'dinner:menuupdated': [event: { date: DateTime; dishId: string; dishName: string }]
 }>()
 
 const isToday = computed(() => props.dinner.date.hasSame(DateTime.local(), 'day'))

@@ -1,5 +1,5 @@
 <template>
-  <!-- Content is fully rendered by the landing layout -->
+  <div />
 </template>
 
 <script setup lang="ts">
