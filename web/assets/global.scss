@@ -131,12 +131,19 @@ body {
   outline-offset: 2px;
 }
 
-// Touch target minimum (48px) — applies to interactive elements
-.v-chip,
-.v-btn.v-btn--icon,
-.v-rating .v-btn {
-  min-height: 48px;
-  min-width: 48px;
+// Touch target minimum (48px) — only needed on touch devices (pointer: coarse)
+// On desktop (pointer: fine / mouse) Vuetify's own sizing is sufficient
+@media (pointer: coarse) {
+  .v-chip,
+  .v-btn.v-btn--icon {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  // Rating buttons: tall enough to tap, but don't expand width (5 icons × 48px = layout-breaking)
+  .v-rating .v-btn {
+    min-height: 48px;
+  }
 }
 
 // =============================================================================

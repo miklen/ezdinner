@@ -31,7 +31,7 @@ Each phase is independently deployable after its prerequisites. Deploy increment
 | 3. Home Page | ✅ Complete | Phases 1 + 2 | Redesigned home page + home skeleton loaders |
 | 4. Dish Cards + Catalog | ✅ Complete | Phase 1 | Redesigned dish cards + catalog + skeleton loaders |
 | 5. Plan Page | ✅ Complete | Phases 1 + 2 | Redesigned plan page + plan skeleton loaders |
-| 6. Dish Detail | Not started | Phase 4 | Redesigned dish detail page + skeleton loader |
+| 6. Dish Detail | ✅ Complete | Phase 4 | Redesigned dish detail page + skeleton loader |
 | 7. Landing Page Refresh | Not started | Phase 1 | Redesigned landing page (run alongside or after Phase 1) |
 
 Note: Phases 3, 4, and 5 are independent of each other and can be done in any order.
@@ -499,6 +499,14 @@ Recommended approach: Summary line ("Had 12 times in 6 months, roughly every 15 
 ## Learnings Log
 
 Record insights, gotchas, and adjustments discovered during implementation here so future sessions benefit:
+
+### Phase 6 Learnings
+- [2026-03-14] `DishOverflowMenu` uses `opacity: 0` on `.overflow-btn` scoped to card-hover context. In the detail header (no parent card), override with `:deep(.overflow-btn) { opacity: 1 }` to always show it — do not modify the component itself.
+- [2026-03-14] `DatesVisualization` dot timeline uses `const` (not reactive) for `timelineStart`/`timelineNow`/`timelineSpanDays` — these represent "now at render time" and do not need reactivity. Only `timelineDots` and `monthLabels` are `computed` (they depend on reactive `props.dates`).
+- [2026-03-14] `DishNotesCard` owns its own edit state and EasyMDE lifecycle — the page passes `initialNotes`/`initialUrl` props and listens for `updated` emit rather than managing edit state at the page level. This keeps the orchestrator thin.
+- [2026-03-14] `DishFamilyRatings` calls `emit('updated')` after a successful rating change; the page calls `loadDish()` in response — prefer a full refetch over optimistic local patch for ratings since the server computes the averaged `dish.rating`.
+- [2026-03-14] Casting `dish ?? ({} as any)` in the template avoids null checks in child components while the skeleton loader is shown — components should guard against empty data in their props or skeleton branch, not the parent.
+- [2026-03-14] Nuxt auto-import prefix rule applies here: `Dish/DatesVisualization.vue` → `<DishDatesVisualization>` (folder prefix added because "DatesVisualization" does NOT start with "Dish"). Contrast: `Dish/DishPill.vue` → `<DishPill>` (deduplicated because both start with "Dish"). Check this before using any component in `components/Dish/` whose filename doesn't start with "Dish".
 
 ### Phase 5 Learnings
 - [2026-03-14] `@vueuse/core` is NOT a transitive Nuxt dependency in this project — it must be explicitly installed (`npm install @vueuse/core`). The plan's assumption was wrong; always verify in node_modules before importing.

@@ -76,6 +76,7 @@ cd web && npm run lint
 - The legacy Nuxt 2 app in the repo root is not the active frontend. Use `/web`.
 - MSAL Browser v3 does not populate `idTokenClaims` on accounts returned by `getAllAccounts()` after a page reload. Call `acquireTokenSilent()` first to get a token response with fresh claims. See `web/plugins/msal.client.ts`.
 - Vuetify 3 `v-rating` inter-icon spacing cannot be controlled via `:deep()` scoped CSS. Apply `style="gap: Npx"` directly on the `<v-rating>` element instead (it renders as `inline-flex`).
+- Vuetify 3 `v-rating` `size` prop only controls the icon size, not the button wrapper. The wrapper `v-btn` retains its default `min-width` (36–64px), which causes rating rows to consume excessive width in flex layouts. Override with `:deep(.v-btn) { min-width: unset !important; width: auto !important; padding: 0 !important; }` in the parent component.
 - `func-ezdinner-prod-02` requires all `AzureAdB2C:*` settings manually (Instance, TenantId, ClientId, Domain, SignUpSignInPolicyId, ClientSecret) — portal "Advanced edit" export from prod-01 may omit them. Refer to `api/src/EzDinner.Functions/local.settings.json` for the full list of required keys.
 
 ## CI/CD
