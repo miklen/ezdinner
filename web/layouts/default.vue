@@ -1,29 +1,50 @@
 <template>
   <v-app id="ezdinner">
+    <!-- Desktop: top bar -->
     <TopbarLarge v-if="!smAndDown" />
-    <TopbarSmall v-else :links="links" />
 
-    <v-main style="background-color: var(--color-background);">
-      <v-container :fluid="md">
-        <v-row>
-          <v-col v-if="!smAndDown" cols="2">
-            <v-list nav bg-color="transparent">
-              <v-list-item
-                v-for="item in links"
-                :key="item.to"
-                :prepend-icon="item.icon"
-                :title="item.title"
-                :to="item.to"
-                exact
-              />
-            </v-list>
-          </v-col>
-          <v-col>
-            <slot />
-          </v-col>
-        </v-row>
+    <!-- Mobile: minimal top bar (no hamburger — bottom nav handles navigation) -->
+    <TopbarSmall v-else />
+
+    <!-- Desktop: icon rail (replaces the old cols="2" nav column) -->
+    <v-navigation-drawer
+      v-if="!smAndDown"
+      permanent
+      rail
+      :elevation="0"
+      class="icon-rail"
+    >
+      <v-list nav class="icon-rail__list">
+        <v-tooltip
+          v-for="item in links"
+          :key="item.to"
+          :text="item.title"
+          location="end"
+        >
+          <template #activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              :to="item.to"
+              exact
+              class="icon-rail__item"
+            >
+              <template #prepend>
+                <v-icon>{{ route.path === item.to ? item.iconActive : item.icon }}</v-icon>
+              </template>
+            </v-list-item>
+          </template>
+        </v-tooltip>
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-main class="app-main">
+      <v-container :fluid="md" class="app-container">
+        <slot />
       </v-container>
     </v-main>
+
+    <!-- Mobile: bottom navigation -->
+    <BottomNav v-if="smAndDown" :links="links" />
 
     <v-overlay :model-value="loading" class="align-center justify-center">
       <v-progress-circular size="50" color="primary" indeterminate />
@@ -51,18 +72,19 @@ const { smAndDown, md } = useDisplay()
 const appStore = useAppStore()
 const familiesStore = useFamiliesStore()
 const snackbar = useSnackbar()
+const route = useRoute()
 
 const loading = ref(true)
 
 const links = computed(() => {
   const nav = [
-    { icon: 'mdi-home', title: 'Home', to: '/home' },
-    { icon: 'mdi-account-group', title: 'Families', to: '/families' },
+    { icon: 'mdi-home-outline', iconActive: 'mdi-home', title: 'Home', to: '/home' },
+    { icon: 'mdi-account-group-outline', iconActive: 'mdi-account-group', title: 'Families', to: '/families' },
   ]
   if (appStore.activeFamilyId) {
     nav.push(
-      { icon: 'mdi-silverware-fork-knife', title: 'Dishes', to: '/dishes' },
-      { icon: 'mdi-calendar-edit', title: 'Plan', to: '/plan' },
+      { icon: 'mdi-silverware-fork-knife', iconActive: 'mdi-silverware-fork-knife', title: 'Dishes', to: '/dishes' },
+      { icon: 'mdi-calendar-blank-outline', iconActive: 'mdi-calendar-blank', title: 'Plan', to: '/plan' },
     )
   }
   return nav
@@ -80,3 +102,35 @@ watch(() => appStore.activeFamilyId, () => {
   familiesStore.getActiveFamily()
 })
 </script>
+
+<style scoped>
+.icon-rail {
+  background-color: var(--color-surface) !important;
+  border-right: 1px solid var(--color-border) !important;
+}
+
+.icon-rail__list {
+  padding-top: var(--space-4);
+}
+
+.icon-rail__item {
+  border-radius: var(--radius-md) !important;
+  margin-bottom: var(--space-2);
+  min-height: 48px !important;
+}
+
+/* Active state: terracotta icon */
+.icon-rail__item.v-list-item--active {
+  color: var(--color-primary) !important;
+  background-color: rgba(212, 101, 42, 0.08) !important;
+}
+
+.app-main {
+  background-color: var(--color-background) !important;
+}
+
+.app-container {
+  padding-top: var(--space-6) !important;
+  padding-bottom: var(--space-12) !important;
+}
+</style>
