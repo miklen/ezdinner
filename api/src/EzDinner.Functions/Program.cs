@@ -14,7 +14,11 @@ var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
     .ConfigureServices((context, services) =>
     {
-        services.AddAuthentication()
+        services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = Microsoft.Identity.Web.Constants.Bearer;
+                options.DefaultChallengeScheme = Microsoft.Identity.Web.Constants.Bearer;
+            })
             .AddMicrosoftIdentityWebApi(context.Configuration.GetSection("AzureAdB2C"));
         services.AddAuthorization();
 
