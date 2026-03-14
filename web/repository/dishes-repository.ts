@@ -27,7 +27,7 @@ export class DishesRepository {
   async getFull(dishId: string, familyId: string) {
     const result = await this.apiFetch<Dish>(`/api/dishes/${dishId}/full/family/${familyId}`)
     if (result.dishStats?.lastUsed) {
-      result.dishStats.lastUsed = DateTime.fromISO(result.dishStats.lastUsed as unknown as string)
+      result.dishStats.lastUsed = DateTime.fromISO(normalizeLocalDate(result.dishStats.lastUsed as unknown as LocalDateLike))
     }
     if (result.dates?.length) {
       result.dates = result.dates.map((date) => ({
@@ -50,7 +50,7 @@ export class DishesRepository {
     const result = await this.apiFetch<Record<string, DishStats>>(`/api/dishes/stats/family/${familyId}`)
     for (const key of Object.keys(result)) {
       if (result[key].lastUsed) {
-        result[key].lastUsed = DateTime.fromISO(result[key].lastUsed as unknown as string)
+        result[key].lastUsed = DateTime.fromISO(normalizeLocalDate(result[key].lastUsed as unknown as LocalDateLike))
       }
     }
     return result

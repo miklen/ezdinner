@@ -31,7 +31,7 @@
                   </v-col>
                 </v-row>
               </v-card-text>
-              <div class="notes-area pa-4">
+              <div class="notes-area" style="padding: 16px 16px 16px 24px">
                 <div v-if="editNotesMode">
                   <textarea ref="textareaRef" v-model="notes" />
                 </div>
