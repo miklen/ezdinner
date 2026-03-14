@@ -30,7 +30,7 @@ Each phase is independently deployable after its prerequisites. Deploy increment
 | 2. Layout + Navigation | ✅ Complete | Phase 1 | Bottom nav, icon rail, page transitions |
 | 3. Home Page | ✅ Complete | Phases 1 + 2 | Redesigned home page + home skeleton loaders |
 | 4. Dish Cards + Catalog | ✅ Complete | Phase 1 | Redesigned dish cards + catalog + skeleton loaders |
-| 5. Plan Page | Not started | Phases 1 + 2 | Redesigned plan page + plan skeleton loaders |
+| 5. Plan Page | ✅ Complete | Phases 1 + 2 | Redesigned plan page + plan skeleton loaders |
 | 6. Dish Detail | Not started | Phase 4 | Redesigned dish detail page + skeleton loader |
 | 7. Landing Page Refresh | Not started | Phase 1 | Redesigned landing page (run alongside or after Phase 1) |
 
@@ -499,6 +499,14 @@ Recommended approach: Summary line ("Had 12 times in 6 months, roughly every 15 
 ## Learnings Log
 
 Record insights, gotchas, and adjustments discovered during implementation here so future sessions benefit:
+
+### Phase 5 Learnings
+- [2026-03-14] `@vueuse/core` is NOT a transitive Nuxt dependency in this project — it must be explicitly installed (`npm install @vueuse/core`). The plan's assumption was wrong; always verify in node_modules before importing.
+- [2026-03-14] `DateTime.toISODate()` returns `string | null` in Luxon — use `.toFormat('yyyy-MM-dd')` instead when a guaranteed string is required (e.g., `:key` binding).
+- [2026-03-14] Grid-row expand animation (`grid-template-rows: 0fr → 1fr`) belongs in the parent card component (PlannedDinner), not in the details component itself. The details component renders content normally; the wrapper owns the animation.
+- [2026-03-14] `color-mix()` and `oklch()` are CSS4 functions; use `rgba(212, 101, 42, 0.12)` for the "TODAY" badge background tint instead of relying on these for the broadest browser compatibility (although modern browsers support them).
+- [2026-03-14] `useSwipe` from `@vueuse/core` requires `touch-action: pan-y` on the swipe target to allow vertical scrolling while still detecting horizontal swipes — without it, the browser may cancel touch events.
+- [2026-03-14] Autocomplete `#append-item` slot (shown when items exist) + `#no-data` slot (shown when empty) covers all cases for the "Create new dish" CTA without duplication.
 
 ### Phase 4 Learnings
 - [2026-03-14] `v-card :to` makes the entire card a router-link; child interactive elements (overflow menu button) need `@click.stop` to prevent navigation on click.

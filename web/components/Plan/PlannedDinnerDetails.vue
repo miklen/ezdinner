@@ -1,69 +1,3 @@
-<template>
-  <v-card>
-    <v-card-subtitle style="cursor: pointer" @click="emit('dinner:close')">
-      <v-row>
-        <v-col style="display: flex">
-          {{ formatDate(dinner.date) }}
-          <v-spacer />
-          <v-icon>mdi-close-circle-outline</v-icon>
-        </v-col>
-      </v-row>
-    </v-card-subtitle>
-
-    <v-card-text>
-      <v-row>
-        <v-col>
-          <v-autocomplete
-            ref="dishSelector"
-            v-model="selectedDish"
-            v-model:search="dishSearch"
-            :items="dishesStore.dishes"
-            item-title="name"
-            item-value="id"
-            return-object
-            variant="outlined"
-            label="Add dish to menu"
-            placeholder="Start typing to search"
-            @update:model-value="onDishSelected"
-            @keyup.enter="createDish"
-          >
-            <template #item="{ item, props: itemProps }">
-              <v-list-item v-bind="itemProps" :title="item.raw.name">
-                <template #append>
-                  <DishRating :model-value="item.raw.rating" />
-                </template>
-              </v-list-item>
-            </template>
-
-            <template #no-data>
-              <v-list-item v-if="!dishSearch">
-                <span class="text-subtitle-1">Enter name of dish</span>
-              </v-list-item>
-              <v-list-item v-else @click="createDish">
-                <span class="text-subtitle-1">Create "{{ dishSearch }}"</span>
-              </v-list-item>
-            </template>
-          </v-autocomplete>
-
-          <v-list>
-            <v-list-item v-for="menuItem in dinner.menu" :key="menuItem.dishId">
-              <v-list-item-title>{{ menuItem.dishName }}</v-list-item-title>
-              <template #append>
-                <v-btn icon variant="text" @click="navigateTo('/dishes/' + menuItem.dishId)">
-                  <v-icon>mdi-information-outline</v-icon>
-                </v-btn>
-                <v-btn icon variant="text" @click="removeDishFromMenu(menuItem.dishId)">
-                  <v-icon>mdi-close-circle-outline</v-icon>
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-col>
-      </v-row>
-    </v-card-text>
-  </v-card>
-</template>
-
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import type { Dinner, Dish } from '~/types'
@@ -83,8 +17,17 @@ const dishSearch = ref('')
 const selectedDish = ref<Dish | null>(null)
 const dishSelector = ref<HTMLElement | null>(null)
 
-function formatDate(date: DateTime) {
-  return date.toLocaleString(DateTime.DATE_HUGE)
+const formatDate = (date: DateTime) => date.toLocaleString(DateTime.DATE_HUGE)
+
+function getDaysSince(dish: Dish): number | null {
+  const lastUsed = dish.dishStats?.lastUsed
+  if (!lastUsed) return null
+  const days = Math.round(
+    DateTime.now()
+      .diff(DateTime.fromISO(lastUsed as unknown as string), 'days')
+      .days,
+  )
+  return days >= 0 ? days : null
 }
 
 async function onDishSelected(dish: Dish | null) {
@@ -94,11 +37,11 @@ async function onDishSelected(dish: Dish | null) {
 }
 
 async function createDish() {
-  const dishName = dishSearch.value
+  const dishName = dishSearch.value.trim()
   if (!dishName) return
   dishSearch.value = ''
   dishSelector.value?.blur()
-  const dishId = await dishRepo.create(appStore.activeFamilyId, dishName) as string
+  const dishId = (await dishRepo.create(appStore.activeFamilyId, dishName)) as string
   await dishesStore.updateDish(dishId)
   await addDishToMenu(dishId)
 }
@@ -114,3 +57,176 @@ async function removeDishFromMenu(dishId: string) {
   emit('dinner:menuupdated', { date: props.dinner.date, dishId, dishName: '' })
 }
 </script>
+
+<template>
+  <div class="dinner-details">
+    <!-- Date bar with close -->
+    <div class="dinner-details__date-bar">
+      <span class="dinner-details__date-label">{{ formatDate(dinner.date) }}</span>
+      <button class="dinner-details__close" aria-label="Close" @click="emit('dinner:close')">
+        <v-icon size="18">mdi-close</v-icon>
+      </button>
+    </div>
+
+    <div class="dinner-details__body">
+      <!-- Current menu as removable DishPills -->
+      <div v-if="dinner.menu.length > 0" class="dinner-details__menu">
+        <DishPill
+          v-for="item in dinner.menu"
+          :key="item.dishId"
+          :name="item.dishName"
+          :to="`/dishes/${item.dishId}`"
+          size="md"
+          removable
+          @remove="removeDishFromMenu(item.dishId)"
+        />
+      </div>
+
+      <!-- Dish autocomplete -->
+      <v-autocomplete
+        ref="dishSelector"
+        v-model="selectedDish"
+        v-model:search="dishSearch"
+        :items="dishesStore.dishes"
+        item-title="name"
+        item-value="id"
+        return-object
+        variant="outlined"
+        density="compact"
+        label="Add dish to menu"
+        placeholder="Search dishes..."
+        class="dinner-details__autocomplete"
+        @update:model-value="onDishSelected"
+        @keyup.enter="createDish"
+      >
+        <template #item="{ item, props: itemProps }">
+          <v-list-item v-bind="itemProps" :title="item.raw.name">
+            <template #subtitle>
+              <span class="dish-option-meta">
+                <DishRating :model-value="item.raw.rating" size="x-small" />
+                <span v-if="getDaysSince(item.raw) !== null" class="dish-option-days">
+                  {{ getDaysSince(item.raw) }}d ago
+                </span>
+              </span>
+            </template>
+          </v-list-item>
+        </template>
+
+        <template #no-data>
+          <v-list-item v-if="!dishSearch">
+            <span class="text-body-2 text-medium-emphasis">Start typing to search</span>
+          </v-list-item>
+          <v-list-item v-else class="create-dish-item" @click="createDish">
+            <template #prepend>
+              <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
+            </template>
+            <span class="text-body-2">
+              Create <strong>"{{ dishSearch }}"</strong>
+            </span>
+          </v-list-item>
+        </template>
+
+        <template #append-item>
+          <template v-if="dishSearch">
+            <v-divider class="my-1" />
+            <v-list-item class="create-dish-item" @click="createDish">
+              <template #prepend>
+                <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
+              </template>
+              <span class="text-body-2">
+                Create <strong>"{{ dishSearch }}"</strong>
+              </span>
+            </v-list-item>
+          </template>
+        </template>
+      </v-autocomplete>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.dinner-details {
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+/* Date bar */
+.dinner-details__date-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface-variant);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dinner-details__date-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.dinner-details__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: background var(--duration-instant) var(--ease-out), color var(--duration-instant) var(--ease-out);
+}
+
+.dinner-details__close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--color-text-primary);
+}
+
+.dinner-details__close:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Body */
+.dinner-details__body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Menu pills */
+.dinner-details__menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Autocomplete */
+.dinner-details__autocomplete {
+  margin-bottom: 0;
+}
+
+/* Dish option metadata */
+.dish-option-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 2px;
+}
+
+.dish-option-days {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* Create new dish row */
+.create-dish-item {
+  cursor: pointer;
+}
+
+.create-dish-item:hover {
+  background: var(--color-surface-variant);
+}
+</style>

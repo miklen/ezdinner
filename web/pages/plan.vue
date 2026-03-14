@@ -1,46 +1,46 @@
 <template>
   <Content split>
-    <v-row>
-      <v-col>
-        <v-menu v-model="showDatePicker" :close-on-content-click="false">
-          <template #activator="{ props: menuProps }">
-            <v-text-field
-              v-bind="menuProps"
-              :model-value="dateRangeText"
-              label="Select date range"
-              prepend-icon="mdi-calendar"
-              readonly
-              style="width: 220px"
-            />
-          </template>
-          <v-date-picker v-model="dateRange" multiple="range" show-week />
-        </v-menu>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12" class="text-center">
-        <v-card-title>Dinner plan</v-card-title>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <div class="dinner-timeline">
-          <template v-for="(dinner, index) in dinners" :key="index">
-            <div v-if="dinner.date.weekday === 1" class="week-header">
-              <span>Week {{ dinner.date.weekNumber }}</span>
-              <span class="text-caption">{{ formatWeekDatesString(dinner.date) }}</span>
-            </div>
-            <PlanPlannedDinner
-              :dinner="dinner"
-              :selected="isDinnerDateSelected(dinner, selectedDinnerDate)"
-              @dinner:clicked="selectedDinnerDate = dinner.date"
-              @dinner:menuupdated="menuUpdated"
-              @dinner:close="selectedDinnerDate = null"
-            />
-          </template>
+    <div class="plan-page">
+      <PlanWeekNav v-model="weekStart" class="mb-4" />
+
+      <!-- Skeleton loading — 9 placeholders (7 days + 2 prev weekend) -->
+      <template v-if="loading">
+        <div v-for="i in 9" :key="i" class="skeleton-card mb-3">
+          <v-skeleton-loader type="list-item-two-line" />
         </div>
-      </v-col>
-    </v-row>
+      </template>
+
+      <template v-else>
+        <!-- Previous weekend — visually separated -->
+        <template v-if="prevWeekendDinners.length > 0">
+          <div class="week-section-label">{{ prevWeekendLabel }}</div>
+          <PlanPlannedDinner
+            v-for="dinner in prevWeekendDinners"
+            :key="dinner.date.toFormat('yyyy-MM-dd')"
+            :dinner="dinner"
+            :selected="isDinnerSelected(dinner)"
+            class="mb-3 dinner-prev-weekend"
+            @dinner:clicked="selectedDate = dinner.date"
+            @dinner:close="selectedDate = null"
+            @dinner:menuupdated="menuUpdated"
+          />
+          <div class="week-divider" />
+        </template>
+
+        <!-- Current week -->
+        <PlanPlannedDinner
+          v-for="dinner in currentWeekDinners"
+          :key="dinner.date.toFormat('yyyy-MM-dd')"
+          :dinner="dinner"
+          :selected="isDinnerSelected(dinner)"
+          class="mb-3"
+          @dinner:clicked="selectedDate = dinner.date"
+          @dinner:close="selectedDate = null"
+          @dinner:menuupdated="menuUpdated"
+        />
+      </template>
+    </div>
+
     <template #support>
       <PlanTopDishes />
     </template>
@@ -57,70 +57,95 @@ const appStore = useAppStore()
 const dishesStore = useDishesStore()
 const dinnersStore = useDinnersStore()
 
-const showDatePicker = ref(false)
-const dateRange = ref<Date[]>([])
-const selectedDinnerDate = ref<DateTime | null>(null)
+// Default to next week when today is Saturday (6) or Sunday (7) —
+// the user is likely planning ahead rather than the week that's ending.
+const todayWeekday = DateTime.now().weekday
+const defaultWeekStart = todayWeekday >= 6
+  ? DateTime.now().plus({ weeks: 1 }).startOf('week')
+  : DateTime.now().startOf('week')
 
-const dateRangeText = computed(() =>
-  dateRange.value
-    .filter((_, i) => i === 0 || i === dateRange.value.length - 1)
-    .map((d) => DateTime.fromJSDate(d).toLocaleString(DateTime.DATE_SHORT))
-    .join(' ~ '),
+const weekStart = ref(defaultWeekStart)
+const selectedDate = ref<DateTime | null>(null)
+const loading = ref(false)
+
+// Load from the Saturday before the week's Monday so we always include
+// the prev weekend at the top of the list.
+const loadFrom = computed(() => weekStart.value.minus({ days: 2 }))
+const weekEnd = computed(() => weekStart.value.endOf('week'))
+
+const prevWeekendDinners = computed(() =>
+  dinnersStore.dinners.filter((d) => d.date < weekStart.value),
 )
 
-const dinners = computed(() => [...dinnersStore.dinners])
+// Label for the prev-weekend section — always uses week number so it
+// remains accurate whether browsing current, past, or future weeks.
+const prevWeekendLabel = computed(() => {
+  const wk = weekStart.value.minus({ days: 2 }).weekNumber
+  return `Week ${wk} weekend`
+})
 
-async function init() {
-  await dishesStore.populateDishes()
-  const to = DateTime.now().plus({ week: 1 })
-  const from = to.minus({ month: 1 })
-  dateRange.value = [from.toJSDate(), to.toJSDate()]
+const currentWeekDinners = computed(() =>
+  dinnersStore.dinners.filter((d) => d.date >= weekStart.value),
+)
+
+async function loadWeek() {
+  loading.value = true
+  await Promise.all([
+    dishesStore.populateDishes(),
+    dinnersStore.populateDinners(loadFrom.value, weekEnd.value),
+  ])
+  loading.value = false
 }
 
-async function populateDinners() {
-  if (dateRange.value.length < 2) return
-  const sorted = [...dateRange.value].sort((a, b) => a.getTime() - b.getTime())
-  const from = DateTime.fromJSDate(sorted[0])
-  const to = DateTime.fromJSDate(sorted[sorted.length - 1])
-  await dinnersStore.populateDinners(from, to)
-}
-
-function isDinnerDateSelected(dinner: Dinner, selectedDate: DateTime | null) {
-  if (!dinner?.date || !selectedDate) return false
-  return dinner.date.equals(selectedDate)
-}
-
-function formatWeekDatesString(startOfWeekDay: DateTime) {
-  return `${startOfWeekDay.toLocaleString(DateTime.DATE_SHORT)} - ${startOfWeekDay.plus({ days: 7 }).toLocaleString(DateTime.DATE_SHORT)}`
+function isDinnerSelected(dinner: Dinner) {
+  return !!selectedDate.value && dinner.date.equals(selectedDate.value)
 }
 
 function menuUpdated() {
-  populateDinners()
+  dinnersStore.populateDinners(loadFrom.value, weekEnd.value)
 }
 
-onMounted(init)
-watch(() => appStore.activeFamilyId, (val) => { if (val) init() })
-watch(dateRange, (val) => { if (val.length >= 2) populateDinners() })
+onMounted(loadWeek)
+watch(weekStart, () => {
+  selectedDate.value = null
+  loadWeek()
+})
+watch(
+  () => appStore.activeFamilyId,
+  (val) => { if (val) loadWeek() },
+)
 </script>
 
 <style scoped>
-.dinner-timeline {
-  position: relative;
-  width: 100%;
+.plan-page {
+  padding-bottom: var(--space-8);
 }
-.dinner-timeline::before {
-  content: '';
-  position: absolute;
-  left: 10px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: rgba(0, 0, 0, 0.12);
+
+.skeleton-card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
-.week-header {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 0 4px 38px;
-  color: rgba(0, 0, 0, 0.6);
+
+.week-section-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: 0 var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.week-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+/* Slightly reduced opacity to distinguish prev-week cards from this week */
+:deep(.dinner-prev-weekend) {
+  opacity: 0.8;
 }
 </style>
