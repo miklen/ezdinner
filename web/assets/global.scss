@@ -1,0 +1,213 @@
+// =============================================================================
+// EzDinner Global Design System
+// "A confident family kitchen — editorial headings, warm breathing room."
+// =============================================================================
+
+// Icon vocabulary (reference):
+// Home         → mdi-home / mdi-home-outline
+// Plan         → mdi-calendar-week / mdi-calendar-week-outline
+// Dishes       → mdi-silverware-fork-knife
+// Families     → mdi-account-group / mdi-account-group-outline
+// Add          → mdi-plus
+// Edit         → mdi-pencil-outline
+// Delete       → mdi-delete-outline
+// More actions → mdi-dots-vertical
+// Remove       → mdi-close
+// Link         → mdi-open-in-new
+// Rating       → mdi-heart / mdi-heart-outline
+
+:root {
+  // ── Color Tokens ──────────────────────────────────────────────────────────
+  --color-primary:          #D4652A;
+  --color-primary-dark:     #B8511D;
+  --color-primary-light:    #E8884F;
+  --color-secondary:        #6B8F5E;
+  --color-accent:           #E5A83B;
+  --color-background:       #FAF7F4;
+  --color-surface:          #FFFFFF;
+  --color-surface-variant:  #F5F0EB;
+  --color-success:          #4A7C3F;
+  --color-error:            #C62828;
+
+  // Text on backgrounds — use dark for body text (WCAG AA compliant)
+  // Reserve --color-primary for large headings and icon fills only
+  --color-text-primary:     #1A1310;
+  --color-text-secondary:   #5C4A3A;
+  --color-text-muted:       #9C8878;
+  --color-text-on-primary:  #FFFFFF;
+  --color-border:           rgba(0, 0, 0, 0.06);
+  --color-border-medium:    rgba(0, 0, 0, 0.12);
+
+  // ── Typography ────────────────────────────────────────────────────────────
+  --font-display:  'DM Serif Display', Georgia, serif;
+  --font-body:     'DM Sans', system-ui, sans-serif;
+
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-lg:   20px;
+  --text-xl:   24px;
+  --text-2xl:  32px;
+  --text-3xl:  48px;
+
+  // ── Spacing (8px base grid) ───────────────────────────────────────────────
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-12:  48px;
+
+  // ── Border Radius ─────────────────────────────────────────────────────────
+  --radius-sm:   6px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  // ── Shadows ───────────────────────────────────────────────────────────────
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+
+  // ── Z-Index Scale ─────────────────────────────────────────────────────────
+  --z-base:      0;
+  --z-raised:    10;
+  --z-dropdown:  100;
+  --z-sticky:    200;
+  --z-nav:       300;
+  --z-snackbar:  400;
+  --z-modal:     500;
+
+  // ── Motion ────────────────────────────────────────────────────────────────
+  --duration-instant: 100ms;
+  --duration-fast:    200ms;
+  --duration-normal:  300ms;
+  --duration-slow:    500ms;
+
+  --ease-out:      cubic-bezier(0.0, 0.0, 0.2, 1.0);
+  --ease-in:       cubic-bezier(0.4, 0.0, 1.0, 1.0);
+  --ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1.0);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+// Reduced motion: zero out all durations
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast:    0ms;
+    --duration-normal:  0ms;
+    --duration-slow:    0ms;
+  }
+}
+
+// =============================================================================
+// Global Base Styles
+// =============================================================================
+
+body,
+.v-application,
+.v-application * {
+  font-family: var(--font-body);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ── Accessibility: Focus Ring ─────────────────────────────────────────────────
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+// Touch target minimum (48px) — applies to interactive elements
+.v-chip,
+.v-btn.v-btn--icon,
+.v-rating .v-btn {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+// =============================================================================
+// Typography Utility Classes
+// =============================================================================
+
+.text-page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+
+.text-section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+
+.text-card-title {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.text-caption-label {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+// =============================================================================
+// Vuetify Overrides
+// =============================================================================
+
+// Card defaults: warm, soft borders, no harsh elevation
+.v-card {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--color-border);
+}
+
+// Primary button: use primary-dark for sufficient contrast
+.v-btn--variant-elevated.bg-primary,
+.v-btn--variant-flat.bg-primary {
+  background-color: var(--color-primary-dark) !important;
+}
+
+// =============================================================================
+// Page Transitions
+// =============================================================================
+
+.page-enter-active,
+.page-leave-active {
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}

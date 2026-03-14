@@ -3,19 +3,29 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      titleTemplate: 'Dinner Planner - %s',
-      title: 'Dinner Planner',
+      titleTemplate: 'EzDinner - %s',
+      title: 'EzDinner',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Plan and track your dinner - get suggestions based on your history!' },
-        { property: 'og:title', content: 'Easy Dinner Planner' },
-        { property: 'og:description', content: 'Plan and track your dinner - get suggestions based on your history!' },
-        { property: 'og:site_name', content: 'Easy Dinner Planner' },
+        { name: 'description', content: 'Plan and track your family dinners — get suggestions based on your history!' },
+        { property: 'og:title', content: 'EzDinner' },
+        { property: 'og:description', content: 'Plan and track your family dinners — get suggestions based on your history!' },
+        { property: 'og:site_name', content: 'EzDinner' },
       ],
-      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap',
+        },
+      ],
     },
   },
+
+  css: ['~/assets/global.scss'],
 
   modules: [
     'vuetify-nuxt-module',
@@ -33,6 +43,22 @@ export default defineNuxtConfig({
     vuetifyOptions: {
       theme: {
         defaultTheme: 'light',
+        themes: {
+          light: {
+            colors: {
+              primary: '#D4652A',
+              'primary-darken-1': '#B8511D',
+              'primary-lighten-1': '#E8884F',
+              secondary: '#6B8F5E',
+              accent: '#E5A83B',
+              background: '#FAF7F4',
+              surface: '#FFFFFF',
+              'surface-variant': '#F5F0EB',
+              success: '#4A7C3F',
+              error: '#C62828',
+            },
+          },
+        },
       },
     },
   },

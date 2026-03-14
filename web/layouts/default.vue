@@ -3,7 +3,7 @@
     <TopbarLarge v-if="!smAndDown" />
     <TopbarSmall v-else :links="links" />
 
-    <v-main class="bg-grey-lighten-3">
+    <v-main style="background-color: var(--color-background);">
       <v-container :fluid="md">
         <v-row>
           <v-col v-if="!smAndDown" cols="2">
@@ -28,6 +28,21 @@
     <v-overlay :model-value="loading" class="align-center justify-center">
       <v-progress-circular size="50" color="primary" indeterminate />
     </v-overlay>
+
+    <v-snackbar
+      v-model="snackbar.visible.value"
+      :color="snackbar.color.value"
+      :timeout="snackbar.timeout.value"
+      location="bottom"
+      rounded="lg"
+    >
+      {{ snackbar.message.value }}
+      <template #actions>
+        <v-btn variant="text" @click="snackbar.visible.value = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -35,6 +50,7 @@
 const { smAndDown, md } = useDisplay()
 const appStore = useAppStore()
 const familiesStore = useFamiliesStore()
+const snackbar = useSnackbar()
 
 const loading = ref(true)
 
