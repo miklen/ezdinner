@@ -27,7 +27,7 @@ Each phase is independently deployable after its prerequisites. Deploy increment
 | Phase | Status | Prerequisites | Deploys |
 |-------|--------|---------------|---------|
 | 1. Design System Foundation | ✅ Complete | — | Warm palette + fonts, EmptyState, DishPill, snackbar infra, a11y |
-| 2. Layout + Navigation | Not started | Phase 1 | Bottom nav, icon rail, page transitions |
+| 2. Layout + Navigation | ✅ Complete | Phase 1 | Bottom nav, icon rail, page transitions |
 | 3. Home Page | Not started | Phases 1 + 2 | Redesigned home page + home skeleton loaders |
 | 4. Dish Cards + Catalog | Not started | Phase 1 | Redesigned dish cards + catalog + skeleton loaders |
 | 5. Plan Page | Not started | Phases 1 + 2 | Redesigned plan page + plan skeleton loaders |
@@ -499,6 +499,12 @@ Recommended approach: Summary line ("Had 12 times in 6 months, roughly every 15 
 ## Learnings Log
 
 Record insights, gotchas, and adjustments discovered during implementation here so future sessions benefit:
+
+### Phase 2 Learnings
+- [2026-03-14] `mdi-calendar-week-outline` does not exist in MDI — use `mdi-calendar-blank-outline` instead. Check MDI icon list before using `-outline` variants; not all icons have them.
+- [2026-03-14] Do not set `top: Npx !important` on `v-navigation-drawer` — this breaks Vuetify's layout offset calculations. Let `v-app` handle positioning automatically.
+- [2026-03-14] `v-bottom-navigation` with routed `v-btn :to` does not need a `v-model` — Vue Router active state drives the active class natively.
+- [2026-03-14] Don't remove the hamburger until the bottom nav is confirmed working in the browser — lesson from Phase 1 repeated; stage mobile nav changes only after testing.
 
 ### Phase 1 Learnings
 - [2026-03-14] `$body-font-family` is NOT a configurable variable in `vuetify/settings` (not `!default`) — overriding it via `@forward ... with (...)` in `settings.scss` throws a Sass error. Override font via `.v-application, .v-application *` in `global.scss` instead.
