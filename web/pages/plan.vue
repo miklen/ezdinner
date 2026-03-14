@@ -58,13 +58,13 @@ const dishesStore = useDishesStore()
 const dinnersStore = useDinnersStore()
 
 const showDatePicker = ref(false)
-const dateRange = ref<string[]>([])
+const dateRange = ref<Date[]>([])
 const selectedDinnerDate = ref<DateTime | null>(null)
 
 const dateRangeText = computed(() =>
   dateRange.value
     .filter((_, i) => i === 0 || i === dateRange.value.length - 1)
-    .map((d) => DateTime.fromISO(d).toLocaleString(DateTime.DATE_SHORT))
+    .map((d) => DateTime.fromJSDate(d).toLocaleString(DateTime.DATE_SHORT))
     .join(' ~ '),
 )
 
@@ -74,14 +74,14 @@ async function init() {
   await dishesStore.populateDishes()
   const to = DateTime.now().plus({ week: 1 })
   const from = to.minus({ month: 1 })
-  dateRange.value = [from.toISODate()!, to.toISODate()!]
+  dateRange.value = [from.toJSDate(), to.toJSDate()]
 }
 
 async function populateDinners() {
   if (dateRange.value.length < 2) return
-  const sorted = [...dateRange.value].sort()
-  const from = DateTime.fromISO(sorted[0])
-  const to = DateTime.fromISO(sorted[sorted.length - 1])
+  const sorted = [...dateRange.value].sort((a, b) => a.getTime() - b.getTime())
+  const from = DateTime.fromJSDate(sorted[0])
+  const to = DateTime.fromJSDate(sorted[sorted.length - 1])
   await dinnersStore.populateDinners(from, to)
 }
 
