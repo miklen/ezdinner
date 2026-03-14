@@ -1,7 +1,7 @@
 {
     "typescript.tsdk": "node_modules\\typescript\\lib",
     "azureFunctions.projectSubpath": "api\\src\\EzDinner.Functions",
-    "azureFunctions.deploySubpath": "api\\src\\EzDinner.Functions/bin/Release/netcoreapp3.1/publish",
+    "azureFunctions.deploySubpath": "api\\src\\EzDinner.Functions/bin/Release/net10.0/publish",
     "azureFunctions.projectLanguage": "C#",
     "azureFunctions.projectRuntime": "~3",
     "debug.internalConsoleOptions": "neverOpen",

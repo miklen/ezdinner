@@ -8,19 +8,19 @@ env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: src\EzDinner.Functions\published
   AZURE_FUNCTIONAPP_PUBLISH_PROFILE: ${{ secrets.FUNC_EZDINNER_PROD_01_FFFF }}
   CONFIGURATION: Release
-  DOTNET_CORE_VERSION: 3.1.x
+  DOTNET_CORE_VERSION: 10.0.x
   WORKING_DIRECTORY: api\src\EzDinner.Functions
 jobs:
   build-and-deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
       - name: Restore
-        run: dotnet restore -s https://api.nuget.org/v3/index.json "${{ env.WORKING_DIRECTORY }}"
+        run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
       - name: Build
         run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
       - name: Publish

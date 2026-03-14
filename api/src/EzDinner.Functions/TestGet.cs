@@ -1,26 +1,25 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Microsoft.Identity.Web;
 
 namespace EzDinner.Functions
 {
-    public static class TestGet
+    public class TestGet
     {
-        [FunctionName("TestGet")]
-        public static async Task<IActionResult?> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test")] HttpRequest req,
-            ILogger log)
-        {
+        private readonly ILogger<TestGet> _logger;
 
-            var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus) return authenticationResponse;
+        public TestGet(ILogger<TestGet> logger)
+        {
+            _logger = logger;
+        }
+
+        [Function("TestGet")]
+        public IActionResult? Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test")] HttpRequest req)
+        {
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
 
             return new OkObjectResult("Test OK");
         }

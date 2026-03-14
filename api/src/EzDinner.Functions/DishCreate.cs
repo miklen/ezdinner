@@ -5,11 +5,9 @@ using EzDinner.Core.Aggregates.DishAggregate;
 using EzDinner.Functions.Models.Command;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.Resource;
 
 namespace EzDinner.Functions
 {
@@ -26,14 +24,12 @@ namespace EzDinner.Functions
             _authz = authz;
         }
         
-        [FunctionName(nameof(DishCreate))]
-        [RequiredScope("backendapi")]
+        [Function(nameof(DishCreate))]
         public async Task<IActionResult?> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "dishes")] HttpRequest req
             )
         {
-            var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus) return authenticationResponse;
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             var newDish = await req.GetBodyAs<CreateDishCommandModel>();
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, newDish.FamilyId, Resources.Dish, Actions.Create)) return new UnauthorizedResult();
            

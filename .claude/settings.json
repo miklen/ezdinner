@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npx nuxt prepare)",
+      "Bash(npm test)",
+      "Bash(npm run build)",
+      "Bash(func start)",
+      "Bash(npm run dev)",
+      "Bash(grep -v \"^C:\\\\\\\\code\\\\|warning CS\")",
+      "Read(//c/Users/mikke/.nuget/packages/microsoft.azure.functions.worker.extensions.http.aspnetcore/**)",
+      "Bash(powershell -Command \"[System.Reflection.Assembly]::LoadFile\\(''C:/Users/mikke/.nuget/packages/microsoft.azure.functions.worker.extensions.http.aspnetcore/2.1.0/lib/net8.0/Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore.dll''\\) | Out-Null; [System.AppDomain]::CurrentDomain.GetAssemblies\\(\\) | Where-Object { $_.GetName\\(\\).Name -eq ''Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore'' } | ForEach-Object { $_.GetTypes\\(\\) | ForEach-Object { $_.FullName } }\")",
+      "Bash(powershell -File:*)",
+      "Bash(xargs -I {} cmd /c \"dotnet-il-disassembler {} 2>/dev/null | grep -l IPolicyValues\")",
+      "Bash(grep -r IPolicyValues c:/code/ezdinner/api/src --include=*.cs -l)",
+      "Bash(dotnet build:*)",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse -Path ''''C:\\\\Users\\\\mikke\\\\.nuget\\\\packages\\\\casbin.net'''' -Filter ''''*.dll'''' | Select-Object -First 3 -ExpandProperty FullName\")",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse ''C:\\\\Users\\\\mikke\\\\.nuget\\\\packages\\\\casbin.net'' -Filter ''Casbin.dll'' | Select-Object -ExpandProperty FullName\")",
+      "Bash(powershell -Command \"[System.Reflection.Assembly]::LoadFile\\(''C:\\\\Users\\\\mikke\\\\.nuget\\\\packages\\\\casbin.net\\\\2.5.1\\\\lib\\\\net8.0\\\\Casbin.dll''\\).GetTypes\\(\\) | Where-Object { $_.Name -eq ''IPolicyValues'' } | Select-Object FullName, Namespace\")",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse ''C:\\\\Users\\\\mikke\\\\.nuget\\\\packages\\\\casbin.persist.adapter.efcore'' -Filter ''*.dll'' | Select-Object -ExpandProperty FullName\")",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse ''C:\\\\Users\\\\mikke\\\\.nuget\\\\packages'' -Filter ''*Casbin*'' -Directory | Select-Object -ExpandProperty FullName\")",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse ''C:\\\\Users\\\\mikke\\\\.nuget\\\\packages\\\\casbin.net.adapter.efcore'' -Filter ''*.dll'' | Select-Object -ExpandProperty FullName\")",
+      "Bash(powershell -Command \":*)",
+      "Bash(powershell -Command \"[System.Reflection.Assembly]::LoadFile\\(''''C:\\\\Users\\\\mikke\\\\.nuget\\\\packages\\\\casbin.net\\\\2.5.1\\\\lib\\\\net8.0\\\\Casbin.dll''''\\) | Out-Null; [System.Reflection.Assembly]::LoadFile\\(''''C:\\\\Users\\\\mikke\\\\..nuget\\\\packages\\\\casbin.net.adapter.efcore\\\\2.4.0\\\\lib\\\\net8.0\\\\Casbin.Persist.Adapter.EFCore.dll''''\\).GetMethods\\(\\)\")",
+      "Bash(grep -r IPolicyValues C:/Users/mikke/.nuget/packages/casbin.net.adapter.efcore/2.4.0 --include=*.cs)",
+      "Bash(grep -r IPolicyValues src/ --include=*.cs)",
+      "Bash(powershell -Command \"Select-String -Path ''C:\\\\Users\\\\mikke\\\\.nuget\\\\packages\\\\casbin.net\\\\2.5.1\\\\lib\\\\net8.0\\\\Casbin.dll'' -Pattern ''IPolicyValues'' -Encoding Byte -List | Select-Object -First 5\")",
+      "Bash(mkdir -p /tmp/inspect)",
+      "Bash(/tmp/inspect/Program.cs:*)",
+      "Bash(/tmp/inspect/inspect.csproj:*)",
+      "Bash(dotnet run:*)",
+      "Bash(powershell -Command \"Get-ChildItem ''c:\\\\code\\\\ezdinner\\\\api\\\\src\\\\EzDinner.Functions\\\\bin\\\\output\\\\'' | Where-Object { $_.Name -like ''*Casbin*'' } | Select-Object Name\")",
+      "Bash(find c:/code/ezdinner/api/src/EzDinner.Infrastructure/bin -name *Casbin*)",
+      "Read(//c/Users/mikke/.nuget/**)",
+      "Bash(xargs grep:*)",
+      "Bash(dotnet add:*)",
+      "Read(//c/Program Files/dotnet/shared/Microsoft.NETCore.App/10.0.3/**)",
+      "Bash(grep -E \"\\\\.\\(md|json\\)$\")",
+      "Bash(grep -E \"\\\\.\\(ts|js|cs\\)$\")",
+      "Bash(ls -la /c/code/ezdinner/api/src/EzDinner.Functions/*.cs)"
+    ],
+    "additionalDirectories": [
+      "c:\\code\\ezdinner\\static",
+      "\\tmp\\inspect",
+      "C:\\Users\\mikke\\.claude\\projects\\c--code-ezdinner"
+    ]
+  }
+}

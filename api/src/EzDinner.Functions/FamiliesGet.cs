@@ -1,23 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using AutoMapper;
-using EzDinner.Core.Aggregates.FamilyAggregate;
 using EzDinner.Core.Aggregates.UserAggregate;
 using EzDinner.Functions.Models.Query;
 using EzDinner.Query.Core.FamilyQueries;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.Resource;
-using Newtonsoft.Json;
 
 namespace EzDinner.Functions
 {
@@ -36,14 +26,12 @@ namespace EzDinner.Functions
             _mapper = mapper;
         }
 
-        [FunctionName(nameof(FamiliesGet))]
-        [RequiredScope("backendapi")]
+        [Function(nameof(FamiliesGet))]
         public async Task<IActionResult?> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "families/select")] HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus) return authenticationResponse;
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
 
             var userId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId() ?? "");
             var families = await _familyRepository.GetFamiliesDetailsAsync(userId);

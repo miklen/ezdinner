@@ -5,12 +5,9 @@ using EzDinner.Core.Aggregates.FamilyAggregate;
 using EzDinner.Functions.Models.Command;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.Resource;
-using Newtonsoft.Json;
 
 namespace EzDinner.Functions
 {
@@ -25,14 +22,12 @@ namespace EzDinner.Functions
             _familyRepository = familyRepository;
         }
 
-        [FunctionName(nameof(FamilyCreate))]
-        [RequiredScope("backendapi")]
+        [Function(nameof(FamilyCreate))]
         public async Task<IActionResult?> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "families")] HttpRequest req
             )
         {
-            var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus) return authenticationResponse;
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
 
             var newFamily = await req.GetBodyAs<CreateFamilyCommandModel>();
             if (string.IsNullOrWhiteSpace(newFamily.Name)) return new BadRequestObjectResult("Name cannot be null or empty");

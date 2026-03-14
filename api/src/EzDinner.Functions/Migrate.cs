@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
@@ -12,7 +11,7 @@ using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.FamilyAggregate;
 using System.Collections.Generic;
 using EzDinner.Authorization.Core;  
-using Casbin.Adapter.EFCore;
+using Casbin.Persist.Adapter.EFCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using EzDinner.Application.Commands.Authorization;
@@ -37,7 +36,7 @@ namespace EzDinner.Functions
             _configuration = configuration;
         }
         
-        [FunctionName(nameof(Migrate))]
+        [Function(nameof(Migrate))]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "migrate")] HttpRequest req)
         {

@@ -1,0 +1,26 @@
+import { DateTime } from 'luxon'
+import type { Dinner } from '~/types'
+
+export const useDinnersStore = defineStore('dinners', () => {
+  const appStore = useAppStore()
+  const dishesStore = useDishesStore()
+  const dinners = ref<Dinner[]>([])
+
+  async function populateDinners(from: DateTime, to: DateTime) {
+    const { dinners: dinnerRepo } = useRepositories()
+    const result = await dinnerRepo.getRange(appStore.activeFamilyId, from, to)
+
+    type RawDinner = Omit<Dinner, 'date'> & { date: string }
+    // Client-side join: attach dish names from dishMap
+    dinners.value = (result as unknown as RawDinner[]).map((dinner) => ({
+      ...dinner,
+      date: DateTime.fromISO(dinner.date),
+      menu: dinner.menu.map((item) => ({
+        ...item,
+        dishName: dishesStore.dishMap[item.dishId] ?? 'Dish not available',
+      })),
+    }))
+  }
+
+  return { dinners, populateDinners }
+})

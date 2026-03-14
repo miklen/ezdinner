@@ -1,4 +1,7 @@
-﻿using Casbin.Adapter.EFCore;
+﻿using Azure.Identity;
+using Casbin;
+using Casbin.Persist.Adapter.EFCore;
+using Casbin.Model;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.DishAggregate;
@@ -13,10 +16,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graph;
-using Microsoft.Graph.Auth;
-using Microsoft.Identity.Client;
-using NetCasbin;
-using NetCasbin.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
@@ -28,14 +27,11 @@ namespace EzDinner.Infrastructure
     {
         public static IServiceCollection RegisterMsGraph(this IServiceCollection services, IConfigurationSection adConfig)
         {
-            var confidentialClientApplication = ConfidentialClientApplicationBuilder
-               .Create(adConfig.GetValue<string>("ClientId"))
-               .WithTenantId(adConfig.GetValue<string>("TenantId"))
-               .WithClientSecret(adConfig.GetValue<string>("ClientSecret"))
-               .Build();
-
-            var authProvider = new ClientCredentialProvider(confidentialClientApplication);
-            var graphClient = new GraphServiceClient(authProvider);
+            var credential = new ClientSecretCredential(
+                adConfig.GetValue<string>("TenantId"),
+                adConfig.GetValue<string>("ClientId"),
+                adConfig.GetValue<string>("ClientSecret"));
+            var graphClient = new GraphServiceClient(credential);
 
             services.AddSingleton(graphClient);
             return services;
@@ -63,6 +59,7 @@ namespace EzDinner.Infrastructure
             var accountKey = connStrParts[1].Substring(connStrParts[1].IndexOf('=') + 1);
             var options = new DbContextOptionsBuilder<CasbinDbContext<string>>()
               .UseCosmos(accountEndpoint, accountKey, databaseName: section.GetValue<string>("Database"))
+              .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.CosmosEventId.SyncNotSupported))
               .Options;
             services.AddSingleton(_ => new CasbinDbContext<string>(options, new CasbinEntityConfiguration()));
             services.AddSingleton(s => new CasbinCosmosAdapter(s.GetRequiredService<CasbinDbContext<string>>()));

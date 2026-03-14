@@ -15,22 +15,45 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          submodules: true
-      - name: Build And Deploy
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v0.0.1-preview
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Update npm
+        run: npm install -g npm@11
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: web
+
+      - name: Prepare Nuxt
+        run: npx nuxt prepare
+        working-directory: web
+
+      - name: Run tests
+        run: npm test
+        working-directory: web
+
+      - name: Build
+        run: npm run build
+        working-directory: web
+        env:
+          NUXT_PUBLIC_API_BASE_URL: https://func-ezdinner-prod-02-enebdabrftexdba9.westeurope-01.azurewebsites.net
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AMBITIOUS_FOREST_0E8C4F603 }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
-          action: 'upload'
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: '/' # App source code path
-          #api_location: 'api/src/EzDinner.Functions' # Api source code path - optional
-          output_location: 'dist' # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: web/.output/public
+          skip_app_build: true
+          output_location: ''
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
@@ -38,8 +61,7 @@ jobs:
     name: Close Pull Request Job
     steps:
       - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v0.0.1-preview
+        uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AMBITIOUS_FOREST_0E8C4F603 }}
-          action: 'close'
+          action: close

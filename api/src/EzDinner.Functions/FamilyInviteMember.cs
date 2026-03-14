@@ -1,8 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
@@ -34,13 +33,12 @@ namespace EzDinner.Functions
         /// <param name="req"></param>
         /// <param name="familyId"></param>
         /// <returns></returns>
-        [FunctionName(nameof(FamilyInviteMember))]
+        [Function(nameof(FamilyInviteMember))]
         public async Task<IActionResult?> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "family/{familyId}/member")] HttpRequest req,
             string familyId)
         {
-            var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus) return authenticationResponse;
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Family, Actions.Update)) return new UnauthorizedResult();
 
             var familyGuid = Guid.Parse(familyId);

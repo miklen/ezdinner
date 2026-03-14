@@ -7,11 +7,9 @@ using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Functions.Models.Query;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.Resource;
 using NodaTime;
 using NodaTime.Text;
 
@@ -32,8 +30,7 @@ namespace EzDinner.Functions
             _authz = authz;
         }
 
-        [FunctionName(nameof(DinnersGet))]
-        [RequiredScope("backendapi")]
+        [Function(nameof(DinnersGet))]
         public async Task<IActionResult?> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "dinners/family/{familyId}/dates/{fromDate}/{toDate}")] HttpRequest req,
             string familyId,
@@ -41,13 +38,12 @@ namespace EzDinner.Functions
             string toDate
             )
         {
-            var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateAzureFunctionAsync();
-            if (!authenticationStatus) return authenticationResponse;
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Dinner, Actions.Read)) return new UnauthorizedResult();
 
             var pattern = LocalDatePattern.Iso;
             var parsedId = Guid.Parse(familyId);
-            var dinners = _dinnerService.GetAsync(parsedId, pattern.Parse(fromDate).GetValueOrThrow(), pattern.Parse(toDate).GetValueOrThrow()).Select(_mapper.Map<DinnersQueryModel>);
+            var dinners = await _dinnerService.GetAsync(parsedId, pattern.Parse(fromDate).GetValueOrThrow(), pattern.Parse(toDate).GetValueOrThrow()).Select(_mapper.Map<DinnersQueryModel>).ToListAsync();
             return new OkObjectResult(dinners);
         }
     }

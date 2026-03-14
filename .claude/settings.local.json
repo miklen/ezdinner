@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:/Program Files/dotnet/dotnet.exe\" build src/EzDinner.Functions/EzDinner.Functions.csproj)",
+      "Bash(\"C:/Program Files/dotnet/dotnet.exe\" package search Microsoft.Azure.Functions.Worker.Sdk --take 5)",
+      "Bash(\"C:/Program Files/dotnet/dotnet.exe\" package search Microsoft.Azure.Functions.Worker --take 5)",
+      "Bash(\"C:/Program Files/dotnet/dotnet.exe\" package search Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore --take 3)",
+      "Bash(\"C:/Program Files/dotnet/dotnet.exe\" package search Microsoft.Azure.Functions.Worker.Extensions.CosmosDB --take 3)",
+      "Bash(\"C:/Program Files/dotnet/dotnet.exe\" package search Microsoft.Identity.Web --take 3)",
+      "Read(//c/Users/mikke/.nuget/packages/casbin.net.adapter.efcore/**)",
+      "Bash(unzip -p ~/.nuget/packages/casbin.net.adapter.efcore/2.4.0/casbin.net.adapter.efcore.2.4.0.nupkg \"*.cs\")",
+      "Bash(unzip -l ~/.nuget/packages/casbin.net.adapter.efcore/2.4.0/casbin.net.adapter.efcore.2.4.0.nupkg)",
+      "Read(//tmp/**)",
+      "Bash(unzip casbin.zip \"lib/net8.0/Casbin.Persist.Adapter.EFCore.dll\")",
+      "Read(//c/Users/mikke/.nuget/packages/casbin.net/2.5.1/**)",
+      "Bash(grep -oE 'EFCoreAdapter[`0-9]*')",
+      "Bash(grep -oE 'CasbinDbContext[`0-9]*')",
+      "Bash(dotnet build src/EzDinner.Functions/EzDinner.Functions.csproj --configuration Release)",
+      "Bash(python3 -c \" import struct with open\\(''lib/net8.0/Casbin.Persist.Adapter.EFCore.dll'', ''rb''\\) as f: data = f.read\\(\\) # Find all strings that look like type names import re text = data.decode\\(''latin-1''\\) # Find namespace-like patterns matches = re.findall\\(r''Casbin[A-Za-z.<>\\\\[\\\\]0-9,\\\\`\\\\'' ]+'', text\\) seen = set\\(\\) for m in matches: m = m.strip\\(\\) if len\\(m\\) > 3 and m not in seen: seen.add\\(m\\) print\\(m\\) \")",
+      "Bash(python3:*)",
+      "Bash(tr -cs 'A-Za-z0-9.<>' ' ')",
+      "Bash(tr -cs 'A-Za-z0-9.<>\\\\`' ' ')",
+      "Bash(xxd)",
+      "Bash(awk 'NR>=0x555 && NR<=0x570')",
+      "Read(//c/Users/mikke/.nuget/packages/microsoft.azure.functions.worker.extensions.http.aspnetcore/2.1.0/**)",
+      "Bash(netstat -ano | grep -E \":3000|:3001\" | grep LISTENING)",
+      "Bash(taskkill /PID 45952 /F && taskkill /PID 41724 /F)",
+      "Bash(cmd //c \"taskkill /PID 45952 /F && taskkill /PID 41724 /F\")",
+      "Bash(git add:*)",
+      "Bash(grep -r \"Linq.Async\\\\|ToListAsync\" /c/code/ezdinner/api/src --include=\"*.csproj\" --include=\"*.cs\" -l 2>/dev/null | head -5)",
+      "Bash(cmd //c \"netstat -ano | findstr :7071 | findstr LISTENING\")",
+      "Bash(cmd //c \"taskkill /PID 37468 /F\")",
+      "Bash(cmd //c \"taskkill /PID 29556 /F\")",
+      "Bash(git commit:*)",
+      "Skill(claude-md-management:revise-claude-md)",
+      "Bash(find /c/code/ezdinner/web/node_modules/vuetify -name \"VAvatar*\" 2>/dev/null | head -5)"
+    ]
+  }
+}
