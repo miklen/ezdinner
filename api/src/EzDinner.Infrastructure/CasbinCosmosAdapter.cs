@@ -21,6 +21,8 @@ namespace EzDinner.Infrastructure
         /// Overrides the base EFCoreAdapter to bypass a LINQ existence check that generates
         /// invalid CosmosDB SQL in EF Core 9. Instead, we insert directly and handle conflicts.
         /// EF Core maps Casbin fields to shadow properties named "Type" and "Value1"–"Value6".
+        /// Note: both p-type (permission) and g-type (role assignment) rules flow through this
+        /// method — EFCoreAdapter has no separate AddGroupingPolicyAsync override.
         /// </summary>
         public override async Task AddPolicyAsync(string section, string policyType, IPolicyValues values)
         {
@@ -39,7 +41,7 @@ namespace EzDinner.Infrastructure
             }
             catch (DbUpdateException ex) when (ex.InnerException is CosmosException cosmosEx && cosmosEx.StatusCode == HttpStatusCode.Conflict)
             {
-                // Policy already exists in DB — no action needed.
+                // Rule already exists in DB — no action needed.
                 _dbContext.ChangeTracker.Clear();
             }
         }

@@ -3,6 +3,8 @@ using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.FamilyAggregate;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace EzDinner.Functions
 {
@@ -10,6 +12,14 @@ namespace EzDinner.Functions
     {
         private readonly ILogger<FamilyCreatedEventUpdatePolicies> _logger;
         private readonly IAuthzService _authz;
+
+        // The Azure Functions v4 isolated worker uses STJ for CosmosDB trigger deserialization,
+        // which cannot bind Family's parameterized constructor. Receive raw strings and deserialize
+        // with Newtonsoft (same serializer the CosmosClient uses) instead.
+        private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy() }
+        };
 
         public FamilyCreatedEventUpdatePolicies(ILogger<FamilyCreatedEventUpdatePolicies> logger, IAuthzService authz)
         {
@@ -24,15 +34,17 @@ namespace EzDinner.Functions
             Connection = "CosmosDb:ConnectionString",
             LeaseContainerName = "Leases",
             LeaseContainerPrefix = "policies",
-            CreateLeaseContainerIfNotExists = true)] IReadOnlyList<Family> input)
+            CreateLeaseContainerIfNotExists = true)] IReadOnlyList<string> inputDocuments)
         {
-            if (input != null && input.Count > 0)
+            if (inputDocuments != null && inputDocuments.Count > 0)
             {
-                _logger.LogInformation("Families updated " + input.Count);
+                _logger.LogInformation("Families updated " + inputDocuments.Count);
                 var updatePermissionsCommand = new UpdateAuthorizationPoliciesCommand(_authz);
 
-                foreach (var family in input)
+                foreach (var json in inputDocuments)
                 {
+                    var family = JsonConvert.DeserializeObject<Family>(json, _jsonSettings);
+                    if (family is null) continue;
                     _logger.LogInformation("Updating policies for family " + family.Id);
                     await updatePermissionsCommand.Handle(family);
                 }
