@@ -31,10 +31,14 @@ const topDishName = computed(() => {
     .sort((a, b) => b.times - a.times)[0]?.name ?? null
 })
 
-const favoriteDish = computed(() => {
+const overdueFavorite = computed(() => {
   const candidate = dishesStore.dishes
     .filter((d) => d.rating > 0 && stats.value[d.id]?.lastUsed)
-    .sort((a, b) => b.rating - a.rating)[0]
+    .sort((a, b) => {
+      const daysA = DateTime.now().diff(DateTime.fromISO(stats.value[a.id].lastUsed as unknown as string), 'days').days
+      const daysB = DateTime.now().diff(DateTime.fromISO(stats.value[b.id].lastUsed as unknown as string), 'days').days
+      return b.rating - a.rating || daysB - daysA
+    })[0]
   if (!candidate) return null
   const lastUsed = DateTime.fromISO(stats.value[candidate.id].lastUsed as unknown as string)
   const days = Math.floor(DateTime.now().diff(lastUsed, 'days').days)
@@ -109,9 +113,8 @@ watch(() => appStore.activeFamilyId, init, { immediate: true })
 
         <HomeQuickStats
           :week-dish-count="weekDishCount"
-          :top-dish-name="topDishName"
-          :favorite-dish-name="favoriteDish?.name ?? null"
-          :favorite-days="favoriteDish?.days ?? null"
+          :overdue-favorite-name="overdueFavorite?.name ?? null"
+          :overdue-favorite-days="overdueFavorite?.days ?? null"
           :loading="loading"
         />
       </div>
