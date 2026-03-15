@@ -60,11 +60,14 @@ cd web && npm run lint
 - Casbin RBAC-with-domains: families are domains, users get roles (Owner, FamilyMember) per family
 - Policies stored in `CasbinRulesV2` CosmosDB container (partition key: `/id`)
 - `CasbinCosmosAdapter` overrides `AddPolicyAsync` to bypass a broken EF Core 9 LINQ existence check that generates invalid CosmosDB SQL (`Identifier 'root' could not be resolved`). Uses direct insert + conflict catch instead.
+- `AddPolicyAsync` handles both `p`-type (permissions) and `g`-type (role assignments) rules — `EFCoreAdapter` 2.4.0 has no separate `AddGroupingPolicyAsync` override.
 - EF Core maps Casbin fields to shadow properties named `"Type"` and `"Value1"`–`"Value6"` (NOT `"PType"` / `"V0"`–`"V5"`)
 - `PUT /api/migrate` seeds authorization policies for existing families — must be called after initial setup or schema changes
+- Casbin `Enforcer` is a singleton that loads from DB at startup into an in-memory model. New rules added via `AddPolicyAsync` update both DB and the current instance's in-memory model, but other running instances remain stale until restarted. If a user has the correct rule in DB but gets 401, restart the function app.
 
 ## Non-Obvious Gotchas
 - Azure Functions v4 isolated worker uses System.Text.Json — Newtonsoft `[JsonConverter]` attributes on model classes are silently ignored. Map NodaTime types to strings in AutoMapper using e.g. `LocalDatePattern.Iso.Format(s.Date)`.
+- CosmosDB triggers in Azure Functions v4 isolated worker use STJ to deserialize the change feed payload. Domain classes with parameterized constructors and private-backed properties (like `Family`) cannot be bound by STJ. Use `IReadOnlyList<string>` as the trigger parameter type and deserialize manually with Newtonsoft.
 - `IAsyncEnumerable<T>` returned via `OkObjectResult` serializes as `{}` with System.Text.Json — always `.ToListAsync()` before returning.
 - Nuxt 3 auto-import prefixes components by folder, with deduplication: the folder prefix is prepended unless the filename already starts with it. `Plan/TopDishes.vue` → `<PlanTopDishes>`. `Dish/DatesVisualization.vue` → `<DishDatesVisualization>`. `Dish/DishPill.vue` → `<DishPill>` (NOT `<DishDishPill>` — "Dish" prefix deduplicated). Using the wrong name silently renders nothing.
 - Vuetify 3 `v-timeline` with `density="compact"` + `side="end"` shrinks to content width (uses `auto` column, not `1fr`). Use a custom CSS timeline (`position: relative`, `::before` for vertical line) instead.
