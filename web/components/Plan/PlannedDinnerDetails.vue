@@ -17,8 +17,6 @@ const dishSearch = ref('')
 const selectedDish = ref<Dish | null>(null)
 const dishSelector = ref<HTMLElement | null>(null)
 
-const formatDate = (date: DateTime) => date.toLocaleString(DateTime.DATE_HUGE)
-
 function getDaysSince(dish: Dish): number | null {
   const lastUsed = dish.dishStats?.lastUsed
   if (!lastUsed) return null
@@ -60,14 +58,6 @@ async function removeDishFromMenu(dishId: string) {
 
 <template>
   <div class="dinner-details">
-    <!-- Date bar with close -->
-    <div class="dinner-details__date-bar">
-      <span class="dinner-details__date-label">{{ formatDate(dinner.date) }}</span>
-      <button class="dinner-details__close" aria-label="Close" @click="emit('dinner:close')">
-        <v-icon size="18">mdi-close</v-icon>
-      </button>
-    </div>
-
     <div class="dinner-details__body">
       <!-- Current menu as removable DishPills -->
       <div v-if="dinner.menu.length > 0" class="dinner-details__menu">
@@ -147,45 +137,6 @@ async function removeDishFromMenu(dishId: string) {
 <style scoped>
 .dinner-details {
   border-top: 1px solid rgba(0, 0, 0, 0.07);
-}
-
-/* Date bar */
-.dinner-details__date-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-surface-variant);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.dinner-details__date-label {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.dinner-details__close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-  border-radius: var(--radius-full);
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  transition: background var(--duration-instant) var(--ease-out), color var(--duration-instant) var(--ease-out);
-}
-
-.dinner-details__close:hover {
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--color-text-primary);
-}
-
-.dinner-details__close:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
 }
 
 /* Body */
