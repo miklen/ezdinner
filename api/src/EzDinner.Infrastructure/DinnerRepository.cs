@@ -92,6 +92,22 @@ namespace EzDinner.Infrastructure
             }
         }
 
+        public async IAsyncEnumerable<string> GetOptOutReasonsAsync(Guid familyId)
+        {
+            var sql = "SELECT VALUE c.optOut.reason FROM c WHERE c.familyId = @familyId AND c.optOut != null";
+            var queryDefinition = new QueryDefinition(sql)
+                .WithParameter("@familyId", familyId);
+            var queryResultSetIterator = _container.GetItemQueryIterator<string>(queryDefinition);
+
+            while (queryResultSetIterator.HasMoreResults)
+            {
+                foreach (var reason in await queryResultSetIterator.ReadNextAsync())
+                {
+                    yield return reason;
+                }
+            }
+        }
+
         public Task SaveAsync(Dinner dinner)
         {
             return _container.UpsertItemAsync(dinner);

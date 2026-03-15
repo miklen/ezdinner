@@ -95,6 +95,7 @@ async function loadWeek() {
   await Promise.all([
     dishesStore.populateDishes(),
     dinnersStore.populateDinners(loadFrom.value, weekEnd.value),
+    dinnersStore.fetchOptOutReasons(),
   ])
   loading.value = false
 }

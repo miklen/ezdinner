@@ -13,5 +13,6 @@ namespace EzDinner.Core.Aggregates.DinnerAggregate
         Task<Dinner?> GetAsync(Guid familyId, LocalDate exactDate);
         IAsyncEnumerable<Dinner> GetAsync(Guid familyId, LocalDate fromDate, LocalDate toDate);
         IAsyncEnumerable<Dinner> GetAsync(Guid familyId, Guid dishId);
+        IAsyncEnumerable<string> GetOptOutReasonsAsync(Guid familyId);
     }
 }

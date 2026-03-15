@@ -13,16 +13,17 @@ const emit = defineEmits<{
 
 const appStore = useAppStore()
 const dishesStore = useDishesStore()
+const dinnersStore = useDinnersStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
 const { smAndDown } = useDisplay()
 
-const OPT_OUT_QUICK_PICKS = [
-  'Vacation',
-  'Eating out',
-  'Restaurant',
-  'Guests',
-  'Leftovers',
-]
+const DEFAULT_OPT_OUT_PICKS = ['Vacation', 'Eating out', 'Restaurant', 'Guests', 'Leftovers']
+
+const optOutQuickPicks = computed(() =>
+  dinnersStore.previousOptOutReasons.length > 0
+    ? dinnersStore.previousOptOutReasons
+    : DEFAULT_OPT_OUT_PICKS,
+)
 const customOptOutReason = ref('')
 const optOutLoading = ref(false)
 const showOptOut = ref(false)
@@ -31,7 +32,11 @@ async function setOptOut(reason: string) {
   if (!reason.trim()) return
   optOutLoading.value = true
   try {
-    await dinnerRepo.setOptOut(appStore.activeFamilyId, props.dinner.date, reason.trim())
+    const trimmed = reason.trim()
+    await dinnerRepo.setOptOut(appStore.activeFamilyId, props.dinner.date, trimmed)
+    if (!dinnersStore.previousOptOutReasons.includes(trimmed)) {
+      dinnersStore.previousOptOutReasons.push(trimmed)
+    }
     customOptOutReason.value = ''
     showOptOut.value = false
     emit('dinner:optoutupdated')
@@ -319,7 +324,7 @@ function focusMobileSearch() {
         <div v-if="showOptOut" class="dinner-details__optout-section">
           <div class="dinner-details__optout-picks">
             <button
-              v-for="pick in OPT_OUT_QUICK_PICKS"
+              v-for="pick in optOutQuickPicks"
               :key="pick"
               class="dinner-details__optout-chip"
               :disabled="optOutLoading"

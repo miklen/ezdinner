@@ -5,6 +5,7 @@ export const useDinnersStore = defineStore('dinners', () => {
   const appStore = useAppStore()
   const dishesStore = useDishesStore()
   const dinners = ref<Dinner[]>([])
+  const previousOptOutReasons = ref<string[]>([])
 
   async function populateDinners(from: DateTime, to: DateTime) {
     const { dinners: dinnerRepo } = useRepositories()
@@ -22,5 +23,10 @@ export const useDinnersStore = defineStore('dinners', () => {
     }))
   }
 
-  return { dinners, populateDinners }
+  async function fetchOptOutReasons() {
+    const { dinners: dinnerRepo } = useRepositories()
+    previousOptOutReasons.value = await dinnerRepo.getOptOutReasons(appStore.activeFamilyId)
+  }
+
+  return { dinners, previousOptOutReasons, populateDinners, fetchOptOutReasons }
 })

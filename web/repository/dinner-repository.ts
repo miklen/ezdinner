@@ -57,4 +57,8 @@ export class DinnerRepository {
       body: { familyId, dishId, reason },
     })
   }
+
+  getOptOutReasons(familyId: string) {
+    return this.apiFetch<string[]>(`/api/dinners/family/${familyId}/optout/reasons`)
+  }
 }
