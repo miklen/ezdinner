@@ -66,7 +66,7 @@ cd web && npm run lint
 ## Non-Obvious Gotchas
 - Azure Functions v4 isolated worker uses System.Text.Json — Newtonsoft `[JsonConverter]` attributes on model classes are silently ignored. Map NodaTime types to strings in AutoMapper using e.g. `LocalDatePattern.Iso.Format(s.Date)`.
 - `IAsyncEnumerable<T>` returned via `OkObjectResult` serializes as `{}` with System.Text.Json — always `.ToListAsync()` before returning.
-- Nuxt 3 auto-import prefixes components by folder: `components/Plan/TopDishes.vue` → `<PlanTopDishes>`. Using the short name silently renders nothing.
+- Nuxt 3 auto-import prefixes components by folder, with deduplication: the folder prefix is prepended unless the filename already starts with it. `Plan/TopDishes.vue` → `<PlanTopDishes>`. `Dish/DatesVisualization.vue` → `<DishDatesVisualization>`. `Dish/DishPill.vue` → `<DishPill>` (NOT `<DishDishPill>` — "Dish" prefix deduplicated). Using the wrong name silently renders nothing.
 - Vuetify 3 `v-timeline` with `density="compact"` + `side="end"` shrinks to content width (uses `auto` column, not `1fr`). Use a custom CSS timeline (`position: relative`, `::before` for vertical line) instead.
 - EF Core 9 + CosmosDB: avoid LINQ queries with `.Any()` / existence checks — they generate invalid SQL. Use direct insert with conflict handling.
 - `HasNoDiscriminator()` is required on `CasbinEntityConfiguration` for Cosmos — without it EF adds a discriminator field that breaks queries.
@@ -78,6 +78,12 @@ cd web && npm run lint
 - Vuetify 3 `v-rating` inter-icon spacing cannot be controlled via `:deep()` scoped CSS. Apply `style="gap: Npx"` directly on the `<v-rating>` element instead (it renders as `inline-flex`).
 - Vuetify 3 `v-rating` `size` prop only controls the icon size, not the button wrapper. The wrapper `v-btn` retains its default `min-width` (36–64px), which causes rating rows to consume excessive width in flex layouts. Override with `:deep(.v-btn) { min-width: unset !important; width: auto !important; padding: 0 !important; }` in the parent component.
 - `func-ezdinner-prod-02` requires all `AzureAdB2C:*` settings manually (Instance, TenantId, ClientId, Domain, SignUpSignInPolicyId, ClientSecret) — portal "Advanced edit" export from prod-01 may omit them. Refer to `api/src/EzDinner.Functions/local.settings.json` for the full list of required keys.
+- Don't use `NuxtLink` (or `v-card :to`) as the outer container when the element also contains removable/clickable children. The entire `<a>` becomes a navigation trigger; `@click.stop` on children is unreliable. Instead wrap only the navigable text in `NuxtLink` and keep the outer element a plain `<span>` or `<div>`.
+- `overflow-x: hidden` on `body` breaks Vuetify `position: fixed` overlays (tooltips, menus, dialogs) in some browsers. Use `overflow-x: clip` instead — prevents horizontal scroll without affecting fixed-position descendants.
+- `v-tooltip` does not work reliably inside `v-navigation-drawer` in rail mode (Vuetify 3.7.x) — neither activator slot pattern nor `activator="parent"` shows a tooltip. Workaround: track `mouseenter`/`mouseleave` on a wrapper div, capture Y from `getBoundingClientRect()`, render a custom `position: fixed` tooltip outside the drawer.
+- `@vueuse/core` is NOT a transitive dependency of Nuxt in this project — must `npm install @vueuse/core` explicitly before importing `useSwipe`, `useIntersectionObserver`, etc.
+- Luxon `DateTime.toISODate()` returns `string | null` — use `.toFormat('yyyy-MM-dd')` when a guaranteed non-null string is required (e.g., `:key` bindings, URL params).
+- `grid-template-rows: 0fr → 1fr` expand animation (smooth height reveal) belongs on the *wrapper* component, not the content component. The content component renders normally; the wrapper applies `overflow: hidden` + the transition.
 
 ## CI/CD
 - `ci.yml` — lint + test `web/` on PR/push to main
