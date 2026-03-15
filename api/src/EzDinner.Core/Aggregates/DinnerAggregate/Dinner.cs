@@ -16,18 +16,22 @@ namespace EzDinner.Core.Aggregates.DinnerAggregate
     public Guid FamilyId { get; private set; }
     public IEnumerable<MenuItem> Menu { get => _menu; }
     public IEnumerable<Tag> Tags { get => _tags; }
+    public OptOut? OptOut { get; private set; }
     public bool IsPlanned => Menu.Any();
+    public bool IsOptedOut => OptOut is not null;
+    public bool IsResolved => IsPlanned || IsOptedOut;
 
 
     /// <summary>
     /// For serialization purpose only
     /// </summary>
-    public Dinner(Guid id, Guid familyId, LocalDate date, IEnumerable<MenuItem> menu, IEnumerable<Tag> tags) : base(id)
+    public Dinner(Guid id, Guid familyId, LocalDate date, IEnumerable<MenuItem> menu, IEnumerable<Tag> tags, OptOut? optOut = null) : base(id)
     {
       Date = date;
       FamilyId = familyId;
       _menu = menu.ToList();
       _tags = tags.ToList();
+      OptOut = optOut;
     }
 
     /// <summary>
@@ -41,13 +45,31 @@ namespace EzDinner.Core.Aggregates.DinnerAggregate
       return new Dinner(id: Guid.NewGuid(), familyId, date, menu: new List<MenuItem>(), tags: new List<Tag>());
     }
 
+    /// <summary>
+    /// Sets an opt-out reason for this dinner and clears any existing menu items.
+    /// Mutually exclusive with having planned dishes.
+    /// </summary>
+    public void SetOptOut(OptOut optOut)
+    {
+      OptOut = optOut;
+      _menu.Clear();
+    }
 
     /// <summary>
-    /// Appends an item to the menu.
+    /// Removes the opt-out, leaving the dinner unresolved.
+    /// </summary>
+    public void RemoveOptOut()
+    {
+      OptOut = null;
+    }
+
+    /// <summary>
+    /// Appends an item to the menu. Clears any opt-out (mutually exclusive).
     /// </summary>
     /// <param name="dishId"></param>
     public void AddMenuItem(MenuItem menuItem)
     {
+      OptOut = null;
       var dishIsAlreadyAdded = _menu.Any(w => w == menuItem);
       if (dishIsAlreadyAdded) return;
       _menu.Add(menuItem);

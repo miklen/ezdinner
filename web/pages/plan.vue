@@ -23,6 +23,7 @@
             @dinner:clicked="selectedDate = dinner.date"
             @dinner:close="selectedDate = null"
             @dinner:menuupdated="menuUpdated"
+            @dinner:optoutupdated="menuUpdated"
           />
           <div class="week-divider" />
         </template>
@@ -37,6 +38,7 @@
           @dinner:clicked="selectedDate = dinner.date"
           @dinner:close="selectedDate = null"
           @dinner:menuupdated="menuUpdated"
+          @dinner:optoutupdated="menuUpdated"
         />
       </template>
     </div>

@@ -8,12 +8,47 @@ const props = defineProps<{ dinner: Dinner }>()
 const emit = defineEmits<{
   'dinner:close': []
   'dinner:menuupdated': [event: { date: DateTime; dishId: string; dishName: string }]
+  'dinner:optoutupdated': []
 }>()
 
 const appStore = useAppStore()
 const dishesStore = useDishesStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
 const { smAndDown } = useDisplay()
+
+const OPT_OUT_QUICK_PICKS = [
+  'Vacation',
+  'Eating out',
+  'Restaurant',
+  'Guests',
+  'Leftovers',
+]
+const customOptOutReason = ref('')
+const optOutLoading = ref(false)
+const showOptOut = ref(false)
+
+async function setOptOut(reason: string) {
+  if (!reason.trim()) return
+  optOutLoading.value = true
+  try {
+    await dinnerRepo.setOptOut(appStore.activeFamilyId, props.dinner.date, reason.trim())
+    customOptOutReason.value = ''
+    showOptOut.value = false
+    emit('dinner:optoutupdated')
+  } finally {
+    optOutLoading.value = false
+  }
+}
+
+async function removeOptOut() {
+  optOutLoading.value = true
+  try {
+    await dinnerRepo.removeOptOut(appStore.activeFamilyId, props.dinner.date)
+    emit('dinner:optoutupdated')
+  } finally {
+    optOutLoading.value = false
+  }
+}
 
 const dishSearch = ref('')
 const selectedDish = ref<Dish | null>(null)
@@ -95,18 +130,38 @@ function focusMobileSearch() {
 <template>
   <div class="dinner-details">
     <div class="dinner-details__body">
-      <!-- Current menu as removable DishPills -->
-      <div v-if="dinner.menu.length > 0" class="dinner-details__menu">
-        <DishPill
-          v-for="item in dinner.menu"
-          :key="item.dishId"
-          :name="item.dishName"
-          :to="`/dishes/${item.dishId}`"
-          size="md"
-          removable
-          @remove="removeDishFromMenu(item.dishId)"
-        />
-      </div>
+      <!-- Opted-out state: show reason + remove option -->
+      <template v-if="dinner.isOptedOut">
+        <div class="dinner-details__optout-status">
+          <v-icon size="16" class="dinner-details__optout-icon">mdi-calendar-remove-outline</v-icon>
+          <span class="dinner-details__optout-label">{{ dinner.optOutReason }}</span>
+          <v-btn
+            variant="text"
+            size="small"
+            color="primary"
+            :loading="optOutLoading"
+            class="dinner-details__optout-remove"
+            @click="removeOptOut"
+          >
+            Remove
+          </v-btn>
+        </div>
+      </template>
+
+      <!-- Normal planning: dish pills + selector + opt-out options -->
+      <template v-else>
+        <!-- Current menu as removable DishPills -->
+        <div v-if="dinner.menu.length > 0" class="dinner-details__menu">
+          <DishPill
+            v-for="item in dinner.menu"
+            :key="item.dishId"
+            :name="item.dishName"
+            :to="`/dishes/${item.dishId}`"
+            size="md"
+            removable
+            @remove="removeDishFromMenu(item.dishId)"
+          />
+        </div>
 
       <!-- Mobile: button trigger -->
       <template v-if="smAndDown">
@@ -251,6 +306,47 @@ function focusMobileSearch() {
           </template>
         </template>
       </v-autocomplete>
+
+        <!-- Opt-out toggle -->
+        <div class="dinner-details__optout-toggle-row">
+          <button class="dinner-details__optout-toggle" @click="showOptOut = !showOptOut">
+            <v-icon size="13">{{ showOptOut ? 'mdi-chevron-up' : 'mdi-calendar-remove-outline' }}</v-icon>
+            {{ showOptOut ? 'Cancel' : 'Skip day' }}
+          </button>
+        </div>
+
+        <!-- Opt-out quick picks (collapsed by default) -->
+        <div v-if="showOptOut" class="dinner-details__optout-section">
+          <div class="dinner-details__optout-picks">
+            <button
+              v-for="pick in OPT_OUT_QUICK_PICKS"
+              :key="pick"
+              class="dinner-details__optout-chip"
+              :disabled="optOutLoading"
+              @click="setOptOut(pick)"
+            >
+              {{ pick }}
+            </button>
+          </div>
+          <div class="dinner-details__optout-custom">
+            <input
+              v-model="customOptOutReason"
+              class="dinner-details__optout-input"
+              placeholder="Other reason..."
+              maxlength="50"
+              @keyup.enter="setOptOut(customOptOutReason)"
+            >
+            <button
+              v-if="customOptOutReason.trim()"
+              class="dinner-details__optout-submit"
+              :disabled="optOutLoading"
+              @click="setOptOut(customOptOutReason)"
+            >
+              <v-icon size="16">mdi-check</v-icon>
+            </button>
+          </div>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -278,6 +374,144 @@ function focusMobileSearch() {
 /* Autocomplete */
 .dinner-details__autocomplete {
   margin-bottom: 0;
+}
+
+/* Opted-out status row */
+.dinner-details__optout-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(0, 0, 0, 0.035);
+  border-radius: var(--radius-md);
+}
+
+.dinner-details__optout-icon {
+  color: var(--color-text-muted) !important;
+  flex-shrink: 0;
+}
+
+.dinner-details__optout-label {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.dinner-details__optout-remove {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  padding: 0 var(--space-2) !important;
+  height: auto !important;
+  min-width: 0 !important;
+}
+
+/* Opt-out toggle row */
+.dinner-details__optout-toggle-row {
+  display: flex;
+}
+
+.dinner-details__optout-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  font-family: inherit;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.dinner-details__optout-toggle:hover {
+  color: var(--color-text-secondary);
+}
+
+/* Opt-out quick pick section */
+.dinner-details__optout-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dinner-details__optout-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.dinner-details__optout-chip {
+  font-size: var(--text-xs);
+  font-family: inherit;
+  color: var(--color-text-secondary);
+  background: rgba(0, 0, 0, 0.055);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-full);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+  white-space: nowrap;
+}
+
+.dinner-details__optout-chip:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--color-text-primary);
+}
+
+.dinner-details__optout-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dinner-details__optout-custom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.dinner-details__optout-input {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 2px 2px 3px;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.dinner-details__optout-input:focus {
+  border-bottom-color: var(--color-primary);
+}
+
+.dinner-details__optout-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.dinner-details__optout-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.dinner-details__optout-submit:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* Mobile trigger */

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using NodaTime;
 using NodaTime.Text;
@@ -17,6 +17,9 @@ namespace EzDinner.Functions.Models.Query
         public string Date { get; set; } = string.Empty;
         public IEnumerable<MenuItemQueryModel>? Menu { get; set; }
         public bool IsPlanned { get; set; }
+        public bool IsOptedOut { get; set; }
+        public string? OptOutReason { get; set; }
+        public bool IsResolved { get; set; }
     }
 
     public class DinnersMapping : Profile
@@ -24,7 +27,8 @@ namespace EzDinner.Functions.Models.Query
         public DinnersMapping()
         {
             CreateMap<Dinner, DinnersQueryModel>()
-                .ForMember(d => d.Date, opt => opt.MapFrom(s => LocalDatePattern.Iso.Format(s.Date)));
+                .ForMember(d => d.Date, opt => opt.MapFrom(s => LocalDatePattern.Iso.Format(s.Date)))
+                .ForMember(d => d.OptOutReason, opt => opt.MapFrom(s => s.OptOut != null ? s.OptOut.Reason : null));
             CreateMap<MenuItem, DinnersQueryModel.MenuItemQueryModel>();
         }
     }

@@ -11,6 +11,7 @@ const emit = defineEmits<{
   'dinner:clicked': []
   'dinner:close': []
   'dinner:menuupdated': [event: { date: DateTime; dishId: string; dishName: string }]
+  'dinner:optoutupdated': []
 }>()
 
 const today = DateTime.now().startOf('day')
@@ -20,9 +21,12 @@ const isPast = computed(() => props.dinner.date < today)
 const isWeekend = computed(() => props.dinner.date.weekday >= 6)
 
 const cardState = computed(() => {
+  if (isToday.value && props.dinner.isOptedOut) return 'opted-out'
   if (isToday.value) return 'today'
+  if (isPast.value && props.dinner.isOptedOut) return 'opted-out'
   if (isPast.value && props.dinner.isPlanned) return 'past-planned'
-  if (isPast.value && !props.dinner.isPlanned) return 'past-unplanned'
+  if (isPast.value && !props.dinner.isResolved) return 'past-unplanned'
+  if (props.dinner.isOptedOut) return 'opted-out'
   if (props.dinner.isPlanned) return 'future-planned'
   return 'future-unplanned'
 })
@@ -57,7 +61,13 @@ function handleHeaderClick() {
       </div>
 
       <div class="dinner-card__summary">
-        <template v-if="dinner.isPlanned && !selected">
+        <template v-if="dinner.isOptedOut && !selected">
+          <div class="dinner-card__opted-out">
+            <v-icon size="14" class="dinner-card__opted-out-icon">mdi-calendar-remove-outline</v-icon>
+            <span class="dinner-card__opted-out-reason">{{ dinner.optOutReason }}</span>
+          </div>
+        </template>
+        <template v-else-if="dinner.isPlanned && !selected">
           <div class="dinner-card__pills">
             <DishPill
               v-for="item in dinner.menu"
@@ -67,19 +77,19 @@ function handleHeaderClick() {
             />
           </div>
         </template>
-        <span v-else-if="isPast && !dinner.isPlanned" class="dinner-card__hint dinner-card__hint--muted">
+        <span v-else-if="isPast && !dinner.isResolved" class="dinner-card__hint dinner-card__hint--muted">
           not tracked
         </span>
-        <span v-else-if="!dinner.isPlanned && !selected" class="dinner-card__hint dinner-card__hint--cta">
+        <span v-else-if="!dinner.isPlanned && !dinner.isOptedOut && !selected" class="dinner-card__hint dinner-card__hint--cta">
           Tap to plan
         </span>
       </div>
 
       <div class="dinner-card__action">
-        <v-icon v-if="dinner.isPlanned && isPast && !selected" color="success" size="18">
+        <v-icon v-if="dinner.isResolved && isPast && !selected" color="success" size="18">
           mdi-check-circle
         </v-icon>
-        <v-icon v-else-if="!dinner.isPlanned && !isPast && !selected" size="18" class="dinner-card__plus-icon">
+        <v-icon v-else-if="!dinner.isResolved && !isPast && !selected" size="18" class="dinner-card__plus-icon">
           mdi-plus-circle-outline
         </v-icon>
         <v-icon v-else-if="selected" size="18" class="dinner-card__chevron">
@@ -98,6 +108,7 @@ function handleHeaderClick() {
           :dinner="dinner"
           @dinner:close="emit('dinner:close')"
           @dinner:menuupdated="emit('dinner:menuupdated', $event)"
+          @dinner:optoutupdated="emit('dinner:optoutupdated')"
         />
       </div>
     </div>
@@ -125,6 +136,28 @@ function handleHeaderClick() {
 
 .dinner-card--past-unplanned {
   opacity: 0.55;
+}
+
+.dinner-card--opted-out {
+  border-left: 3px solid rgba(0, 0, 0, 0.18);
+  opacity: 0.75;
+}
+
+.dinner-card__opted-out {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.dinner-card__opted-out-icon {
+  color: var(--color-text-muted) !important;
+  flex-shrink: 0;
+}
+
+.dinner-card__opted-out-reason {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .dinner-card--future-unplanned {

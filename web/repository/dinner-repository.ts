@@ -36,4 +36,18 @@ export class DinnerRepository {
       body: { familyId, dishId, newDishId },
     })
   }
+
+  setOptOut(familyId: string, date: DateTime, reason: string) {
+    return this.apiFetch('/api/dinners/optout', {
+      method: 'PUT',
+      body: { familyId, date: date.toFormat('yyyy-MM-dd'), reason },
+    })
+  }
+
+  removeOptOut(familyId: string, date: DateTime) {
+    return this.apiFetch('/api/dinners/optout/remove', {
+      method: 'PUT',
+      body: { familyId, date: date.toFormat('yyyy-MM-dd') },
+    })
+  }
 }

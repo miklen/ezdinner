@@ -16,6 +16,9 @@ export interface Dinner {
   menu: MenuItem[]
   tags: Tag[]
   isPlanned: boolean
+  isOptedOut: boolean
+  optOutReason: string | null
+  isResolved: boolean
 }
 
 export interface DinnerDate {
