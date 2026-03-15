@@ -10,8 +10,18 @@
               v-for="member in family.familyMembers"
               :key="member.id"
               :title="member.name"
-              prepend-icon="mdi-account"
-            />
+              :prepend-icon="member.hasAutonomy ? 'mdi-account' : 'mdi-account-outline'"
+            >
+              <template #append>
+                <v-btn
+                  v-if="!member.hasAutonomy"
+                  icon="mdi-merge"
+                  size="small"
+                  variant="text"
+                  @click.stop="openMergeDialog(family.id, member.id)"
+                />
+              </template>
+            </v-list-item>
           </v-list>
           <v-card-actions>
             <v-btn variant="text" color="primary" @click="openInviteDialog(family.id)">Invite</v-btn>
@@ -88,6 +98,36 @@
       </v-card>
     </v-dialog>
 
+    <!-- Merge non-autonomous member dialog -->
+    <v-dialog v-model="mergeDialog" width="500">
+      <v-card>
+        <v-card-title class="text-h5">Merge into account</v-card-title>
+        <v-divider />
+        <v-card-text style="padding-top: 16px">
+          Transfer all dish ratings from this member to an existing account, then remove this entry.
+          If both have rated the same dish, the account holder's rating is kept.
+        </v-card-text>
+        <v-card-text>
+          <v-select
+            v-if="mergeIsOwner"
+            v-model="mergeAutonomousId"
+            :items="mergeTargetOptions"
+            item-title="name"
+            item-value="id"
+            label="Merge into"
+          />
+          <v-alert v-model="mergeErrorAlert" closable type="error" border="start" variant="tonal">
+            An error occurred
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="mergeDialog = false">Cancel</v-btn>
+          <v-btn variant="text" color="primary" :disabled="!mergeAutonomousId" @click="mergeMember">Merge</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Create member without account dialog -->
     <v-dialog v-model="addMemberDialog" width="500">
       <v-card>
@@ -119,6 +159,9 @@ useHead({ title: 'Families' })
 
 const familiesStore = useFamiliesStore()
 const { families: familyRepo } = useRepositories()
+const { $msal } = useNuxtApp()
+
+const userId = computed(() => $msal.getObjectId())
 
 const families = ref<Family[]>([])
 const targetFamilyId = ref('')
@@ -132,6 +175,26 @@ const newFamilyName = ref('')
 
 const addMemberDialog = ref(false)
 const memberName = ref('')
+
+const mergeDialog = ref(false)
+const mergeFamilyId = ref('')
+const mergeNonAutonomousId = ref('')
+const mergeAutonomousId = ref('')
+const mergeErrorAlert = ref(false)
+
+const mergeIsOwner = computed(() => {
+  const family = families.value.find(f => f.id === mergeFamilyId.value)
+  return family?.familyMembers.find(m => m.isOwner)?.id === userId.value
+})
+
+const mergeTargetOptions = computed(() => {
+  const family = families.value.find(f => f.id === mergeFamilyId.value)
+  const members = family?.familyMembers.filter(m => m.hasAutonomy) ?? []
+  return members.map(m => ({
+    ...m,
+    name: m.id === userId.value ? `${m.name} (You)` : m.name,
+  }))
+})
 
 const errorAlert = ref(false)
 
@@ -185,5 +248,32 @@ async function addMember() {
   addMemberDialog.value = false
   memberName.value = ''
   families.value = await familyRepo.all()
+}
+
+function openMergeDialog(familyId: string, nonAutonomousMemberId: string) {
+  mergeFamilyId.value = familyId
+  mergeNonAutonomousId.value = nonAutonomousMemberId
+  mergeErrorAlert.value = false
+  // Pre-select the current user if they are an autonomous member of this family
+  const family = families.value.find(f => f.id === familyId)
+  const selfMember = family?.familyMembers.find(m => m.id === userId.value && m.hasAutonomy)
+  mergeAutonomousId.value = selfMember?.id ?? ''
+  mergeDialog.value = true
+}
+
+async function mergeMember() {
+  mergeErrorAlert.value = false
+  try {
+    const ok = await familyRepo.mergeNonAutonomousMember(mergeFamilyId.value, mergeNonAutonomousId.value, mergeAutonomousId.value)
+    if (ok) {
+      mergeDialog.value = false
+      families.value = await familyRepo.all()
+      await familiesStore.getActiveFamily()
+    } else {
+      mergeErrorAlert.value = true
+    }
+  } catch {
+    mergeErrorAlert.value = true
+  }
 }
 </script>

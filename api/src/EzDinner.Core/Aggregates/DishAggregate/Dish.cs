@@ -75,6 +75,20 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         {
             Notes = notes;
         }
+
+        public bool MigrateRating(Guid fromMemberId, Guid toMemberId)
+        {
+            var sourceIndex = _ratings.FindIndex(r => r.RaterId == fromMemberId);
+            if (sourceIndex == -1) return false;
+
+            var targetExists = _ratings.Any(r => r.RaterId == toMemberId);
+            if (targetExists)
+                _ratings.RemoveAt(sourceIndex);
+            else
+                _ratings[sourceIndex] = new Rating(toMemberId, _ratings[sourceIndex].RatingValue);
+
+            return true;
+        }
     }
 }
  

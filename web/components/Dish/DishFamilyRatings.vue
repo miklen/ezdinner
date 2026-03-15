@@ -106,7 +106,7 @@ async function updateRating(val: number, familyMemberId: string) {
               size="18"
               style="gap: 2px"
               :model-value="ratings[member.id] ?? 0"
-              :readonly="member.id !== userId"
+              :readonly="member.hasAutonomy && member.id !== userId"
               @update:model-value="(val) => updateRating(val, member.id)"
             />
           </div>

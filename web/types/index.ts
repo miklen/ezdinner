@@ -61,6 +61,7 @@ export interface FamilyMember {
   id: string
   name: string
   isOwner: boolean
+  hasAutonomy: boolean
 }
 
 export interface Family {

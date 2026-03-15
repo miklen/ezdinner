@@ -44,4 +44,12 @@ export class FamilyRepository {
       body: { name },
     })
   }
+
+  async mergeNonAutonomousMember(familyId: string, nonAutonomousMemberId: string, autonomousMemberId: string): Promise<boolean> {
+    const { status } = await this.apiFetchRaw(
+      `/api/families/${familyId}/member/${nonAutonomousMemberId}/merge`,
+      { method: 'POST', body: JSON.stringify({ autonomousMemberId }) },
+    )
+    return status === 200
+  }
 }

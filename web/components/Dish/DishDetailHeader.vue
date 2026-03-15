@@ -20,12 +20,12 @@ const { show: showSnackbar } = useSnackbar()
 
 const renameDialog = shallowRef(false)
 const newName = shallowRef('')
-const localName = shallowRef(props.dish.name)
+const localName = shallowRef(props.dish?.name ?? '')
 
-watch(() => props.dish.name, (val) => { localName.value = val })
+watch(() => props.dish?.name, (val) => { if (val !== undefined) localName.value = val })
 
 const effectiveStats = computed<DishStats>(() =>
-  props.dishStats ?? { dishId: props.dish.id, lastUsed: undefined, timesUsed: 0 },
+  props.dishStats ?? { dishId: props.dish?.id ?? '', lastUsed: undefined, timesUsed: 0 },
 )
 
 const daysAgo = computed(() => {

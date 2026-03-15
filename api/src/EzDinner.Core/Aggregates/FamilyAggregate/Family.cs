@@ -86,5 +86,24 @@ namespace EzDinner.Core.Aggregates.FamilyAggregate
             _familyMembers.RemoveAll(w => w.Id == familyMemberId);
             UpdatedDate = DateTime.UtcNow;
         }
+
+        /// <summary>
+        /// Merge a non-autonomous member into an autonomous account, transferring identity.
+        /// </summary>
+        public void MergeNonAutonomousMember(Guid nonAutonomousId, Guid autonomousId)
+        {
+            var source = _familyMembers.FirstOrDefault(m => m.Id == nonAutonomousId)
+                ?? throw new InvalidOperationException("NON_AUTONOMOUS_MEMBER_NOT_FOUND");
+            if (source.HasAutonomy)
+                throw new InvalidOperationException("SOURCE_MEMBER_HAS_AUTONOMY");
+
+            var target = _familyMembers.FirstOrDefault(m => m.Id == autonomousId)
+                ?? throw new InvalidOperationException("AUTONOMOUS_MEMBER_NOT_FOUND");
+            if (!target.HasAutonomy)
+                throw new InvalidOperationException("TARGET_MEMBER_LACKS_AUTONOMY");
+
+            _familyMembers.RemoveAll(m => m.Id == nonAutonomousId);
+            UpdatedDate = DateTime.UtcNow;
+        }
     }
 }

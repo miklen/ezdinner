@@ -1,3 +1,4 @@
+using EzDinner.Application.Commands.FamilyMembers;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Infrastructure;
@@ -31,6 +32,7 @@ var host = new HostBuilder()
             .RegisterCosmosDb(context.Configuration.GetSection("CosmosDb"))
             .RegisterCasbin(context.Configuration.GetSection("CosmosDb"))
             .RegisterRepositories()
+            .AddScoped<MergeNonAutonomousMemberCommand>()
             .AddScoped<IDinnerService, DinnerService>()
             .AddScoped<IDishQueryService, DishQueryService>()
             .AddScoped<IFamilyQueryService, FamilyQueryService>()

@@ -9,5 +9,6 @@ namespace EzDinner.Core.Aggregates.DishAggregate
     {
         public Task SaveAsync(Dish dish);
         public Task<Dish?> GetDishAsync(Guid dishId);
+        public Task<IEnumerable<Dish>> GetDishesAsync(Guid familyId);
     }
 }

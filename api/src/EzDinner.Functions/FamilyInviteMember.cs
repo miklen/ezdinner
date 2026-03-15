@@ -55,6 +55,10 @@ namespace EzDinner.Functions
 
             family.InviteFamilyMember(user.Id);
             await _familyRepository.SaveAsync(family);
+
+            await _authz.CreateFamilyMemberRolePermissionsAsync(familyGuid);
+            await _authz.AssignRoleToUserAsync(user.Id, Roles.FamilyMember, familyGuid);
+
             return new OkResult();
         }
     }
