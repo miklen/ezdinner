@@ -24,13 +24,6 @@ const weekDishCount = computed(() => {
   return dishIds.size
 })
 
-const topDishName = computed(() => {
-  return dishesStore.dishes
-    .map((d) => ({ name: d.name, times: stats.value[d.id]?.timesUsed ?? 0 }))
-    .filter((d) => d.times > 0)
-    .sort((a, b) => b.times - a.times)[0]?.name ?? null
-})
-
 const overdueFavorite = computed(() => {
   const candidate = dishesStore.dishes
     .filter((d) => d.rating > 0 && stats.value[d.id]?.lastUsed)

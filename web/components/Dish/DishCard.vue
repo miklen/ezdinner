@@ -7,6 +7,7 @@ const props = withDefaults(defineProps<{
   dishStats?: DishStats
   clickable?: boolean
 }>(), {
+  dishStats: undefined,
   clickable: true,
 })
 

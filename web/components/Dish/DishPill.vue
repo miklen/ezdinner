@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { resolveComponent, computed } from 'vue'
-
 const props = withDefaults(defineProps<{
   name: string
   size?: 'sm' | 'md'
@@ -8,33 +6,30 @@ const props = withDefaults(defineProps<{
   to?: string
 }>(), {
   size: 'md',
+  to: undefined,
 })
 
 const emit = defineEmits<{
   remove: []
 }>()
-
-const tag = computed(() => props.to ? resolveComponent('NuxtLink') : 'span')
 </script>
 
 <template>
-  <component
-    :is="tag"
-    :to="props.to"
+  <span
     class="dish-pill"
     :class="[`dish-pill--${props.size}`, { 'dish-pill--linked': !!props.to }]"
-    @click.stop
   >
-    <span class="dish-pill__name">{{ name }}</span>
+    <NuxtLink v-if="to" :to="to" class="dish-pill__name dish-pill__link">{{ name }}</NuxtLink>
+    <span v-else class="dish-pill__name">{{ name }}</span>
     <button
       v-if="removable"
       class="dish-pill__remove"
       :aria-label="`Remove ${name}`"
-      @click.stop="emit('remove')"
+      @click="emit('remove')"
     >
       <v-icon size="14">mdi-close</v-icon>
     </button>
-  </component>
+  </span>
 </template>
 
 <style scoped>
@@ -75,16 +70,21 @@ const tag = computed(() => props.to ? resolveComponent('NuxtLink') : 'span')
   border-color: var(--color-primary);
 }
 
-.dish-pill--linked:hover .dish-pill__name {
-  text-decoration: underline;
-  text-decoration-color: var(--color-primary-dark);
-  text-underline-offset: 2px;
-}
-
 .dish-pill__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dish-pill__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.dish-pill--linked:hover .dish-pill__link {
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary-dark);
+  text-underline-offset: 2px;
 }
 
 .dish-pill__remove {
