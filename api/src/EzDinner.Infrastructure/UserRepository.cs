@@ -6,10 +6,12 @@ namespace EzDinner.Infrastructure
     public class UserRepository : IUserRepository
     {
         private readonly GraphServiceClient _graphClient;
+        private readonly string _tenantDomain;
 
-        public UserRepository(GraphServiceClient graphClient)
+        public UserRepository(GraphServiceClient graphClient, string tenantDomain)
         {
             _graphClient = graphClient;
+            _tenantDomain = tenantDomain;
         }
 
         public async Task<Core.Aggregates.UserAggregate.User> GetUser(Guid id)
@@ -29,6 +31,18 @@ namespace EzDinner.Infrastructure
             var userPage = await _graphClient.Users.GetAsync(config =>
                 config.QueryParameters.Filter = $"mail eq '{email}'");
             var user = userPage?.Value?.FirstOrDefault();
+
+            if (user is null)
+            {
+                var identityPage = await _graphClient.Users.GetAsync(config =>
+                {
+                    config.QueryParameters.Filter = $"identities/any(i:i/issuerAssignedId eq '{email}' and i/issuer eq '{_tenantDomain}')";
+                    config.QueryParameters.Count = true;
+                    config.Headers.Add("ConsistencyLevel", "eventual");
+                });
+                user = identityPage?.Value?.FirstOrDefault();
+            }
+
             if (user is null) return null;
             return new Core.Aggregates.UserAggregate.User()
             {

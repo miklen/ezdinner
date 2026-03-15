@@ -32,8 +32,10 @@ namespace EzDinner.Infrastructure
                 adConfig.GetValue<string>("ClientId"),
                 adConfig.GetValue<string>("ClientSecret"));
             var graphClient = new GraphServiceClient(credential);
+            var tenantDomain = adConfig.GetValue<string>("Domain")!;
 
             services.AddSingleton(graphClient);
+            services.AddSingleton<IUserRepository>(new UserRepository(graphClient, tenantDomain));
             return services;
         }
 
@@ -70,7 +72,6 @@ namespace EzDinner.Infrastructure
         public static IServiceCollection RegisterRepositories(this IServiceCollection services)
         {
             services.AddScoped<IFamilyRepository, FamilyRepository>();
-            services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IDishRepository, DishRepository>();
             services.AddScoped<IDishQueryRepository, DishRepository>();
             services.AddScoped<IDinnerRepository, DinnerRepository>();
