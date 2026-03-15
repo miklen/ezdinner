@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#B8511D"/>
+
+  <!-- Fork (left) -->
+  <g stroke="#FAF7F4" stroke-width="2" stroke-linecap="round" fill="none">
+    <!-- 3 tines -->
+    <line x1="8.5"  y1="4.5" x2="8.5"  y2="12"/>
+    <line x1="11"   y1="4.5" x2="11"   y2="12"/>
+    <line x1="13.5" y1="4.5" x2="13.5" y2="12"/>
+    <!-- Curved base connecting tines -->
+    <path d="M8.5,12 C8.5,15.5 13.5,15.5 13.5,12"/>
+    <!-- Handle -->
+    <line x1="11" y1="15.5" x2="11" y2="27.5"/>
+  </g>
+
+  <!-- Knife (right) -->
+  <!-- Blade: straight spine left, curved cutting edge right -->
+  <path d="M19.5,4.5 L21.5,4.5 Q23.5,10 21.5,16 L19.5,16 Z" fill="#FAF7F4"/>
+  <!-- Bolster + handle -->
+  <line x1="20.5" y1="17" x2="20.5" y2="27.5" stroke="#FAF7F4" stroke-width="2" stroke-linecap="round"/>
+</svg>

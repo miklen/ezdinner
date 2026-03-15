@@ -32,7 +32,7 @@ Each phase is independently deployable after its prerequisites. Deploy increment
 | 4. Dish Cards + Catalog | ✅ Complete | Phase 1 | Redesigned dish cards + catalog + skeleton loaders |
 | 5. Plan Page | ✅ Complete | Phases 1 + 2 | Redesigned plan page + plan skeleton loaders |
 | 6. Dish Detail | ✅ Complete | Phase 4 | Redesigned dish detail page + skeleton loader |
-| 7. Landing Page Refresh | Not started | Phase 1 | Redesigned landing page (run alongside or after Phase 1) |
+| 7. Landing Page Refresh | ✅ Complete | Phase 1 | Redesigned landing page (run alongside or after Phase 1) |
 
 Note: Phases 3, 4, and 5 are independent of each other and can be done in any order.
 
@@ -497,6 +497,15 @@ Recommended approach: Summary line ("Had 12 times in 6 months, roughly every 15 
 ---
 
 ## Learnings Log
+
+### Phase 7 Learnings
+- [2026-03-15] All page content lives in `layouts/landing.vue` — `pages/index.vue` is just `definePageMeta({ layout: 'landing' })`. No child components needed for a marketing layout of this size.
+- [2026-03-15] Reuse the logotype markup pattern from `TopbarLarge.vue` (`.logotype__ez` + `.logotype__dinner`) for brand consistency across authenticated and public surfaces.
+- [2026-03-15] `v-container :fluid="false"` with `max-width: 1200px` on the inner wrapper gives a content-width limit independent of Vuetify's breakpoint container widths — useful when the landing page needs a different max-width than the app.
+- [2026-03-15] Hero image is hidden on mobile (`display: none` at ≤960px) rather than stacked — keeps the mobile hero clean and CTA-focused. Image on mobile adds scroll before the CTA with no added value.
+- [2026-03-15] Feature cards use CSS custom property `--stagger-delay` set via inline `:style` to control `transition-delay` per card — avoids `:nth-child` selectors and keeps the stagger configurable from script.
+- [2026-03-15] `IntersectionObserver` added in `onMounted` (merged with auth-redirect guard in the same hook) — do not call `onMounted` twice; merge all mount-time side effects.
+- [2026-03-15] Feature card hover `transform: translateY(-2px)` must override the `opacity: 0; transform: translateY(28px)` initial state — scoped rule `.features-grid.is-visible .feature-card:hover` prevents the hover from fighting the entrance transform before reveal.
 
 Record insights, gotchas, and adjustments discovered during implementation here so future sessions benefit:
 
