@@ -113,6 +113,7 @@ async function doMove() {
         <!-- Overflow menu: top-right, revealed on card hover -->
         <div class="dish-card__overflow">
           <DishOverflowMenu
+            :dish="dish"
             @edit-name="enableEditNameMode"
             @move="moveDialog = true"
             @delete="confirmDialog = true"

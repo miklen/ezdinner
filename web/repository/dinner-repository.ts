@@ -50,4 +50,11 @@ export class DinnerRepository {
       body: { familyId, date: date.toFormat('yyyy-MM-dd') },
     })
   }
+
+  convertDishToOptOut(familyId: string, dishId: string, reason: string) {
+    return this.apiFetch('/api/dinners/menuitem/convert-to-optout', {
+      method: 'PUT',
+      body: { familyId, dishId, reason },
+    })
+  }
 }

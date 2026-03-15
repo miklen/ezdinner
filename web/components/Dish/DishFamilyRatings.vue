@@ -2,7 +2,7 @@
 import type { Dish, FamilyMember } from '~/types'
 
 const props = defineProps<{
-  dish: Dish
+  dish?: Dish
   familyMembers: FamilyMember[]
   userId: string
   loading?: boolean

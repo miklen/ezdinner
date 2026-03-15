@@ -77,7 +77,7 @@ async function doDelete() {
     <!-- Header: breadcrumb + name + rating + stat + overflow menu -->
     <DishDetailHeader
       v-if="dish || loading"
-      :dish="dish ?? ({} as any)"
+      :dish="dish ?? undefined"
       :dish-stats="dish?.dishStats"
       :loading="loading"
       @move="moveDialog = true"
@@ -103,7 +103,7 @@ async function doDelete() {
           <!-- Family ratings -->
           <DishFamilyRatings
             v-if="dish || loading"
-            :dish="dish ?? ({} as any)"
+            :dish="dish ?? undefined"
             :family-members="familyMembers"
             :user-id="userId"
             :loading="loading"
@@ -182,4 +182,5 @@ async function doDelete() {
   flex-direction: column;
   gap: var(--space-3);
 }
+
 </style>

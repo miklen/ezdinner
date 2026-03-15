@@ -1,9 +1,10 @@
 <script setup lang="ts">
+// DishDetailHeader
 import { DateTime } from 'luxon'
 import type { Dish, DishStats } from '~/types'
 
 const props = defineProps<{
-  dish: Dish
+  dish?: Dish
   dishStats?: DishStats
   loading?: boolean
 }>()
@@ -90,6 +91,7 @@ async function doRename() {
           @edit-name="openRename"
           @move="emit('move')"
           @delete="emit('delete')"
+          @converted="navigateTo('/dishes')"
         />
       </div>
     </div>
@@ -129,6 +131,7 @@ async function doRename() {
       </v-card-actions>
     </v-card>
   </v-dialog>
+
 </template>
 
 <style scoped>
@@ -235,4 +238,5 @@ async function doRename() {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+
 </style>
