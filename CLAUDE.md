@@ -88,8 +88,7 @@ cd web && npm run lint
 ## CI/CD
 - `ci.yml` — lint + test `web/` on PR/push to main
 - `azure-static-web-apps-*.yml` — deploys `web/` to Azure Static Web Apps
-- `func-ezdinner-prod-01.yml` — deploys backend to Azure Functions
-- `func-ezdinner-prod-02.yml` — deploys backend to `func-ezdinner-prod-02` on push to `update-backend` (staging environment)
+- `func-ezdinner-prod-02.yml` — deploys backend to `func-ezdinner-prod-02`
 - SWA automatically creates preview environments for PRs targeting `main` (free tier limit: 3 concurrent staging envs)
 - CI uses npm 11 (`npm install -g npm@11` step) — lockfile was generated with npm 11 and `npm ci` fails on Node 22's bundled npm 10
 - `npx nuxt prepare` must run before `npm test` in CI to generate `.nuxt/tsconfig.json`
