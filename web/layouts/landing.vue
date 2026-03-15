@@ -173,6 +173,8 @@ const features = [
           </div>
         </v-container>
       </section>
+      <!-- Page slot: pages/index.vue renders here (empty div, no visual impact) -->
+      <slot />
     </v-main>
 
     <!-- ── Footer ─────────────────────────────────────────────────── -->
