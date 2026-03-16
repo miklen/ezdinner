@@ -58,6 +58,7 @@ namespace EzDinner.Functions
 
             await _authz.CreateFamilyMemberRolePermissionsAsync(familyGuid);
             await _authz.AssignRoleToUserAsync(user.Id, Roles.FamilyMember, familyGuid);
+            await _authz.ReloadPoliciesAsync();
 
             return new OkResult();
         }

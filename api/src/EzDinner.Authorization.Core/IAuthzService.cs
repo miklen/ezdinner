@@ -54,5 +54,10 @@ namespace EzDinner.Authorization.Core
         /// <param name="action">An action <see cref="Actions>"/></param>
         /// <returns>True if the user has the required permissions. False if not.</returns>
         bool Authorize(string userId, string familyId, string resource, string action);
+        /// <summary>
+        /// Reloads the Casbin policy model from the database on this instance.
+        /// Call after writing new policies to ensure the in-memory model reflects the latest state.
+        /// </summary>
+        Task ReloadPoliciesAsync();
     }
 }

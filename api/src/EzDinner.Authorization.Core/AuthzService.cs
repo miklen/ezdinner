@@ -106,5 +106,10 @@ namespace EzDinner.Authorization.Core
         {
             return _authzRepository.VerifyUserPermission(userId, familyId, resource, action);
         }
+
+        public Task ReloadPoliciesAsync()
+        {
+            return _authzRepository.ReloadPoliciesAsync();
+        }
     }
 }

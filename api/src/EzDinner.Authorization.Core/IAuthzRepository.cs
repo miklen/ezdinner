@@ -13,5 +13,6 @@ namespace EzDinner.Authorization.Core
         bool RoleHasPolicy(string role, Guid familyId, string resource, string action);
 
         bool VerifyUserPermission(string userId, string familyId, string resource, string action);
+        Task ReloadPoliciesAsync();
     }
 }

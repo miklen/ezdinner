@@ -62,6 +62,11 @@ m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && (r.obj == p.obj || p.obj == ""*"
         {
             return _enforcer.Enforce(userId, familyId, resource, action);
         }
+
+        public Task ReloadPoliciesAsync()
+        {
+            return _enforcer.LoadPolicyAsync();
+        }
         public static IModel GetRbacWithDomainsModel()
         {
             return DefaultModel.CreateFromText(RBAC_WITH_DOMAINS_MODEL);
