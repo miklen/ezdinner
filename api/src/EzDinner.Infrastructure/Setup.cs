@@ -1,4 +1,5 @@
 ﻿using Azure.Identity;
+using Microsoft.Extensions.Logging;
 using Casbin;
 using Casbin.Persist.Adapter.EFCore;
 using Casbin.Model;
@@ -35,7 +36,8 @@ namespace EzDinner.Infrastructure
             var tenantDomain = adConfig.GetValue<string>("Domain")!;
 
             services.AddSingleton(graphClient);
-            services.AddSingleton<IUserRepository>(new UserRepository(graphClient, tenantDomain));
+            services.AddSingleton<IUserRepository>(sp =>
+                new UserRepository(graphClient, tenantDomain, sp.GetRequiredService<ILogger<UserRepository>>()));
             return services;
         }
 
