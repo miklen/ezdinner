@@ -67,6 +67,8 @@ cd web && npm run lint
 - Azure Functions `TimerTrigger` on Consumption plan keeps instances alive and fires on every instance independently — avoid for low-traffic apps where scale-to-zero is desired, as it generates continuous CosmosDB reads and prevents cost savings.
 
 ## B2C IEF Custom Policies
+- Custom policies in `b2c/` are NOT deployed by any CI/CD pipeline. After editing, upload manually via Azure Portal → B2C tenant → Identity Experience Framework → Upload custom policy. Upload order matters: Base → Localization → Extensions → SignUpOrSignin/PasswordReset/ProfileEdit.
+- B2C local accounts (created via IEF) have no `mail` attribute in Graph API — email lives in the `identities` collection as `signInType=emailAddress`. `UserRepository.GetUser(string)` first tries `mail eq`, then falls back to `identities/any(i:i/issuerAssignedId eq '{email}' and i/issuer eq '{tenantDomain}')` with `ConsistencyLevel: eventual` + `$count=true` (both required by Graph API for this filter).
 - In `AAD-UserWriteUsingLogonEmail` (and any AAD write TP), never add `<PersistedClaim PartnerClaimType="email" />`. The `email` PartnerClaimType maps to the Azure AD `mail` attribute, which is **read-only** for B2C local accounts (auto-derived from `signInNames.emailAddress`). Writing it causes the AAD write to fail silently as `AADB2C90278 "Unable to validate the information provided"`. Use `PartnerClaimType="otherMails"` if you need the alternate email collection.
 - `JourneyInsights` telemetry only works in `RelyingParty/UserJourneyBehaviors`, not in the `UserJourney` element directly.
 
