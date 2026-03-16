@@ -24,8 +24,8 @@
             </v-list-item>
           </v-list>
           <v-card-actions>
-            <v-btn variant="text" color="primary" @click="openInviteDialog(family.id)">Invite</v-btn>
-            <v-btn variant="text" color="primary" @click="openAddMemberDialog(family.id)">Create</v-btn>
+            <v-btn v-if="isOwnerOf(family.id)" variant="text" color="primary" @click="openInviteDialog(family.id)">Invite</v-btn>
+            <v-btn v-if="isOwnerOf(family.id)" variant="text" color="primary" @click="openAddMemberDialog(family.id)">Create</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -201,6 +201,11 @@ const errorAlert = ref(false)
 onMounted(async () => {
   families.value = await familyRepo.all()
 })
+
+function isOwnerOf(familyId: string): boolean {
+  const family = families.value.find(f => f.id === familyId)
+  return family?.familyMembers.find(m => m.isOwner)?.id === userId.value
+}
 
 function openInviteDialog(familyId: string) {
   targetFamilyId.value = familyId

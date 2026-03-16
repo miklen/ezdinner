@@ -22,11 +22,12 @@ export class FamilyRepository {
   }
 
   async inviteFamilyMember(familyId: string, email: string): Promise<boolean> {
-    // 200 = user found and invited, 204 = user not found
+    // 200 = user found and invited, 204 = user not found, 401 = not authorized
     const { status } = await this.apiFetchRaw(`/api/family/${familyId}/member`, {
       method: 'POST',
       body: JSON.stringify({ email }),
     })
+    if (status === 401) throw new Error('Unauthorized')
     return status === 200
   }
 
