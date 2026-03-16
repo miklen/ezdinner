@@ -65,6 +65,10 @@ cd web && npm run lint
 - `PUT /api/migrate` seeds authorization policies for existing families — must be called after initial setup or schema changes
 - Casbin `Enforcer` is a singleton that loads from DB at startup into an in-memory model. New rules added via `AddPolicyAsync` update both DB and the current instance's in-memory model, but other running instances remain stale until restarted. If a user has the correct rule in DB but gets 401, restart the function app.
 
+## B2C IEF Custom Policies
+- In `AAD-UserWriteUsingLogonEmail` (and any AAD write TP), never add `<PersistedClaim PartnerClaimType="email" />`. The `email` PartnerClaimType maps to the Azure AD `mail` attribute, which is **read-only** for B2C local accounts (auto-derived from `signInNames.emailAddress`). Writing it causes the AAD write to fail silently as `AADB2C90278 "Unable to validate the information provided"`. Use `PartnerClaimType="otherMails"` if you need the alternate email collection.
+- `JourneyInsights` telemetry only works in `RelyingParty/UserJourneyBehaviors`, not in the `UserJourney` element directly.
+
 ## Non-Obvious Gotchas
 - Azure Functions v4 isolated worker uses System.Text.Json — Newtonsoft `[JsonConverter]` attributes on model classes are silently ignored. Map NodaTime types to strings in AutoMapper using e.g. `LocalDatePattern.Iso.Format(s.Date)`.
 - CosmosDB triggers in Azure Functions v4 isolated worker use STJ to deserialize the change feed payload. Domain classes with parameterized constructors and private-backed properties (like `Family`) cannot be bound by STJ. Use `IReadOnlyList<string>` as the trigger parameter type and deserialize manually with Newtonsoft.
