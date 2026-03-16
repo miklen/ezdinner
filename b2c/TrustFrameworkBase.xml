@@ -337,12 +337,16 @@
     </ClaimsSchema>
 
     <ClaimsTransformations>
-      <ClaimsTransformation Id="SetDisplayNameToUnknown" TransformationMethod="CreateStringClaim">
+      <ClaimsTransformation Id="CreateDisplayNameFromFirstAndLastName" TransformationMethod="FormatStringMultipleClaims">
+        <InputClaims>
+          <InputClaim ClaimTypeReferenceId="givenName" TransformationClaimType="inputClaim1" />
+          <InputClaim ClaimTypeReferenceId="surname" TransformationClaimType="inputClaim2" />
+        </InputClaims>
         <InputParameters>
-          <InputParameter Id="value" DataType="string" Value="unknown" />
+          <InputParameter Id="stringFormat" DataType="string" Value="{0} {1}" />
         </InputParameters>
         <OutputClaims>
-          <OutputClaim ClaimTypeReferenceId="displayName" TransformationClaimType="createdClaim" />
+          <OutputClaim ClaimTypeReferenceId="displayName" TransformationClaimType="outputClaim" />
         </OutputClaims>
       </ClaimsTransformation>
 
@@ -754,7 +758,7 @@
             <OutputClaim ClaimTypeReferenceId="surname" />
           </OutputClaims>
           <OutputClaimsTransformations>
-            <OutputClaimsTransformation ReferenceId="SetDisplayNameToUnknown" />
+            <OutputClaimsTransformation ReferenceId="CreateDisplayNameFromFirstAndLastName" />
           </OutputClaimsTransformations>
           <ValidationTechnicalProfiles>
             <ValidationTechnicalProfile ReferenceId="AAD-UserWriteUsingLogonEmail" />
