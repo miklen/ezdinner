@@ -54,11 +54,13 @@ export class MsalService {
   private async handleRedirect() {
     const response = await this.instance.handleRedirectPromise()
     if (response?.account) {
+      this.instance.setActiveAccount(response.account)
       this.isAuthenticated.value = true
       this.cachedClaims = response.idTokenClaims as Record<string, unknown>
     } else {
       const accounts = this.instance.getAllAccounts()
       if (accounts.length > 0) {
+        this.instance.setActiveAccount(accounts[0])
         this.isAuthenticated.value = true
         // idTokenClaims is not always populated from the cache in MSAL v3 —
         // acquire a token silently to get fresh claims.
@@ -100,7 +102,7 @@ export class MsalService {
 
   async acquireToken(): Promise<string | null> {
     await this.initPromise
-    const account = this.instance.getAllAccounts()[0]
+    const account = this.instance.getActiveAccount()
     if (!account) return null
     try {
       const response = await this.instance.acquireTokenSilent({ account, scopes: SCOPES })
@@ -125,7 +127,7 @@ export class MsalService {
   }
 
   getObjectId(): string | undefined {
-    return this.instance.getAllAccounts()[0]?.localAccountId
+    return this.instance.getActiveAccount()?.localAccountId
   }
 }
 
