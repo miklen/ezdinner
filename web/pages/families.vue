@@ -10,7 +10,7 @@
               v-for="member in family.familyMembers"
               :key="member.id"
               :title="member.name"
-              :prepend-icon="member.hasAutonomy ? 'mdi-account' : 'mdi-account-outline'"
+              :prepend-icon="member.isOwner ? 'mdi-shield-account' : member.hasAutonomy ? 'mdi-account' : 'mdi-account-outline'"
             >
               <template #append>
                 <v-btn
@@ -20,6 +20,31 @@
                   variant="text"
                   @click.stop="openMergeDialog(family.id, member.id)"
                 />
+                <v-btn
+                  v-if="isOwnerOf(family.id) && member.hasAutonomy && !member.isOwner"
+                  icon="mdi-shield-plus"
+                  size="small"
+                  variant="text"
+                  title="Make Owner"
+                  @click.stop="changeRole(family.id, member.id, true)"
+                />
+                <v-tooltip
+                  v-if="isOwnerOf(family.id) && member.hasAutonomy && member.isOwner"
+                  theme="dark"
+                >
+                  <template #activator="{ props: tooltipProps }">
+                    <span v-bind="tooltipProps">
+                      <v-btn
+                        icon="mdi-shield-off"
+                        size="small"
+                        variant="text"
+                        :disabled="ownerCount(family.id) <= 1"
+                        @click.stop="changeRole(family.id, member.id, false)"
+                      />
+                    </span>
+                  </template>
+                  {{ ownerCount(family.id) <= 1 ? 'A family must have at least one owner' : 'Remove Owner' }}
+                </v-tooltip>
               </template>
             </v-list-item>
           </v-list>
@@ -128,6 +153,11 @@
       </v-card>
     </v-dialog>
 
+    <!-- Role change snackbar -->
+    <v-snackbar v-model="roleChangeSnackbar" color="success" timeout="3000">
+      {{ roleChangeMessage }}
+    </v-snackbar>
+
     <!-- Create member without account dialog -->
     <v-dialog v-model="addMemberDialog" width="500">
       <v-card>
@@ -184,7 +214,7 @@ const mergeErrorAlert = ref(false)
 
 const mergeIsOwner = computed(() => {
   const family = families.value.find(f => f.id === mergeFamilyId.value)
-  return family?.familyMembers.find(m => m.isOwner)?.id === userId.value
+  return family?.familyMembers.some(m => m.isOwner && m.id === userId.value) ?? false
 })
 
 const mergeTargetOptions = computed(() => {
@@ -198,13 +228,32 @@ const mergeTargetOptions = computed(() => {
 
 const errorAlert = ref(false)
 
+const roleChangeSnackbar = ref(false)
+const roleChangeMessage = ref('')
+
 onMounted(async () => {
   families.value = await familyRepo.all()
 })
 
 function isOwnerOf(familyId: string): boolean {
   const family = families.value.find(f => f.id === familyId)
-  return family?.familyMembers.find(m => m.isOwner)?.id === userId.value
+  return family?.familyMembers.some(m => m.isOwner && m.id === userId.value) ?? false
+}
+
+function ownerCount(familyId: string): number {
+  const family = families.value.find(f => f.id === familyId)
+  return family?.familyMembers.filter(m => m.isOwner).length ?? 0
+}
+
+async function changeRole(familyId: string, memberId: string, isOwner: boolean) {
+  try {
+    await familyRepo.setMemberRole(familyId, memberId, isOwner)
+    families.value = await familyRepo.all()
+    roleChangeMessage.value = isOwner ? 'Member promoted to Owner' : 'Owner role removed'
+    roleChangeSnackbar.value = true
+  } catch {
+    errorAlert.value = true
+  }
 }
 
 function openInviteDialog(familyId: string) {

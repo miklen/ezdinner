@@ -52,6 +52,11 @@ m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && (r.obj == p.obj || p.obj == ""*"
         {
             return _enforcer.AddRoleForUserAsync(userId.ToString(), role, familyId.ToString());
         }
+
+        public Task RemoveRoleFromUserAsync(Guid userId, Guid familyId, string role)
+        {
+            return _enforcer.DeleteRoleForUserAsync(userId.ToString(), role, familyId.ToString());
+        }
       
         public bool UserHasRole(Guid userId, Guid familyId, string role)
         {

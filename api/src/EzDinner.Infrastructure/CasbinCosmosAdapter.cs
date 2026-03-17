@@ -46,6 +46,24 @@ namespace EzDinner.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Overrides the base EFCoreAdapter to bypass a call to ICollection.Count that throws
+        /// EntryPointNotFoundException in EF Core 9 / .NET 10. Instead, we look up the rule
+        /// by its deterministic ID and delete it directly.
+        /// </summary>
+        public override async Task RemovePolicyAsync(string section, string policyType, IPolicyValues values)
+        {
+            _dbContext.ChangeTracker.Clear();
+
+            var id = GetDeterministicId(policyType, values);
+            var rule = await _dbContext.Set<EFCorePersistPolicy<string>>().FindAsync(id);
+            if (rule is null) return;
+
+            _dbContext.Remove(rule);
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+        }
+
         private static string GetDeterministicId(string policyType, IPolicyValues values)
         {
             return string.Join("|", new[] { policyType }.Concat(values));

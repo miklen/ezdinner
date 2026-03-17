@@ -64,6 +64,11 @@ namespace EzDinner.Authorization.Core
             return Task.CompletedTask;
         }
 
+        public Task RemoveRoleFromUserAsync(Guid userId, string role, Guid familyId)
+        {
+            return _authzRepository.RemoveRoleFromUserAsync(userId, familyId, role);
+        }
+
         public Task CreateOwnerRolePermissionsAsync(Guid familyId)
         {
             if (!_authzRepository.RoleHasPolicy(Roles.Owner, familyId, Resources.All, Actions.All))

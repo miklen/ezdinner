@@ -21,6 +21,7 @@ namespace EzDinner.Authorization.Core
         /// <param name="familyId"></param>
         /// <returns></returns>
         Task AssignRoleToUserAsync(Guid userId, string role, Guid familyId);
+        Task RemoveRoleFromUserAsync(Guid userId, string role, Guid familyId);
         /// <summary>
         /// Idempotent creates definition and asssigns permissions to the FamilyMember role
         /// </summary>

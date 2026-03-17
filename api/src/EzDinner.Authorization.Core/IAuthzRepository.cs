@@ -9,6 +9,7 @@ namespace EzDinner.Authorization.Core
     {
         bool UserHasRole(Guid userId, Guid familyId, string role);
         Task AssignRoleToUser(Guid userId, Guid familyId, string role);
+        Task RemoveRoleFromUserAsync(Guid userId, Guid familyId, string role);
         Task AssignPolicyToRole(string role, Guid familyId, string resource, string action);
         bool RoleHasPolicy(string role, Guid familyId, string resource, string action);
 

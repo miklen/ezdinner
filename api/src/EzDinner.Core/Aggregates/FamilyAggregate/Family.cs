@@ -88,6 +88,23 @@ namespace EzDinner.Core.Aggregates.FamilyAggregate
         }
 
         /// <summary>
+        /// Assign or revoke the Owner role for a family member.
+        /// At least one Owner must remain after any change.
+        /// </summary>
+        public void SetMemberRole(Guid memberId, bool isOwner)
+        {
+            var member = _familyMembers.FirstOrDefault(m => m.Id == memberId)
+                ?? throw new InvalidOperationException("MEMBER_NOT_FOUND");
+            if (!member.HasAutonomy)
+                throw new InvalidOperationException("CANNOT_CHANGE_ROLE_OF_NON_AUTONOMOUS_MEMBER");
+            if (!isOwner && _familyMembers.Count(m => m.IsOwner) <= 1)
+                throw new InvalidOperationException("LAST_OWNER_CANNOT_BE_DEMOTED");
+
+            member.IsOwner = isOwner;
+            UpdatedDate = DateTime.UtcNow;
+        }
+
+        /// <summary>
         /// Merge a non-autonomous member into an autonomous account, transferring identity.
         /// </summary>
         public void MergeNonAutonomousMember(Guid nonAutonomousId, Guid autonomousId)

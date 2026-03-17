@@ -89,6 +89,9 @@ cd web && npm run lint
 - `HasNoDiscriminator()` is required on `CasbinEntityConfiguration` for Cosmos — without it EF adds a discriminator field that breaks queries.
 - `HasPartitionKey(p => p.Id)` must match the container's actual partition key path (`/id`) or CosmosDB rejects writes.
 - Casbin.NET.Adapter.EFCore 2.4.0 requires Casbin.NET >= 2.19.1 (older 2.x versions cause NU1605 downgrade warning and runtime failures).
+- `EFCoreAdapter.RemovePolicyAsync` throws `EntryPointNotFoundException` at `ICollection<T>.get_Count()` in .NET 10 — same class of bug as `AddPolicyAsync`. `CasbinCosmosAdapter` overrides both to use direct EF operations (lookup by deterministic ID, then delete/insert).
+- Vuetify 3 `v-tooltip` `:text` prop renders empty on light themes — use the default slot for tooltip content instead. Also add `theme="dark"` to ensure visible contrast.
+- When checking if the current user is an owner in a family with multiple owners, use `familyMembers.some(m => m.isOwner && m.id === userId)` not `familyMembers.find(m => m.isOwner)?.id === userId` — `find` only checks the first owner in the array.
 - Integration tests are in `api/tests/EzDinner.IntegrationTests` and hit a real CosmosDB — no mocking.
 - The legacy Nuxt 2 app in the repo root is not the active frontend. Use `/web`.
 - MSAL Browser v3 does not populate `idTokenClaims` on accounts returned by `getAllAccounts()` after a page reload. Call `acquireTokenSilent()` first to get a token response with fresh claims. See `web/plugins/msal.client.ts`.

@@ -53,4 +53,14 @@ export class FamilyRepository {
     )
     return status === 200
   }
+
+  async setMemberRole(familyId: string, memberId: string, isOwner: boolean): Promise<void> {
+    const { status } = await this.apiFetchRaw(
+      `/api/families/${familyId}/member/${memberId}/role`,
+      { method: 'PUT', body: JSON.stringify({ isOwner }) },
+    )
+    if (status === 401) throw new Error('Unauthorized')
+    if (status === 400) throw new Error('INVALID_ROLE_CHANGE')
+    if (status !== 200) throw new Error('UNEXPECTED_ERROR')
+  }
 }
