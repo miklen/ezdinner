@@ -1,5 +1,12 @@
 # EzDinner — Claude Code Guide
 
+## Required Skills by Context
+- **All code work**: load `tactical-ddd` and `software-design-principles` skills before making changes
+- **Frontend work** (`/web`): additionally load `vue-best-practices`, `vue-options-api-best-practices`, `vue-pinia-best-practices`, `vue-testing-best-practices`, and `frontend-design` skills
+- **Vue routing work**: additionally load `vue-router-best-practices` skill
+- **Vue debugging**: load `vue-debug-guides` skill
+- **Debugging errors**: load `technical-investigator` skill before diagnosing any issue
+
 ## Project Overview
 EzDinner is a family dinner planning app. Users belong to families and plan weekly dinners from a dish catalog. Multi-tenant by family, with per-family RBAC authorization.
 
