@@ -74,3 +74,15 @@ export interface FamilySelect {
   id: string
   name: string
 }
+
+export interface DishSuggestion {
+  dishId: string
+  dishName: string
+  rating: number
+  daysSinceLast: number
+}
+
+export interface DaySuggestion {
+  date: string
+  suggestion: DishSuggestion | null
+}

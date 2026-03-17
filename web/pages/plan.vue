@@ -11,6 +11,14 @@
       </template>
 
       <template v-else>
+        <!-- Suggestion bar — show below week header, above dinner list -->
+        <PlanSuggestionBar
+          :week-start="weekStart"
+          :planned-dinners="dinnersStore.dinners"
+          class="mb-4"
+          @dish:used="onSuggestionUsed"
+        />
+
         <!-- Previous weekend — visually separated -->
         <template v-if="prevWeekendDinners.length > 0">
           <div class="week-section-label">{{ prevWeekendLabel }}</div>
@@ -106,6 +114,13 @@ function isDinnerSelected(dinner: Dinner) {
 
 function menuUpdated() {
   dinnersStore.populateDinners(loadFrom.value, weekEnd.value)
+}
+
+async function onSuggestionUsed(date: string, dishId: string, _dishName: string) {
+  const { dinners: dinnerRepo } = useRepositories()
+  const dt = DateTime.fromISO(date)
+  await dinnerRepo.addDishToMenu(appStore.activeFamilyId, dt, dishId)
+  await dinnersStore.populateDinners(loadFrom.value, weekEnd.value)
 }
 
 onMounted(loadWeek)
