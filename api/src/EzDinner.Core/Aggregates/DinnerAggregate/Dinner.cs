@@ -56,6 +56,12 @@ namespace EzDinner.Core.Aggregates.DinnerAggregate
     }
 
     /// <summary>
+    /// Sets an opt-out reason for this dinner and clears any existing menu items.
+    /// Mutually exclusive with having planned dishes.
+    /// </summary>
+    public void SetOptOut(string reason) => SetOptOut(new OptOut(reason));
+
+    /// <summary>
     /// Removes the opt-out, leaving the dinner unresolved.
     /// </summary>
     public void RemoveOptOut()

@@ -34,10 +34,9 @@ namespace EzDinner.Functions
 
             _logger.LogInformation($"Converting all dinners with dish {model.DishId} to opt-out with reason: {model.Reason}");
 
-            var optOut = new OptOut(model.Reason);
             await foreach (var dinner in _dinnerRepository.GetAsync(model.FamilyId, model.DishId))
             {
-                dinner.SetOptOut(optOut);
+                dinner.SetOptOut(model.Reason);
                 await _dinnerRepository.SaveAsync(dinner);
             }
 

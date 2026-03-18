@@ -7,9 +7,9 @@ namespace EzDinner.Core.Aggregates.FamilyAggregate
     public class FamilyMember
     {
         public Guid Id { get; private set; }
-        public string? Name { get; set; }
+        public string? Name { get; private set; }
         public bool HasAutonomy { get; private set; }
-        public bool IsOwner { get; set; }
+        public bool IsOwner { get; internal set; }
 
         public FamilyMember(Guid id, string? name, bool hasAutonomy, bool isOwner)
         {

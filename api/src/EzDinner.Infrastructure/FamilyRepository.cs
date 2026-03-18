@@ -66,8 +66,8 @@ namespace EzDinner.Infrastructure
 
         public async Task<Family?> GetFamily(Guid familyId)
         {
-            var sql = $"SELECT * FROM c WHERE c.id = '{familyId}'";
-            var queryDefinition = new QueryDefinition(sql);
+            var sql = "SELECT * FROM c WHERE c.id = @familyId";
+            var queryDefinition = new QueryDefinition(sql).WithParameter("@familyId", familyId.ToString());
             var queryResultSetIterator = _container.GetItemQueryIterator<Family>(queryDefinition);
 
             while (queryResultSetIterator.HasMoreResults)

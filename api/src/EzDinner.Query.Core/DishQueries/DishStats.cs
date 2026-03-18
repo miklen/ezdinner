@@ -17,22 +17,22 @@ namespace EzDinner.Query.Core.DishQueries
         {
             DishId = dishId;
             foreach (var dinner in dinners)
-            {
-                foreach (var menu in dinner.Menu)
-                {
-                    if (menu.DishId != dishId) continue;
-                    TimesUsed++;
-                    if (LastUsed < dinner.Date)
-                    {
-                        LastUsed = dinner.Date;
-                    }
-                }
-            }
+                AddDinner(dinner);
         }
 
         public DishStats()
         {
+        }
 
+        public void AddDinner(Dinner dinner)
+        {
+            foreach (var menu in dinner.Menu)
+            {
+                if (menu.DishId != DishId) continue;
+                TimesUsed++;
+                if (LastUsed < dinner.Date)
+                    LastUsed = dinner.Date;
+            }
         }
     }
 }

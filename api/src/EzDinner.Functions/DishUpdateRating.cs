@@ -46,11 +46,15 @@ namespace EzDinner.Functions
             var familyMemberId = Guid.Parse(dishRating.FamilyMemberId);
             var familyMember = family!.FamilyMembers.FirstOrDefault(w => w.Id == familyMemberId);
             if (familyMember is null) return new BadRequestObjectResult("FAMILYMEMBER_NOT_FOUND_IN_FAMILY");
-            
-            // verify that you're rating as yourself or on behalf of a user that doesn't have autonomy - rating on behalf of other autonomus users is not allowed
-            if (!familyMember.Id.Equals(userId) && familyMember.HasAutonomy) return new BadRequestObjectResult("NOT_ALLOWED");
 
-            dish.SetRating(familyMemberId, dishRating.GetRatingInDomainFormat());
+            try
+            {
+                dish.SetRating(userId, familyMemberId, familyMember.HasAutonomy, dishRating.Rating);
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "CANNOT_RATE_ON_BEHALF_OF_AUTONOMOUS_MEMBER")
+            {
+                return new BadRequestObjectResult("NOT_ALLOWED");
+            }
             await _dishRepository.SaveAsync(dish);
 
             return new OkResult();

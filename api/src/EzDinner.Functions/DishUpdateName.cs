@@ -38,7 +38,7 @@ namespace EzDinner.Functions
             var newDishName = await req.GetBodyAs<UpdateDishNameCommandModel>();
             if (string.IsNullOrWhiteSpace(newDishName?.Name)) return new BadRequestObjectResult("MISSING_NAME");
 
-            dish.Name = newDishName.Name;
+            dish.SetName(newDishName.Name);
             await _dishRepository.SaveAsync(dish);
 
             return new OkResult();

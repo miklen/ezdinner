@@ -46,9 +46,11 @@ namespace EzDinner.IntegrationTests.SuggestionTests
             var today = new LocalDate(2025, 6, 15);
 
             var dishA = Dish.CreateNew(familyId, "Overdue High-Rated Dish");
-            dishA.SetRating(Guid.NewGuid(), 9);
+            var raterA1 = Guid.NewGuid();
+            dishA.SetRating(raterA1, raterA1, false, 4.5);
             var dishB = Dish.CreateNew(familyId, "Recently Used Dish");
-            dishB.SetRating(Guid.NewGuid(), 5);
+            var raterB1 = Guid.NewGuid();
+            dishB.SetRating(raterB1, raterB1, false, 2.5);
 
             await _dishRepository.SaveAsync(dishA);
             await _dishRepository.SaveAsync(dishB);
@@ -89,9 +91,11 @@ namespace EzDinner.IntegrationTests.SuggestionTests
             var today = new LocalDate(2025, 6, 15);
 
             var dishA = Dish.CreateNew(familyId, "Best Dish");
-            dishA.SetRating(Guid.NewGuid(), 9);
+            var raterA2 = Guid.NewGuid();
+            dishA.SetRating(raterA2, raterA2, false, 4.5);
             var dishB = Dish.CreateNew(familyId, "Second Best Dish");
-            dishB.SetRating(Guid.NewGuid(), 7);
+            var raterB2 = Guid.NewGuid();
+            dishB.SetRating(raterB2, raterB2, false, 3.5);
 
             await _dishRepository.SaveAsync(dishA);
             await _dishRepository.SaveAsync(dishB);
@@ -133,7 +137,8 @@ namespace EzDinner.IntegrationTests.SuggestionTests
             var weekStart = new LocalDate(2025, 6, 9); // Monday
 
             var dish = Dish.CreateNew(familyId, "A Dish");
-            dish.SetRating(Guid.NewGuid(), 7);
+            var rater3 = Guid.NewGuid();
+            dish.SetRating(rater3, rater3, false, 3.5);
             await _dishRepository.SaveAsync(dish);
 
             // Plan Monday (day 0) already

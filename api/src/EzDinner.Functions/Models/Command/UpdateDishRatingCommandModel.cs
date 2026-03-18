@@ -8,10 +8,5 @@ namespace EzDinner.Functions.Models.Command
     {
         public double Rating { get; set; }
         public string? FamilyMemberId { get; set; }
-
-        public int GetRatingInDomainFormat()
-        {
-            return Convert.ToInt32(Rating * 2d);
-        }
     }
 }

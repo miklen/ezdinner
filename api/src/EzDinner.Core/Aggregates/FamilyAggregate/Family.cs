@@ -9,7 +9,8 @@ namespace EzDinner.Core.Aggregates.FamilyAggregate
     {
         private readonly List<FamilyMember> _familyMembers;
 
-        public Guid OwnerId => _familyMembers.First(w => w.IsOwner).Id;
+        public Guid OwnerId => _familyMembers.FirstOrDefault(w => w.IsOwner)?.Id
+            ?? throw new InvalidOperationException("Family has no owner.");
         public string Name { get; private set; }
         public IEnumerable<FamilyMember> FamilyMembers => _familyMembers;
 

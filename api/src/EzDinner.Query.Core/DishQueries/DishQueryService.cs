@@ -33,12 +33,9 @@ namespace EzDinner.Query.Core.DishQueries
             {
                 foreach(var menu in dinner.Menu)
                 {
-                    if (!dishes.TryGetValue(menu.DishId, out var stats)) dishes.Add(menu.DishId, stats = new DishStats() { DishId = menu.DishId });
-                    stats.TimesUsed++;
-                    if (stats.LastUsed < dinner.Date)
-                    {
-                        stats.LastUsed = dinner.Date;
-                    }
+                    if (!dishes.TryGetValue(menu.DishId, out var stats))
+                        dishes.Add(menu.DishId, stats = new DishStats() { DishId = menu.DishId });
+                    stats.AddDinner(dinner);
                 }
             }
             return dishes;

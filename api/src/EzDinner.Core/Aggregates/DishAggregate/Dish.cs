@@ -10,7 +10,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
     {
         private readonly List<Rating> _ratings;
 
-        public string Name { get; set; }
+        public string Name { get; private set; }
         public Guid FamilyId { get; }
         public bool Deleted { get; private set; }
         public Uri? Url { get; private set; }
@@ -41,22 +41,36 @@ namespace EzDinner.Core.Aggregates.DishAggregate
             return new Dish(id: Guid.NewGuid(), familyId, name, null, new List<Tag>(), notes: "", deleted: false, new List<Rating>());
         }
 
+        public void SetName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Dish name cannot be empty.", nameof(name));
+            Name = name;
+        }
+
         public void Delete()
         {
             Deleted = true;
         }
 
-        public void SetRating(Guid familyMemberId, int rating)
+        /// <summary>
+        /// Rate this dish on behalf of a family member. Caller must be the member themselves unless the member lacks autonomy.
+        /// </summary>
+        /// <param name="callerId">The authenticated user performing the action.</param>
+        /// <param name="familyMemberId">The member whose rating is being set.</param>
+        /// <param name="memberHasAutonomy">Whether the rated member has their own account.</param>
+        /// <param name="uiRating">Rating on the 0–5 UI scale.</param>
+        public void SetRating(Guid callerId, Guid familyMemberId, bool memberHasAutonomy, double uiRating)
         {
+            if (!familyMemberId.Equals(callerId) && memberHasAutonomy)
+                throw new InvalidOperationException("CANNOT_RATE_ON_BEHALF_OF_AUTONOMOUS_MEMBER");
+
+            var domainRating = Convert.ToInt32(uiRating * 2d);
             var ratingIndex = _ratings.FindIndex(w => w.RaterId == familyMemberId);
-            var newRating = new Rating(familyMemberId, rating);
+            var newRating = new Rating(familyMemberId, domainRating);
             if (ratingIndex == -1)
-            {
                 _ratings.Add(newRating);
-            } else
-            {
+            else
                 _ratings[ratingIndex] = newRating;
-            }
         }
 
         public void SetUrl(string? url)
