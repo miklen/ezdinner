@@ -125,8 +125,8 @@ function formatDaysAgo(days: number): string {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
   background: none;

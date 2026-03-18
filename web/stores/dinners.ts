@@ -9,7 +9,10 @@ export const useDinnersStore = defineStore('dinners', () => {
 
   async function populateDinners(from: DateTime, to: DateTime) {
     const { dinners: dinnerRepo } = useRepositories()
-    const result = await dinnerRepo.getRange(appStore.activeFamilyId, from, to)
+    const [result] = await Promise.all([
+      dinnerRepo.getRange(appStore.activeFamilyId, from, to),
+      dishesStore.populateDishes(),
+    ])
 
     type RawDinner = Omit<Dinner, 'date'> & { date: string }
     // Client-side join: attach dish names from dishMap
