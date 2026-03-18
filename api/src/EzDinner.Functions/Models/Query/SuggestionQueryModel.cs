@@ -1,4 +1,5 @@
 using AutoMapper;
+using EzDinner.Core.DomainServices.DinnerSuggestions;
 using EzDinner.Query.Core.SuggestionQueries;
 using NodaTime.Text;
 using System;
@@ -23,7 +24,7 @@ namespace EzDinner.Functions.Models.Query
     {
         public SuggestionMapping()
         {
-            CreateMap<DishScore, SuggestionQueryModel>();
+            CreateMap<DishScoreValueObject, SuggestionQueryModel>();
             CreateMap<DaySuggestion, WeekSuggestionItemQueryModel>()
                 .ForMember(d => d.Date, opt => opt.MapFrom(s => LocalDatePattern.Iso.Format(s.Date)));
         }

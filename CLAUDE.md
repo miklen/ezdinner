@@ -11,17 +11,20 @@
 EzDinner is a family dinner planning app. Users belong to families and plan weekly dinners from a dish catalog. Multi-tenant by family, with per-family RBAC authorization.
 
 ## Structure
+A CQRS architecture
 ```
 /               # Legacy Nuxt 2 frontend (not actively developed)
 /web            # Active Nuxt 3 frontend (TypeScript, Pinia, Vuetify 3)
-/api            # .NET 10 Azure Functions backend (Clean Architecture)
+/api            # .NET 10 Azure Functions backend (Clean Architecture + CQRS)
   /src
     EzDinner.Functions          # HTTP-triggered Azure Functions (entry points)
     EzDinner.Application        # Use cases / commands
-    EzDinner.Core               # Domain aggregates (DDD)
+    EzDinner.Core               # Domain layer: Aggregates/ and DomainServices/
     EzDinner.Infrastructure     # CosmosDB repos, Casbin adapter, EF Core
     EzDinner.Authorization.Core # Casbin RBAC engine wrapper
     EzDinner.Query.Core         # Read-only query interfaces
+  /test
+    EzDinner.UnitTests          # Unit tests — no CosmosDB required
   /tests
     EzDinner.IntegrationTests   # Integration tests (require live CosmosDB emulator)
 ```
@@ -45,6 +48,9 @@ Runs at http://localhost:3000.
 # Backend build only
 cd api/src/EzDinner.Functions && dotnet build
 
+# Run unit tests (no emulator required)
+cd api/test/EzDinner.UnitTests && dotnet test
+
 # Run integration tests (requires CosmosDB emulator)
 cd api && dotnet test
 
@@ -54,6 +60,35 @@ cd web && npm test
 # Frontend lint
 cd web && npm run lint
 ```
+
+## Backend Architecture
+
+### Layer responsibilities — what goes where
+- **`EzDinner.Core`** — pure domain logic only; no I/O, no repos, no infrastructure imports
+- **`EzDinner.Query.Core`** — query orchestration: load from repos → invoke domain → return shaped result; also holds query result models (`DaySuggestion` etc.)
+- **`EzDinner.Application`** — command orchestration: load → mutate via domain → save
+- **`EzDinner.Functions`** — thin HTTP layer only: parse request → call query/command → map to DTO; no business logic
+- **`EzDinner.Infrastructure`** — repo implementations, CosmosDB, EF Core, Casbin
+- `EzDinner.Query.Core` already references `EzDinner.Core` (transitive through `EzDinner.Infrastructure` into `EzDinner.Functions`)
+
+### EzDinner.Core internal structure
+```
+Aggregates/XxxAggregate/     # one folder per aggregate; root class is Xxx (no postfix on class, only on folder)
+DomainServices/XxxYyy/       # one folder per domain service capability
+```
+
+### DDD naming conventions (enforced)
+- Aggregate root class: `Dish`, `Dinner`, `Family` — no class postfix; the folder carries `Aggregate`
+- Value objects: postfix `ValueObject` — e.g., `DishCandidateValueObject`
+- Domain services: postfix `Service` — e.g., `DinnerSuggestionService`; use `EngineService` when plain `Service` would clash with a same-named query-layer class
+- Factories: postfix `Factory`; make `static` if pure computation — no DI registration needed
+- Business/scoring rules (Strategy pattern): postfix `Rule` — recognised type alongside the five DDD types
+
+**If a new domain concept doesn't clearly fit Aggregate, Entity, ValueObject, Factory, Service, or Rule — stop and ask before placing it.**
+
+### Testing placement
+- Domain unit tests → `api/test/EzDinner.UnitTests/XxxTests/` — construct types directly, no mocks, no I/O
+- Integration tests → `api/tests/EzDinner.IntegrationTests/` — require live CosmosDB emulator
 
 ## Tech Stack
 - **Frontend**: Nuxt 3, Vue 3, Pinia, Vuetify 3, TypeScript, MSAL Browser 3

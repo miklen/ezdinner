@@ -1,3 +1,4 @@
+using EzDinner.Core.DomainServices.DinnerSuggestions;
 using NodaTime;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
 {
     public interface IDinnerSuggestionService
     {
-        Task<DishScore?> SuggestDay(Guid familyId, LocalDate date, IReadOnlyList<Guid> excludedDishIds);
+        Task<DishScoreValueObject?> SuggestDay(Guid familyId, LocalDate date, IReadOnlyList<Guid> excludedDishIds);
         Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds);
     }
 }

@@ -1,8 +1,8 @@
 using System;
 
-namespace EzDinner.Query.Core.SuggestionQueries
+namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
-    public class DishCandidate
+    public class DishCandidateValueObject
     {
         public Guid DishId { get; }
         public string DishName { get; }
@@ -11,7 +11,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
         public double TypicalFrequencyDays { get; }
         public double LeftoverFrequencyRatio { get; }
 
-        public DishCandidate(
+        public DishCandidateValueObject(
             Guid dishId,
             string dishName,
             double rating,

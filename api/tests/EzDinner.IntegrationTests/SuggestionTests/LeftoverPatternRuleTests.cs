@@ -1,5 +1,6 @@
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.DishAggregate;
+using EzDinner.Core.DomainServices.DinnerSuggestions;
 using EzDinner.Query.Core.SuggestionQueries;
 using NodaTime;
 using System;
@@ -52,9 +53,8 @@ namespace EzDinner.IntegrationTests.SuggestionTests
                     allDinners.Add(d);
 
                 var targetDate = baseDate.PlusDays(21);
-                var factory = new DishCandidateFactory(_dishRepository, _dinnerRepository);
                 var allDishes = await _dishRepository.GetDishesAsync(familyId);
-                var candidates = factory.BuildCandidates(allDishes, allDinners, targetDate).ToList();
+                var candidates = DishCandidateFactory.BuildCandidates(allDishes, allDinners, targetDate).ToList();
 
                 var candidate = candidates.Single(c => c.DishId == dish.Id);
 
@@ -64,11 +64,11 @@ namespace EzDinner.IntegrationTests.SuggestionTests
 
                 // Rule applies bonus when dish is in adjacentDishIds (preceding day used this dish)
                 var rule = new LeftoverPatternRule();
-                var contextWithAdjacent = new SuggestionContext(
+                var contextWithAdjacent = new SuggestionContextValueObject(
                     targetDate,
                     adjacentDishIds: new List<Guid> { dish.Id },
                     excludedDishIds: Array.Empty<Guid>());
-                var contextWithoutAdjacent = new SuggestionContext(
+                var contextWithoutAdjacent = new SuggestionContextValueObject(
                     targetDate,
                     adjacentDishIds: Array.Empty<Guid>(),
                     excludedDishIds: Array.Empty<Guid>());

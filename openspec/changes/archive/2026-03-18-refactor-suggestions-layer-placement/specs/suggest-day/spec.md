@@ -1,0 +1,1 @@
+No requirement changes. All existing scenarios in `openspec/specs/suggest-day/spec.md` remain valid and unchanged. This change is a structural refactor only — the observable behaviour of the suggest-day capability is identical before and after.

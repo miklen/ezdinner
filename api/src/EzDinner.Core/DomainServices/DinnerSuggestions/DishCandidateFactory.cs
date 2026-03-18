@@ -4,35 +4,15 @@ using NodaTime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
-namespace EzDinner.Query.Core.SuggestionQueries
+namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
-    public class DishCandidateFactory
+    public static class DishCandidateFactory
     {
-        private readonly IDishRepository _dishRepository;
-        private readonly IDinnerRepository _dinnerRepository;
-
         private const int DefaultDaysSinceLast = 365;
         private const double DefaultTypicalFrequencyDays = 14.0;
 
-        public DishCandidateFactory(IDishRepository dishRepository, IDinnerRepository dinnerRepository)
-        {
-            _dishRepository = dishRepository;
-            _dinnerRepository = dinnerRepository;
-        }
-
-        public async Task<IEnumerable<DishCandidate>> BuildCandidatesAsync(Guid familyId, LocalDate targetDate)
-        {
-            var dishes = await _dishRepository.GetDishesAsync(familyId);
-            var allDinners = new List<Dinner>();
-            await foreach (var dinner in _dinnerRepository.GetAsync(familyId, LocalDate.MinIsoValue, LocalDate.MaxIsoValue))
-                allDinners.Add(dinner);
-
-            return BuildCandidates(dishes, allDinners, targetDate);
-        }
-
-        public IEnumerable<DishCandidate> BuildCandidates(
+        public static IEnumerable<DishCandidateValueObject> BuildCandidates(
             IEnumerable<Dish> dishes,
             IEnumerable<Dinner> allDinners,
             LocalDate targetDate)
@@ -43,7 +23,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
                 .Select(d => BuildCandidate(d, dinnerList, targetDate));
         }
 
-        private static DishCandidate BuildCandidate(Dish dish, List<Dinner> allDinners, LocalDate targetDate)
+        private static DishCandidateValueObject BuildCandidate(Dish dish, List<Dinner> allDinners, LocalDate targetDate)
         {
             var usageDates = allDinners
                 .Where(d => d.Menu.Any(m => m.DishId == dish.Id))
@@ -58,7 +38,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
             var typicalFrequencyDays = ComputeTypicalFrequencyDays(usageDates);
             var leftoverFrequencyRatio = ComputeLeftoverFrequencyRatio(usageDates);
 
-            return new DishCandidate(
+            return new DishCandidateValueObject(
                 dish.Id,
                 dish.Name,
                 dish.Rating,

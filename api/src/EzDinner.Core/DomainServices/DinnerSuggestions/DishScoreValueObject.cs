@@ -1,8 +1,8 @@
 using System;
 
-namespace EzDinner.Query.Core.SuggestionQueries
+namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
-    public class DishScore : IComparable<DishScore>
+    public class DishScoreValueObject : IComparable<DishScoreValueObject>
     {
         public Guid DishId { get; }
         public string DishName { get; }
@@ -10,7 +10,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
         public double Rating { get; }
         public int DaysSinceLast { get; }
 
-        public DishScore(Guid dishId, string dishName, double totalScore, double rating, int daysSinceLast)
+        public DishScoreValueObject(Guid dishId, string dishName, double totalScore, double rating, int daysSinceLast)
         {
             DishId = dishId;
             DishName = dishName;
@@ -19,7 +19,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
             DaysSinceLast = daysSinceLast;
         }
 
-        public int CompareTo(DishScore? other)
+        public int CompareTo(DishScoreValueObject? other)
         {
             if (other is null) return 1;
             return TotalScore.CompareTo(other.TotalScore);

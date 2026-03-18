@@ -1,5 +1,6 @@
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.DishAggregate;
+using EzDinner.Core.DomainServices.DinnerSuggestions;
 using NodaTime;
 using System;
 using System.Collections.Generic;
@@ -10,36 +11,39 @@ namespace EzDinner.Query.Core.SuggestionQueries
 {
     public class DinnerSuggestionService : IDinnerSuggestionService
     {
-        private readonly DishCandidateFactory _candidateFactory;
-        private readonly DinnerSuggestionEngine _engine;
+        private readonly DinnerSuggestionEngineService _engine;
         private readonly IDishRepository _dishRepository;
         private readonly IDinnerRepository _dinnerRepository;
 
         public DinnerSuggestionService(
-            DishCandidateFactory candidateFactory,
-            DinnerSuggestionEngine engine,
+            DinnerSuggestionEngineService engine,
             IDishRepository dishRepository,
             IDinnerRepository dinnerRepository)
         {
-            _candidateFactory = candidateFactory;
             _engine = engine;
             _dishRepository = dishRepository;
             _dinnerRepository = dinnerRepository;
         }
 
-        public async Task<DishScore?> SuggestDay(Guid familyId, LocalDate date, IReadOnlyList<Guid> excludedDishIds)
+        public async Task<DishScoreValueObject?> SuggestDay(Guid familyId, LocalDate date, IReadOnlyList<Guid> excludedDishIds)
         {
             var existingDinner = await _dinnerRepository.GetAsync(familyId, date);
             if (existingDinner is not null && existingDinner.IsPlanned)
                 return null;
 
-            var candidates = await _candidateFactory.BuildCandidatesAsync(familyId, date);
+            var dishes = await _dishRepository.GetDishesAsync(familyId);
+            var allDinners = new List<Dinner>();
+            await foreach (var dinner in _dinnerRepository.GetAsync(familyId, LocalDate.MinIsoValue, LocalDate.MaxIsoValue))
+                allDinners.Add(dinner);
 
-            var prevDayDinner = await _dinnerRepository.GetAsync(familyId, date.PlusDays(-1));
-            var adjacentDishIds = prevDayDinner?.Menu.Select(m => m.DishId).ToList()
-                ?? new List<Guid>();
+            var candidates = DishCandidateFactory.BuildCandidates(dishes, allDinners, date);
 
-            var context = new SuggestionContext(date, adjacentDishIds, excludedDishIds);
+            var adjacentDishIds = allDinners
+                .Where(d => d.Date == date.PlusDays(-1))
+                .SelectMany(d => d.Menu.Select(m => m.DishId))
+                .ToList();
+
+            var context = new SuggestionContextValueObject(date, adjacentDishIds, excludedDishIds);
             var ranked = _engine.Rank(candidates, context);
 
             return ranked.FirstOrDefault(s => !excludedDishIds.Contains(s.DishId))
@@ -60,7 +64,6 @@ namespace EzDinner.Query.Core.SuggestionQueries
 
             var results = new List<DaySuggestion>();
             var suggestedByDate = new Dictionary<LocalDate, Guid?>();
-            // Tracks dishes already suggested earlier this week to avoid repeats
             var suggestedThisWeek = new HashSet<Guid>();
 
             for (var i = 0; i < 7; i++)
@@ -71,11 +74,10 @@ namespace EzDinner.Query.Core.SuggestionQueries
                     continue;
 
                 var adjacentDishIds = BuildAdjacentDishIds(date, allDinners, suggestedByDate);
-                var candidates = _candidateFactory.BuildCandidates(dishes, allDinners, date);
+                var candidates = DishCandidateFactory.BuildCandidates(dishes, allDinners, date);
 
-                // Combine client reroll exclusions with intra-week already-suggested dishes
                 var effectiveExclusions = excludedDishIds.Concat(suggestedThisWeek).ToList();
-                var context = new SuggestionContext(date, adjacentDishIds, effectiveExclusions);
+                var context = new SuggestionContextValueObject(date, adjacentDishIds, effectiveExclusions);
                 var ranked = _engine.Rank(candidates, context);
 
                 var selected = ranked.FirstOrDefault(s => !effectiveExclusions.Contains(s.DishId))

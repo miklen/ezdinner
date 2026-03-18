@@ -1,5 +1,6 @@
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.DishAggregate;
+using EzDinner.Core.DomainServices.DinnerSuggestions;
 using EzDinner.Query.Core.SuggestionQueries;
 using NodaTime;
 using System;
@@ -29,9 +30,8 @@ namespace EzDinner.IntegrationTests.SuggestionTests
                 new LeftoverPatternRule(),
             };
 
-            var factory = new DishCandidateFactory(_dishRepository, _dinnerRepository);
-            var engine = new DinnerSuggestionEngine(rules);
-            _suggestionService = new DinnerSuggestionService(factory, engine, _dishRepository, _dinnerRepository);
+            var engine = new DinnerSuggestionEngineService(rules);
+            _suggestionService = new DinnerSuggestionService(engine, _dishRepository, _dinnerRepository);
         }
 
         /// <summary>

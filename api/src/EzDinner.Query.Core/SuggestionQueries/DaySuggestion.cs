@@ -1,3 +1,4 @@
+using EzDinner.Core.DomainServices.DinnerSuggestions;
 using NodaTime;
 
 namespace EzDinner.Query.Core.SuggestionQueries
@@ -5,9 +6,9 @@ namespace EzDinner.Query.Core.SuggestionQueries
     public class DaySuggestion
     {
         public LocalDate Date { get; }
-        public DishScore? Suggestion { get; }
+        public DishScoreValueObject? Suggestion { get; }
 
-        public DaySuggestion(LocalDate date, DishScore? suggestion)
+        public DaySuggestion(LocalDate date, DishScoreValueObject? suggestion)
         {
             Date = date;
             Suggestion = suggestion;

@@ -1,10 +1,5 @@
-namespace EzDinner.Query.Core.SuggestionQueries
+namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
-    /// <summary>
-    /// Penalises dishes used too recently.
-    /// Used within the last 3 days: large negative override (zero-score threshold).
-    /// Used within the last 7 days: significant penalty.
-    /// </summary>
     public class RecencyPenaltyRule : IScoringRule
     {
         private const int ZeroScoreThresholdDays = 3;
@@ -12,7 +7,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
         private const double ZeroScorePenalty = -1000.0;
         private const double RecentUsePenalty = -20.0;
 
-        public double Score(DishCandidate candidate, SuggestionContext context)
+        public double Score(DishCandidateValueObject candidate, SuggestionContextValueObject context)
         {
             if (candidate.DaysSinceLast <= ZeroScoreThresholdDays)
                 return ZeroScorePenalty;

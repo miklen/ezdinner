@@ -1,0 +1,1 @@
+No requirement changes. All existing scenarios in `openspec/specs/suggest-week/spec.md` remain valid and unchanged. This change is a structural refactor only — the observable behaviour of the suggest-week capability is identical before and after.

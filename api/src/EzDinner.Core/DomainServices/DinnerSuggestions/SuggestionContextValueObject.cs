@@ -2,15 +2,15 @@ using NodaTime;
 using System;
 using System.Collections.Generic;
 
-namespace EzDinner.Query.Core.SuggestionQueries
+namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
-    public class SuggestionContext
+    public class SuggestionContextValueObject
     {
         public LocalDate TargetDate { get; }
         public IReadOnlyList<Guid> AdjacentDishIds { get; }
         public IReadOnlyList<Guid> ExcludedDishIds { get; }
 
-        public SuggestionContext(
+        public SuggestionContextValueObject(
             LocalDate targetDate,
             IReadOnlyList<Guid> adjacentDishIds,
             IReadOnlyList<Guid> excludedDishIds)

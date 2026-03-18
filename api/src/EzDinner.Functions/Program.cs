@@ -4,6 +4,7 @@ using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Infrastructure;
 using EzDinner.Query.Core.DishQueries;
 using EzDinner.Query.Core.FamilyQueries;
+using EzDinner.Core.DomainServices.DinnerSuggestions;
 using EzDinner.Query.Core.SuggestionQueries;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -39,8 +40,7 @@ var host = new HostBuilder()
             .AddScoped<IDishQueryService, DishQueryService>()
             .AddScoped<IFamilyQueryService, FamilyQueryService>()
             .AddSingleton<IAuthzService, AuthzService>()
-            .AddScoped<DishCandidateFactory>()
-            .AddScoped<DinnerSuggestionEngine>()
+            .AddScoped<DinnerSuggestionEngineService>()
             .AddScoped<IScoringRule, OverdueScoringRule>()
             .AddScoped<IScoringRule, RatingScoringRule>()
             .AddScoped<IScoringRule, RecencyPenaltyRule>()
