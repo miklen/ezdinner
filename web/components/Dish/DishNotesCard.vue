@@ -186,7 +186,7 @@ async function saveEdit() {
 }
 
 .notes-card__url-chip:hover {
-  background-color: rgba(212, 101, 42, 0.08);
+  background-color: rgba(var(--color-primary-rgb), 0.08);
   border-color: var(--color-primary);
 }
 

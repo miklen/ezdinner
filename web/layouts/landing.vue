@@ -237,7 +237,7 @@ const features = [
 
   &:hover {
     border-color: var(--color-primary) !important;
-    background-color: rgba(212, 101, 42, 0.04) !important;
+    background-color: rgba(var(--color-primary-rgb), 0.04) !important;
   }
 }
 
@@ -495,7 +495,7 @@ const features = [
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  background: rgba(212, 101, 42, 0.1);
+  background: rgba(var(--color-primary-rgb), 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -610,7 +610,7 @@ const features = [
 }
 
 .footer-logo-dinner {
-  color: rgba(212, 101, 42, 0.7);
+  color: rgba(var(--color-primary-rgb), 0.7);
 }
 
 .footer-copy {

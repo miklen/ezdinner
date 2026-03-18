@@ -52,10 +52,6 @@ async function onSuggest() {
   }
 }
 
-function onRerollDay(date: string) {
-  rerollDay(date)
-}
-
 function onUse(date: string, dishId: string, dishName: string) {
   clearSuggestionForDate(date)
   emit('dish:used', date, dishId, dishName)
@@ -105,7 +101,7 @@ function onUse(date: string, dishId: string, dishName: string) {
             :date="item.date"
             :suggestion="item.suggestion!"
             @use="onUse"
-            @reroll="onRerollDay"
+            @reroll="rerollDay"
           />
         </div>
       </div>
@@ -117,9 +113,9 @@ function onUse(date: string, dishId: string, dishName: string) {
 .suggestion-bar {
   position: relative;
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  background: linear-gradient(135deg, rgba(212, 101, 42, 0.04) 0%, rgba(212, 101, 42, 0.01) 100%);
+  background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.04) 0%, rgba(var(--color-primary-rgb), 0.01) 100%);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(212, 101, 42, 0.14);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.14);
   margin-bottom: var(--space-4);
   overflow: hidden;
 }
@@ -132,7 +128,7 @@ function onUse(date: string, dishId: string, dishName: string) {
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(to bottom, rgba(212, 101, 42, 0.9), rgba(212, 101, 42, 0.3));
+  background: linear-gradient(to bottom, rgba(var(--color-primary-rgb), 0.9), rgba(var(--color-primary-rgb), 0.3));
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
 }
 
@@ -158,7 +154,7 @@ function onUse(date: string, dishId: string, dishName: string) {
 }
 
 .bar-icon {
-  color: rgba(212, 101, 42, 0.7);
+  color: rgba(var(--color-primary-rgb), 0.7);
 }
 
 .bar-label {
@@ -166,11 +162,11 @@ function onUse(date: string, dishId: string, dishName: string) {
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: rgba(212, 101, 42, 0.8);
+  color: rgba(var(--color-primary-rgb), 0.8);
 }
 
 .bar-chevron {
-  color: rgba(212, 101, 42, 0.5);
+  color: rgba(var(--color-primary-rgb), 0.5);
   transition: transform 0.2s ease;
 }
 
@@ -186,9 +182,9 @@ function onUse(date: string, dishId: string, dishName: string) {
   gap: 5px;
   padding: 5px 12px;
   border-radius: 20px;
-  border: 1px solid rgba(212, 101, 42, 0.35);
-  background: rgba(212, 101, 42, 0.08);
-  color: rgba(212, 101, 42, 0.9);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.35);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: rgba(var(--color-primary-rgb), 0.9);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -197,8 +193,8 @@ function onUse(date: string, dishId: string, dishName: string) {
 }
 
 .suggest-btn:hover:not(:disabled) {
-  background: rgba(212, 101, 42, 0.14);
-  border-color: rgba(212, 101, 42, 0.5);
+  background: rgba(var(--color-primary-rgb), 0.14);
+  border-color: rgba(var(--color-primary-rgb), 0.5);
 }
 
 .suggest-btn:disabled {
@@ -255,7 +251,7 @@ function onUse(date: string, dishId: string, dishName: string) {
   width: 48px;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(212, 101, 42, 0.7);
+  color: rgba(var(--color-primary-rgb), 0.7);
   letter-spacing: 0.03em;
   flex-shrink: 0;
   text-transform: uppercase;

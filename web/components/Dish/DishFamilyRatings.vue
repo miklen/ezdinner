@@ -193,7 +193,7 @@ async function updateRating(val: number, familyMemberId: string) {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-primary-dark);
-  background-color: rgba(212, 101, 42, 0.12);
+  background-color: rgba(var(--color-primary-rgb), 0.12);
   padding: 1px 6px;
   border-radius: var(--radius-full);
 }

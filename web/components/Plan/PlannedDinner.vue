@@ -216,7 +216,7 @@ function handleHeaderClick() {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-primary-dark);
-  background: rgba(212, 101, 42, 0.12);
+  background: rgba(var(--color-primary-rgb), 0.12);
   border-radius: var(--radius-sm);
   padding: 2px 6px;
   line-height: 1.6;

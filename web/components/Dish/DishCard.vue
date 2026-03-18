@@ -82,7 +82,7 @@ async function doUpdateName() {
 async function doDelete() {
   await dishRepo.delete(appStore.activeFamilyId, props.dish.id)
   confirmDialog.value = false
-  dishesStore.populateDishes()
+  await dishesStore.populateDishes()
 }
 
 async function doMove() {

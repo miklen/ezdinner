@@ -137,7 +137,7 @@ watch(() => appStore.activeFamilyId, () => {
 /* Active state: terracotta icon */
 .icon-rail__item.v-list-item--active {
   color: var(--color-primary) !important;
-  background-color: rgba(212, 101, 42, 0.08) !important;
+  background-color: rgba(var(--color-primary-rgb), 0.08) !important;
 }
 
 .rail-tooltip {

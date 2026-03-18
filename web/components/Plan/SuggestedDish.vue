@@ -54,7 +54,7 @@ function formatDaysAgo(days: number): string {
   padding: 6px var(--space-2);
   background: rgba(255, 255, 255, 0.7);
   border-radius: 10px;
-  border: 1px solid rgba(212, 101, 42, 0.12);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.12);
   min-width: 0;
 }
 
@@ -106,9 +106,9 @@ function formatDaysAgo(days: number): string {
 .use-btn {
   padding: 3px 10px;
   border-radius: 12px;
-  border: 1px solid rgba(212, 101, 42, 0.4);
-  background: rgba(212, 101, 42, 0.09);
-  color: rgba(212, 101, 42, 0.9);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.4);
+  background: rgba(var(--color-primary-rgb), 0.09);
+  color: rgba(var(--color-primary-rgb), 0.9);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -118,7 +118,7 @@ function formatDaysAgo(days: number): string {
 }
 
 .use-btn:hover {
-  background: rgba(212, 101, 42, 0.18);
+  background: rgba(var(--color-primary-rgb), 0.18);
 }
 
 .reroll-btn {

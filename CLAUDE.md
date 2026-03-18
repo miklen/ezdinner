@@ -115,6 +115,8 @@ DomainServices/XxxYyy/       # one folder per domain service capability
 - `JourneyInsights` telemetry only works in `RelyingParty/UserJourneyBehaviors`, not in the `UserJourney` element directly.
 
 ## Non-Obvious Gotchas
+- Global CSS token sheet is at `web/assets/global.scss`. Primary color opacity variants use `--color-primary-rgb: 212, 101, 42` — write `rgba(var(--color-primary-rgb), 0.08)` not the raw value.
+- `useSnackbar` (`web/composables/useSnackbar.ts`) is an intentional module-level singleton — refs are declared outside the function to share state across callers. It is client-only and should not be migrated to Pinia unless SSR is enabled for authenticated routes.
 - Azure Functions v4 isolated worker uses System.Text.Json — Newtonsoft `[JsonConverter]` attributes on model classes are silently ignored. Map NodaTime types to strings in AutoMapper using e.g. `LocalDatePattern.Iso.Format(s.Date)`.
 - CosmosDB triggers in Azure Functions v4 isolated worker use STJ to deserialize the change feed payload. Domain classes with parameterized constructors and private-backed properties (like `Family`) cannot be bound by STJ. Use `IReadOnlyList<JsonElement>` as the trigger parameter type, then call `.GetRawText()` on each element to get the raw JSON string and deserialize with Newtonsoft. **`IReadOnlyList<string>` does NOT work** — STJ cannot convert a JSON object element to a `string` type (throws `InvalidOperationException: Cannot get the value of a token type 'StartObject' as a string`).
 - `IAsyncEnumerable<T>` returned via `OkObjectResult` serializes as `{}` with System.Text.Json — always `.ToListAsync()` before returning.

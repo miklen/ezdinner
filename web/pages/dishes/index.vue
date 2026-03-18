@@ -38,12 +38,12 @@ function selectSort(key: SortKey) {
   }
 }
 
-const sortChips = computed<{ key: SortKey; label: string }[]>(() => [
+const sortChips: { key: SortKey; label: string }[] = [
   { key: 'name', label: 'Name' },
   { key: 'rating', label: 'Rating' },
   { key: 'timesUsed', label: 'Times used' },
   { key: 'lastUsed', label: 'Last used' },
-])
+]
 
 // ── Derived dish list ─────────────────────────────────────────────────────────
 

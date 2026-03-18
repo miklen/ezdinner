@@ -34,9 +34,7 @@ async function setOptOut(reason: string) {
   try {
     const trimmed = reason.trim()
     await dinnerRepo.setOptOut(appStore.activeFamilyId, props.dinner.date, trimmed)
-    if (!dinnersStore.previousOptOutReasons.includes(trimmed)) {
-      dinnersStore.previousOptOutReasons.push(trimmed)
-    }
+    dinnersStore.addOptOutReason(trimmed)
     customOptOutReason.value = ''
     showOptOut.value = false
     emit('dinner:optoutupdated')

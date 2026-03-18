@@ -31,5 +31,11 @@ export const useDinnersStore = defineStore('dinners', () => {
     previousOptOutReasons.value = await dinnerRepo.getOptOutReasons(appStore.activeFamilyId)
   }
 
-  return { dinners, previousOptOutReasons, populateDinners, fetchOptOutReasons }
+  function addOptOutReason(reason: string) {
+    if (!previousOptOutReasons.value.includes(reason)) {
+      previousOptOutReasons.value.push(reason)
+    }
+  }
+
+  return { dinners, previousOptOutReasons, populateDinners, fetchOptOutReasons, addOptOutReason }
 })
