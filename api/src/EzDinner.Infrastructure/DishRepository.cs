@@ -23,9 +23,12 @@ namespace EzDinner.Infrastructure
             _container = _client.GetContainer(configuration.GetValue<string>("CosmosDb:Database"), CONTAINER);
         }
 
-        public async Task<IEnumerable<Dish>> GetDishesAsync(Guid familyId)
+        public async Task<IEnumerable<Dish>> GetDishesAsync(Guid familyId, bool includeArchived = false)
         {
-            var queryDefinition = new QueryDefinition($"SELECT * FROM c WHERE c.familyId = @familyId AND (c.deleted = @deleted OR IS_DEFINED(c.deleted) = false)")
+            var sql = "SELECT * FROM c WHERE c.familyId = @familyId AND (c.deleted = @deleted OR IS_DEFINED(c.deleted) = false)";
+            if (!includeArchived)
+                sql += " AND (c.isArchived = false OR IS_DEFINED(c.isArchived) = false)";
+            var queryDefinition = new QueryDefinition(sql)
                 .WithParameter("@familyId", familyId.ToString())
                 .WithParameter("@deleted", false);
             var queryResultSetIterator = _container.GetItemQueryIterator<Dish>(queryDefinition);

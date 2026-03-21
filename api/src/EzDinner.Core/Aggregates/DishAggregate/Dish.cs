@@ -13,6 +13,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         public string Name { get; private set; }
         public Guid FamilyId { get; }
         public bool Deleted { get; private set; }
+        public bool IsArchived { get; private set; }
         public Uri? Url { get; private set; }
         public IEnumerable<Tag> Tags { get; }
         public string Notes { get; private set; }
@@ -25,7 +26,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         /// <summary>
         /// For serialization purpose only. Does not protect invariants and constraints.
         /// </summary>
-        public Dish(Guid id, Guid familyId, string name, Uri? url, IEnumerable<Tag> tags, string notes, bool deleted, IEnumerable<Rating> ratings) : base(id)
+        public Dish(Guid id, Guid familyId, string name, Uri? url, IEnumerable<Tag> tags, string notes, bool deleted, IEnumerable<Rating> ratings, bool isArchived = false) : base(id)
         {
             FamilyId = familyId;
             Name = name;
@@ -33,6 +34,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
             Tags = tags;
             Notes = notes;
             Deleted = deleted;
+            IsArchived = isArchived;
             _ratings = ratings?.ToList() ?? new List<Rating>();
         }
 
@@ -50,6 +52,18 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         public void Delete()
         {
             Deleted = true;
+        }
+
+        public void Archive()
+        {
+            if (IsArchived) throw new InvalidOperationException("DISH_ALREADY_ARCHIVED");
+            IsArchived = true;
+        }
+
+        public void Reactivate()
+        {
+            if (!IsArchived) throw new InvalidOperationException("DISH_NOT_ARCHIVED");
+            IsArchived = false;
         }
 
         /// <summary>

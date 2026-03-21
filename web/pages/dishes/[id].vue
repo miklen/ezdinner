@@ -70,10 +70,58 @@ async function doDelete() {
     deleteDialog.value = false
   }
 }
+
+// ── Archive / Reactivate ───────────────────────────────────────────────────────
+
+const archiveDialog = shallowRef(false)
+const reactivateDialog = shallowRef(false)
+const archiveLoading = shallowRef(false)
+const reactivateLoading = shallowRef(false)
+
+async function doArchive() {
+  if (!dish.value) return
+  archiveLoading.value = true
+  try {
+    await dishRepo.archive(appStore.activeFamilyId, dish.value.id)
+    archiveDialog.value = false
+    await loadDish()
+    dishesStore.populateDishes()
+    showSnackbar('Dish archived', { type: 'success' })
+  } catch {
+    showSnackbar('Failed to archive dish', { type: 'error' })
+    archiveDialog.value = false
+  } finally {
+    archiveLoading.value = false
+  }
+}
+
+async function doReactivate() {
+  if (!dish.value) return
+  reactivateLoading.value = true
+  try {
+    await dishRepo.reactivate(appStore.activeFamilyId, dish.value.id)
+    reactivateDialog.value = false
+    await loadDish()
+    dishesStore.populateDishes()
+    showSnackbar('Dish reactivated', { type: 'success' })
+  } catch {
+    showSnackbar('Failed to reactivate dish', { type: 'error' })
+    reactivateDialog.value = false
+  } finally {
+    reactivateLoading.value = false
+  }
+}
 </script>
 
 <template>
   <div class="dish-detail">
+    <!-- Archived status banner -->
+    <div v-if="dish?.isArchived" class="dish-detail__archived-banner">
+      <v-icon size="14" icon="mdi-archive-outline" class="dish-detail__archived-icon" />
+      This dish is archived — it won't appear in suggestions or the active catalog.
+      <span class="dish-detail__archived-hint">Reactivate anytime below.</span>
+    </div>
+
     <!-- Header: breadcrumb + name + rating + stat + overflow menu -->
     <DishDetailHeader
       v-if="dish || loading"
@@ -83,6 +131,26 @@ async function doDelete() {
       @move="moveDialog = true"
       @delete="deleteDialog = true"
     />
+
+    <!-- Archive / Reactivate action -->
+    <div v-if="dish && !loading" class="dish-detail__archive-action mb-4">
+      <button
+        v-if="!dish.isArchived"
+        class="dish-detail__archive-btn"
+        @click="archiveDialog = true"
+      >
+        <v-icon size="14" icon="mdi-archive-arrow-down-outline" />
+        Archive dish
+      </button>
+      <button
+        v-else
+        class="dish-detail__archive-btn dish-detail__archive-btn--reactivate"
+        @click="reactivateDialog = true"
+      >
+        <v-icon size="14" icon="mdi-archive-arrow-up-outline" />
+        Reactivate dish
+      </button>
+    </div>
 
     <!-- Two-column layout: notes on left, ratings + dates on right -->
     <!-- align="start" prevents Vuetify from stretching columns to equal height -->
@@ -169,6 +237,37 @@ async function doDelete() {
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Archive confirmation dialog -->
+    <v-dialog v-model="archiveDialog" width="400">
+      <v-card>
+        <v-card-title>Archive dish?</v-card-title>
+        <v-card-text>
+          <strong>{{ dish?.name }}</strong> will be removed from suggestions and the active catalog.
+          You can reactivate it at any time.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" :disabled="archiveLoading" @click="archiveDialog = false">Cancel</v-btn>
+          <v-btn variant="text" color="warning" :loading="archiveLoading" @click="doArchive">Archive</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Reactivate confirmation dialog -->
+    <v-dialog v-model="reactivateDialog" width="400">
+      <v-card>
+        <v-card-title>Reactivate dish?</v-card-title>
+        <v-card-text>
+          <strong>{{ dish?.name }}</strong> will be restored to the active catalog and become eligible for suggestions again.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" :disabled="reactivateLoading" @click="reactivateDialog = false">Cancel</v-btn>
+          <v-btn variant="text" color="primary" :loading="reactivateLoading" @click="doReactivate">Reactivate</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -183,4 +282,68 @@ async function doDelete() {
   gap: var(--space-3);
 }
 
+/* Archived banner — warm strip using app palette, not Vuetify warning blue */
+.dish-detail__archived-banner {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background-color: rgba(var(--color-primary-rgb), 0.06);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.dish-detail__archived-icon {
+  color: var(--color-accent);
+  flex-shrink: 0;
+  position: relative;
+  top: 1px;
+}
+
+.dish-detail__archived-hint {
+  margin-left: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* Archive / reactivate button — understated, dashed for archive; solid for reactivate */
+.dish-detail__archive-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-3);
+  background: none;
+  border: 1px dashed var(--color-border-medium);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.dish-detail__archive-btn:hover {
+  border-color: var(--color-text-secondary);
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface-variant);
+}
+
+.dish-detail__archive-btn--reactivate {
+  border-style: solid;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.dish-detail__archive-btn--reactivate:hover {
+  background-color: rgba(var(--color-primary-rgb), 0.06);
+  border-color: var(--color-primary-dark);
+  color: var(--color-primary-dark);
+}
 </style>

@@ -37,6 +37,8 @@ namespace EzDinner.Query.Core.DishQueries
 
         public IEnumerable<RatingQueryModel>? Ratings { get; set; }
 
+        public bool IsArchived { get; set; }
+
         public static DishDetails CreateNew(Dish dish, IReadOnlyList<Dinner> dinners)
         {
             if (dish is null) throw new ArgumentNullException(nameof(dish));
@@ -49,7 +51,8 @@ namespace EzDinner.Query.Core.DishQueries
                 Url = dish.Url?.ToString() ?? "",
                 Notes = dish.Notes ?? "",
                 DishStats = new DishStats(dish.Id, dinners),
-                Dates = CreateDinnersWithDaysBetween(dinners)
+                Dates = CreateDinnersWithDaysBetween(dinners),
+                IsArchived = dish.IsArchived
             };
         }
 

@@ -16,8 +16,11 @@ function normalizeLocalDate(date: LocalDateLike): string {
 export class DishesRepository {
   constructor(private apiFetch: ApiFetch) {}
 
-  all(familyId: string) {
-    return this.apiFetch<Dish[]>(`/api/dishes/family/${familyId}`)
+  all(familyId: string, includeArchived = false) {
+    const url = includeArchived
+      ? `/api/dishes/family/${familyId}?includeArchived=true`
+      : `/api/dishes/family/${familyId}`
+    return this.apiFetch<Dish[]>(url)
   }
 
   get(dishId: string) {
@@ -66,5 +69,13 @@ export class DishesRepository {
 
   updateNotes(dishId: string, notes: string, url: string) {
     return this.apiFetch(`/api/dishes/${dishId}/notes`, { method: 'PUT', body: { notes, url } })
+  }
+
+  archive(familyId: string, dishId: string) {
+    return this.apiFetch(`/api/families/${familyId}/dishes/${dishId}/archive`, { method: 'PATCH' })
+  }
+
+  reactivate(familyId: string, dishId: string) {
+    return this.apiFetch(`/api/families/${familyId}/dishes/${dishId}/reactivate`, { method: 'PATCH' })
   }
 }

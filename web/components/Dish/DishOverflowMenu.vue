@@ -10,6 +10,7 @@ const emit = defineEmits<{
   move: []
   delete: []
   converted: []
+  archived: []
 }>()
 
 const route = useRoute()
@@ -24,6 +25,32 @@ const currentDish = computed(() =>
   props.dish ?? dishesStore.dishes.find(d => d.id === routeDishId.value),
 )
 const dishId = computed(() => currentDish.value?.id)
+
+const archiveDialog = shallowRef(false)
+const archiveLoading = shallowRef(false)
+
+async function doArchive() {
+  if (!dishId.value) return
+  archiveLoading.value = true
+  const isCurrentlyArchived = currentDish.value?.isArchived ?? false
+  try {
+    if (isCurrentlyArchived) {
+      await dishRepo.reactivate(appStore.activeFamilyId, dishId.value)
+      showSnackbar('Dish reactivated', { type: 'success' })
+    } else {
+      await dishRepo.archive(appStore.activeFamilyId, dishId.value)
+      showSnackbar('Dish archived', { type: 'success' })
+    }
+    dishesStore.populateDishes()
+    archiveDialog.value = false
+    emit('archived')
+  } catch {
+    showSnackbar('Failed, please try again', { type: 'error' })
+    archiveDialog.value = false
+  } finally {
+    archiveLoading.value = false
+  }
+}
 
 const convertDialog = shallowRef(false)
 const convertReason = ref('')
@@ -90,6 +117,12 @@ async function doConvert() {
         title="Convert to opt-outs"
         @click="openConvertDialog"
       />
+      <v-list-item
+        v-if="dishId"
+        :prepend-icon="currentDish?.isArchived ? 'mdi-archive-arrow-up-outline' : 'mdi-archive-arrow-down-outline'"
+        :title="currentDish?.isArchived ? 'Reactivate' : 'Archive'"
+        @click="archiveDialog = true"
+      />
       <v-divider />
       <v-list-item
         prepend-icon="mdi-delete-outline"
@@ -99,6 +132,34 @@ async function doConvert() {
       />
     </v-list>
   </v-menu>
+
+  <!-- Archive / Reactivate dialog -->
+  <v-dialog v-model="archiveDialog" width="400">
+    <v-card>
+      <v-card-title>{{ currentDish?.isArchived ? 'Reactivate dish?' : 'Archive dish?' }}</v-card-title>
+      <v-card-text>
+        <template v-if="currentDish?.isArchived">
+          <strong>{{ currentDish?.name }}</strong> will be restored to the active catalog and become eligible for suggestions again.
+        </template>
+        <template v-else>
+          <strong>{{ currentDish?.name }}</strong> will be removed from suggestions and the active catalog.
+          You can reactivate it at any time.
+        </template>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" :disabled="archiveLoading" @click="archiveDialog = false">Cancel</v-btn>
+        <v-btn
+          variant="text"
+          :color="currentDish?.isArchived ? 'primary' : undefined"
+          :loading="archiveLoading"
+          @click="doArchive"
+        >
+          {{ currentDish?.isArchived ? 'Reactivate' : 'Archive' }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 
   <!-- Convert to opt-outs dialog -->
   <v-dialog v-model="convertDialog" width="440">

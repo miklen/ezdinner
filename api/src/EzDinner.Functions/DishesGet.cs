@@ -37,7 +37,8 @@ namespace EzDinner.Functions
 
             _logger.LogInformation("GetDishes called for familyId " + familyId);
             var parsedId = Guid.Parse(familyId);
-            var dishes = await _dishRepository.GetDishesAsync(parsedId);
+            var includeArchived = string.Equals(req.Query["includeArchived"], "true", StringComparison.OrdinalIgnoreCase);
+            var dishes = await _dishRepository.GetDishesAsync(parsedId, includeArchived);
 
             return new OkObjectResult(dishes.Select(DishesQueryModel.FromDomain));
         }

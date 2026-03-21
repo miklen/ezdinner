@@ -12,6 +12,11 @@ const stats = ref<Record<string, DishStats>>({})
 const newDishName = shallowRef('')
 const newDishDialog = shallowRef(false)
 const loading = shallowRef(true)
+const showArchived = shallowRef(false)
+// Local list for catalog display — allows toggling archived visibility independently.
+// Does NOT sync with dishesStore.dishes, which always holds active dishes only.
+// Other pages (plan, dish picker) rely on the store being a clean active-dish list.
+const allDishes = ref<Dish[]>([])
 
 // ── Sort state ────────────────────────────────────────────────────────────────
 
@@ -49,9 +54,10 @@ const sortChips: { key: SortKey; label: string }[] = [
 
 const dishes = computed<Dish[]>(() => {
   const query = searchDish.value.toLowerCase()
-  const filtered = dishesStore.dishes.filter((d) =>
-    d.name?.toLowerCase().includes(query),
-  )
+  const filtered = allDishes.value.filter((d) => {
+    if (showArchived.value !== d.isArchived) return false
+    return d.name?.toLowerCase().includes(query)
+  })
 
   const dir = sortDir.value === 'asc' ? 1 : -1
 
@@ -72,8 +78,12 @@ const dishes = computed<Dish[]>(() => {
   })
 })
 
-const hasNoDishesAtAll = computed(() => !loading.value && dishesStore.dishes.length === 0)
-const hasNoSearchResults = computed(() => !loading.value && dishesStore.dishes.length > 0 && dishes.value.length === 0)
+const activeDishes = computed(() => allDishes.value.filter((d) => !d.isArchived))
+const archivedDishes = computed(() => allDishes.value.filter((d) => d.isArchived))
+
+const hasNoDishesAtAll = computed(() => !loading.value && activeDishes.value.length === 0 && !showArchived.value)
+const hasNoArchivedDishes = computed(() => !loading.value && archivedDishes.value.length === 0 && showArchived.value)
+const hasNoSearchResults = computed(() => !loading.value && dishes.value.length === 0 && !hasNoDishesAtAll.value && !hasNoArchivedDishes.value)
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 
@@ -81,10 +91,21 @@ async function loadStats() {
   stats.value = await dishRepo.allUsageStats(appStore.activeFamilyId)
 }
 
+async function loadDishes() {
+  allDishes.value = await dishRepo.all(appStore.activeFamilyId, showArchived.value)
+}
+
 async function init() {
   loading.value = true
-  await dishesStore.populateDishes()
-  await loadStats()
+  await Promise.all([loadDishes(), dishesStore.populateDishes(), loadStats()])
+  loading.value = false
+}
+
+async function toggleArchived() {
+  if (loading.value) return
+  showArchived.value = !showArchived.value
+  loading.value = true
+  await loadDishes()
   loading.value = false
 }
 
@@ -114,15 +135,28 @@ watch(
     <!-- ── Header row ──────────────────────────────────────────────────────── -->
     <div class="catalog__header">
       <h1 class="text-page-title catalog__heading">Dishes</h1>
-      <v-btn
-        color="primary"
-        variant="tonal"
-        prepend-icon="mdi-plus"
-        rounded="lg"
-        @click="newDishDialog = true"
-      >
-        Add dish
-      </v-btn>
+      <div class="catalog__header-actions">
+        <v-btn
+          :color="showArchived ? 'secondary' : undefined"
+          :variant="showArchived ? 'tonal' : 'outlined'"
+          :aria-label="showArchived ? 'Hide archived dishes' : 'Show archived dishes'"
+          prepend-icon="mdi-archive-outline"
+          rounded="lg"
+          size="small"
+          @click="toggleArchived"
+        >
+          {{ showArchived ? 'Hide archived' : 'Show archived' }}
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="tonal"
+          prepend-icon="mdi-plus"
+          rounded="lg"
+          @click="newDishDialog = true"
+        >
+          Add dish
+        </v-btn>
+      </div>
     </div>
 
     <!-- ── Search bar ──────────────────────────────────────────────────────── -->
@@ -159,6 +193,12 @@ watch(
       </v-chip>
     </div>
 
+    <!-- ── Archived view banner ───────────────────────────────────────────── -->
+    <div v-if="showArchived && !loading" class="catalog__archived-banner">
+      <v-icon size="14" icon="mdi-archive-outline" class="catalog__archived-banner-icon" />
+      Archived dishes are hidden from suggestions and the active catalog.
+    </div>
+
     <!-- ── Skeleton loaders ────────────────────────────────────────────────── -->
     <div v-if="loading" class="dish-grid">
       <v-skeleton-loader
@@ -177,6 +217,13 @@ watch(
       action-label="Add a dish"
     />
 
+    <!-- ── Empty: no archived dishes ──────────────────────────────────────── -->
+    <EmptyState
+      v-else-if="hasNoArchivedDishes"
+      icon="mdi-archive-outline"
+      message="No archived dishes."
+    />
+
     <!-- ── Empty: search returned nothing ─────────────────────────────────── -->
     <EmptyState
       v-else-if="hasNoSearchResults"
@@ -191,7 +238,9 @@ watch(
         :key="dish.id"
         :dish="dish"
         :dish-stats="stats[dish.id]"
+        :class="{ 'dish-card--archived': dish.isArchived }"
         @menuitem:moved="loadStats"
+        @archived="init"
       />
     </div>
 
@@ -236,6 +285,12 @@ watch(
   margin-bottom: var(--space-4);
 }
 
+.catalog__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .catalog__heading {
   margin: 0;
 }
@@ -276,5 +331,32 @@ watch(
   .dish-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+.catalog__archived-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+  background-color: var(--color-surface-variant);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.catalog__archived-banner-icon {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.dish-card--archived {
+  filter: grayscale(25%) opacity(0.65);
+  transition: filter var(--duration-fast) var(--ease-out);
+}
+
+.dish-card--archived:hover {
+  filter: grayscale(10%) opacity(0.85);
 }
 </style>

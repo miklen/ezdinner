@@ -1,7 +1,7 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Family can request a full-week dinner suggestion
-The system SHALL return one suggested dish per unplanned day for a 7-day period starting on a given Monday, based on each dish's usage history, rating, and leftover patterns.
+The system SHALL return one suggested dish per unplanned day for a 7-day period starting on a given Monday, based on each dish's usage history, rating, and leftover patterns. Archived and soft-deleted dishes SHALL be excluded from candidates.
 
 #### Scenario: Week suggestion returned for unplanned week
 - **WHEN** a family member requests a week suggestion for a week with no dinners planned
@@ -28,21 +28,10 @@ The system SHALL return one suggested dish per unplanned day for a 7-day period 
 - **AND** that dish is suggested or planned for the preceding day
 - **THEN** it SHALL receive a leftover bonus on the following day
 
-#### Scenario: Dish deleted from catalog is not suggested
+#### Scenario: Soft-deleted dish is not suggested
 - **WHEN** a dish is soft-deleted
 - **THEN** it SHALL NOT appear in any suggestion
 
 #### Scenario: Archived dish is not suggested
 - **WHEN** a dish is archived
 - **THEN** it SHALL NOT appear in any suggestion
-
-### Requirement: Family can reroll the full-week suggestion
-The system SHALL accept a list of previously suggested dish IDs to exclude and return a new set of suggestions that avoids those dishes wherever possible.
-
-#### Scenario: Reroll excludes previous suggestions
-- **WHEN** a family member rerolls the week suggestion with an exclusion list
-- **THEN** the response SHALL NOT include any dish from the exclusion list unless no other eligible dish exists
-
-#### Scenario: Reroll falls back when exclusion list exhausts candidates
-- **WHEN** the exclusion list covers all eligible dishes for a given day
-- **THEN** the system SHALL return the best-scoring dish regardless of the exclusion list for that day

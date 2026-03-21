@@ -19,6 +19,10 @@ The system SHALL return one suggested dish for a specific date, scored using the
 - **WHEN** a dish is soft-deleted
 - **THEN** it SHALL NOT appear as a suggestion for any date
 
+#### Scenario: Archived dishes are excluded
+- **WHEN** a dish is archived
+- **THEN** it SHALL NOT appear as a suggestion for any date
+
 ### Requirement: Family can reroll the single-day suggestion
 The system SHALL accept a list of previously suggested dish IDs to exclude for that date and return a new suggestion that avoids those dishes wherever possible.
 

@@ -31,7 +31,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
             if (existingDinner is not null && existingDinner.IsPlanned)
                 return null;
 
-            var dishes = await _dishRepository.GetDishesAsync(familyId);
+            var dishes = (await _dishRepository.GetDishesAsync(familyId)).Where(d => !d.IsArchived).ToList();
             var allDinners = new List<Dinner>();
             await foreach (var dinner in _dinnerRepository.GetAsync(familyId, LocalDate.MinIsoValue, LocalDate.MaxIsoValue))
                 allDinners.Add(dinner);
@@ -52,7 +52,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
 
         public async Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds)
         {
-            var dishes = await _dishRepository.GetDishesAsync(familyId);
+            var dishes = (await _dishRepository.GetDishesAsync(familyId)).Where(d => !d.IsArchived).ToList();
             var allDinners = new List<Dinner>();
             await foreach (var dinner in _dinnerRepository.GetAsync(familyId, LocalDate.MinIsoValue, LocalDate.MaxIsoValue))
                 allDinners.Add(dinner);

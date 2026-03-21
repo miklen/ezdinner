@@ -13,6 +13,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'menuitem:moved': []
+  archived: []
 }>()
 
 const appStore = useAppStore()
@@ -117,6 +118,7 @@ async function doMove() {
             @edit-name="enableEditNameMode"
             @move="moveDialog = true"
             @delete="confirmDialog = true"
+            @archived="emit('archived')"
           />
         </div>
 
@@ -126,6 +128,7 @@ async function doMove() {
           class="dish-card__name text-card-title"
         >
           {{ name }}
+          <span v-if="dish.isArchived" class="dish-card__archived-label">archived</span>
         </div>
 
         <!-- Name: inline edit mode -->
@@ -300,5 +303,20 @@ async function doMove() {
 
 .dish-card__stat {
   margin: 0;
+}
+
+.dish-card__archived-label {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: var(--space-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border-medium);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  line-height: 1.6;
 }
 </style>

@@ -47,6 +47,7 @@ export interface Dish {
   dates: DinnerDate[]
   dishStats: DishStats
   ratings: Rating[]
+  isArchived: boolean
 }
 
 export interface DishSelector {
