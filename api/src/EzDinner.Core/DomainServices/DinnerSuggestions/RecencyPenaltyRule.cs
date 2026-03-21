@@ -1,6 +1,6 @@
 namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
-    public class RecencyPenaltyRule : IScoringRule
+    public class RecencyPenaltyRule : IExplainableScoringRule
     {
         private const int ZeroScoreThresholdDays = 3;
         private const int RecencyPenaltyDays = 7;
@@ -16,6 +16,17 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
                 return RecentUsePenalty;
 
             return 0.0;
+        }
+
+        public string? Explain(DishCandidateValueObject candidate, SuggestionContextValueObject context)
+        {
+            if (candidate.DaysSinceLast <= ZeroScoreThresholdDays)
+                return "Too recently served";
+
+            if (candidate.DaysSinceLast <= RecencyPenaltyDays)
+                return $"Served {candidate.DaysSinceLast} days ago";
+
+            return null;
         }
     }
 }

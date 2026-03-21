@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
@@ -9,15 +10,20 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
         public double TotalScore { get; }
         public double Rating { get; }
         public int DaysSinceLast { get; }
+        public IReadOnlyList<string> Reasons { get; }
 
-        public DishScoreValueObject(Guid dishId, string dishName, double totalScore, double rating, int daysSinceLast)
+        public DishScoreValueObject(Guid dishId, string dishName, double totalScore, double rating, int daysSinceLast, IReadOnlyList<string>? reasons = null)
         {
             DishId = dishId;
             DishName = dishName;
             TotalScore = totalScore;
             Rating = rating;
             DaysSinceLast = daysSinceLast;
+            Reasons = reasons ?? Array.Empty<string>();
         }
+
+        public DishScoreValueObject WithReasons(IReadOnlyList<string> reasons)
+            => new(DishId, DishName, TotalScore, Rating, DaysSinceLast, reasons);
 
         public int CompareTo(DishScoreValueObject? other)
         {

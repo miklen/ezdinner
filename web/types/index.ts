@@ -104,6 +104,7 @@ export interface DishSuggestion {
   dishName: string
   rating: number
   daysSinceLast: number
+  reasons: string[]
 }
 
 export interface DaySuggestion {

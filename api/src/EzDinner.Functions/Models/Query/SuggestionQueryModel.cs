@@ -12,6 +12,7 @@ namespace EzDinner.Functions.Models.Query
         public string DishName { get; set; } = string.Empty;
         public double Rating { get; set; }
         public int DaysSinceLast { get; set; }
+        public string[] Reasons { get; set; } = Array.Empty<string>();
     }
 
     public class WeekSuggestionItemQueryModel

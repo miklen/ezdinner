@@ -2,7 +2,7 @@ using EzDinner.Core.Aggregates.DishAggregate;
 
 namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
-    public class SeasonalAffinityRule : IScoringRule
+    public class SeasonalAffinityRule : IExplainableScoringRule
     {
         private const double SeasonMatchBoost = 8.0;
         private const double SeasonMismatchPenalty = -8.0;
@@ -18,6 +18,19 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
                 return SeasonMatchBoost;
 
             return SeasonMismatchPenalty;
+        }
+
+        public string? Explain(DishCandidateValueObject candidate, SuggestionContextValueObject context)
+        {
+            if (candidate.SeasonAffinity is null || candidate.SeasonAffinity == SeasonAffinity.AllYear)
+                return null;
+
+            var currentSeason = DeriveSeasonFrom(context.TargetDate.Month);
+
+            if (candidate.SeasonAffinity == currentSeason)
+                return "Matches the season";
+
+            return "Out of season";
         }
 
         private static SeasonAffinity DeriveSeasonFrom(int month) => month switch

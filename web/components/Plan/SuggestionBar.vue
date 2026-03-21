@@ -17,6 +17,7 @@ const { suggestions, loading, exhausted, suggestWeek, rerollWeek, rerollDay, cle
 const weekStartIso = computed(() => props.weekStart.toFormat('yyyy-MM-dd'))
 const hasLoaded = ref(false)
 const expanded = ref(false)
+const showAlgorithmInfo = ref(false)
 
 // Per-day effort preferences — ephemeral to this planning session (task 7.3)
 const effortPreferences = ref<Record<string, EffortLevel | null>>({})
@@ -81,16 +82,26 @@ function onReroll(date: string) {
 <template>
   <div class="suggestion-bar">
     <div class="bar-header">
-      <button
-        class="bar-label-toggle clickable"
-        @click="expanded = !expanded"
-      >
-        <v-icon size="14" class="bar-icon">mdi-lightbulb-outline</v-icon>
-        <span class="bar-label">Suggestions</span>
-        <v-icon size="14" class="bar-chevron">
-          {{ expanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
-        </v-icon>
-      </button>
+      <div class="bar-label-group">
+        <button
+          class="bar-label-toggle clickable"
+          @click="expanded = !expanded"
+        >
+          <v-icon size="14" class="bar-icon">mdi-lightbulb-outline</v-icon>
+          <span class="bar-label">Suggestions</span>
+          <v-icon size="14" class="bar-chevron">
+            {{ expanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+          </v-icon>
+        </button>
+        <button
+          class="algo-info-btn"
+          :class="{ active: showAlgorithmInfo }"
+          aria-label="How suggestions are ranked"
+          @click="showAlgorithmInfo = !showAlgorithmInfo"
+        >
+          <v-icon size="13">mdi-help-circle-outline</v-icon>
+        </button>
+      </div>
       <div class="bar-actions">
         <button v-if="hasLoaded" class="reset-btn" title="Clear suggestions" @click="onReset">
           <v-icon size="14">mdi-close</v-icon>
@@ -99,6 +110,12 @@ function onReroll(date: string) {
           <v-icon size="14">{{ hasLoaded ? 'mdi-dice-multiple' : 'mdi-lightbulb-outline' }}</v-icon>
           {{ hasLoaded ? 'Suggest again' : 'Suggest week' }}
         </button>
+      </div>
+    </div>
+
+    <div class="algo-info-wrapper" :class="{ open: showAlgorithmInfo }">
+      <div class="algo-info">
+        Ranked by: <strong>rating</strong> · <strong>how long overdue</strong> · <strong>seasonal fit</strong> · <strong>effort match</strong> · <strong>leftover patterns</strong>. Dishes served in the last 7 days are down-ranked.
       </div>
     </div>
 
@@ -181,6 +198,55 @@ function onReroll(date: string) {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
+}
+
+.bar-label-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.algo-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: rgba(var(--color-primary-rgb), 0.45);
+  cursor: pointer;
+  transition: color 0.15s ease;
+  padding: 0;
+}
+
+.algo-info-btn:hover,
+.algo-info-btn.active {
+  color: rgba(var(--color-primary-rgb), 0.9);
+}
+
+.algo-info-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s ease;
+}
+
+.algo-info-wrapper.open {
+  grid-template-rows: 1fr;
+}
+
+.algo-info {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  padding-top: 6px;
+}
+
+.algo-info strong {
+  color: rgba(var(--color-primary-rgb), 0.75);
+  font-weight: 600;
 }
 
 .bar-label-toggle {
