@@ -125,6 +125,7 @@ async function saveEdit() {
       <!-- Notes: edit mode -->
       <div v-if="editMode" class="notes-card__editor">
         <textarea ref="textareaRef" />
+        <p class="notes-card__hint">Mention prep time, season, and main ingredients for better suggestions</p>
       </div>
 
       <!-- Notes: view mode -->
@@ -233,5 +234,12 @@ async function saveEdit() {
   color: var(--color-text-muted);
   font-style: italic;
   margin: 0;
+}
+
+.notes-card__hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 </style>

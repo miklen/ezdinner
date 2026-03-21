@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import type { Dish, DishStats } from '~/types'
+import type { Dish, DishMetadata, DishStats } from '~/types'
 
 type ApiFetch = <T>(path: string, options?: Parameters<typeof $fetch>[1]) => Promise<T>
 type LocalDateLike = string | { year: number; month: number; day: number }
@@ -42,7 +42,15 @@ export class DishesRepository {
   }
 
   create(familyId: string, dishName: string) {
-    return this.apiFetch('/api/dishes', { method: 'POST', body: { name: dishName, familyId } })
+    return this.apiFetch<string>('/api/dishes', { method: 'POST', body: { name: dishName, familyId } })
+  }
+
+  enrich(familyId: string, dishId: string) {
+    return this.apiFetch(`/api/families/${familyId}/dishes/${dishId}/enrich`, { method: 'POST' })
+  }
+
+  updateMetadata(familyId: string, dishId: string, metadata: Partial<DishMetadata>) {
+    return this.apiFetch(`/api/families/${familyId}/dishes/${dishId}/metadata`, { method: 'PATCH', body: metadata })
   }
 
   delete(familyId: string, dishId: string) {

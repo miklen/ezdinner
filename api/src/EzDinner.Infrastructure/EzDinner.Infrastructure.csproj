@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Anthropic.SDK" Version="4.0.0" />
     <PackageReference Include="Azure.Identity" Version="1.13.1" />
     <PackageReference Include="Casbin.NET" Version="2.19.1" />
     <PackageReference Include="Casbin.NET.Adapter.EFCore" Version="2.4.0" />
@@ -20,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EzDinner.Application\EzDinner.Application.csproj" />
     <ProjectReference Include="..\EzDinner.Authorization.Core\EzDinner.Authorization.Core.csproj" />
     <ProjectReference Include="..\EzDinner.Core\EzDinner.Core.csproj" />
     <ProjectReference Include="..\EzDinner.Query.Core\EzDinner.Query.Core.csproj" />

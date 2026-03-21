@@ -12,6 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   move: []
   delete: []
+  renamed: []
 }>()
 
 const dishesStore = useDishesStore()
@@ -55,6 +56,7 @@ async function doRename() {
     localName.value = trimmed
     await dishesStore.updateDish(props.dish.id)
     showSnackbar('Dish renamed', { type: 'success' })
+    emit('renamed')
   } catch {
     showSnackbar('Failed to rename dish', { type: 'error' })
   }

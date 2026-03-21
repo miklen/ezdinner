@@ -15,6 +15,7 @@ const { show: showSnackbar } = useSnackbar()
 
 const dish = ref<Dish | null>(null)
 const loading = shallowRef(true)
+const enriching = shallowRef(false)
 
 const userId = computed(() => $msal.getObjectId())
 const familyMembers = computed(() => familiesStore.activeFamily?.familyMembers ?? [])
@@ -29,7 +30,24 @@ async function loadDish() {
   }
 }
 
+// Enriching on name/notes change: the dish name and notes are the primary inputs
+// to AI enrichment, so any change to them should re-run analysis.
+async function triggerEnrich() {
+  if (enriching.value) return
+  await loadDish()
+  enriching.value = true
+  try {
+    await dishRepo.enrich(appStore.activeFamilyId, route.params.id as string)
+    await loadDish()
+  } catch {
+    showSnackbar('AI analysis failed — metadata not updated', { type: 'error' })
+  } finally {
+    enriching.value = false
+  }
+}
+
 onMounted(loadDish)
+onUnmounted(() => { enriching.value = false })
 watch(() => appStore.activeFamilyId, () => navigateTo('/dishes'))
 
 // ── Move occurrences dialog ────────────────────────────────────────────────────
@@ -130,6 +148,7 @@ async function doReactivate() {
       :loading="loading"
       @move="moveDialog = true"
       @delete="deleteDialog = true"
+      @renamed="triggerEnrich"
     />
 
     <!-- Archive / Reactivate action -->
@@ -162,6 +181,7 @@ async function doReactivate() {
           :initial-notes="dish?.notes ?? ''"
           :initial-url="dish?.url ?? ''"
           :loading="loading"
+          @updated="triggerEnrich"
         />
       </v-col>
 
@@ -175,6 +195,16 @@ async function doReactivate() {
             :family-members="familyMembers"
             :user-id="userId"
             :loading="loading"
+            @updated="loadDish"
+          />
+
+          <!-- Dish metadata (AI enrichment) -->
+          <!-- Nuxt auto-import: Dish/DishMetadataCard.vue → <DishMetadataCard> -->
+          <DishMetadataCard
+            v-if="dish"
+            :dish="dish"
+            :family-id="appStore.activeFamilyId"
+            :enriching="enriching"
             @updated="loadDish"
           />
 

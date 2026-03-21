@@ -1,7 +1,9 @@
-﻿using Azure.Identity;
+﻿using Anthropic.SDK;
+using Azure.Identity;
 using Casbin;
 using Casbin.Persist.Adapter.EFCore;
 using Casbin.Model;
+using EzDinner.Application.Commands.Dishes;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.DishAggregate;
@@ -77,6 +79,14 @@ namespace EzDinner.Infrastructure
             services.AddScoped<IDinnerRepository, DinnerRepository>();
             services.AddScoped<IFamilyQueryRepository, FamilyRepository>();
             services.AddSingleton<IAuthzRepository, AuthzRepository>();
+            return services;
+        }
+
+        public static IServiceCollection RegisterEnrichment(this IServiceCollection services, IConfiguration configuration)
+        {
+            var apiKey = configuration.GetValue<string>("Anthropic:ApiKey")!;
+            services.AddSingleton(_ => new AnthropicClient(new APIAuthentication(apiKey)));
+            services.AddScoped<IDishEnrichmentProvider, AnthropicEnrichmentProvider>();
             return services;
         }
 

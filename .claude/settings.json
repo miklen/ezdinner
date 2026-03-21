@@ -1,24 +1,4 @@
 {
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-backend-review.sh\"",
-            "timeout": 10,
-            "statusMessage": "Checking if backend review is required..."
-          },
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-frontend-review.sh\"",
-            "timeout": 10,
-            "statusMessage": "Checking if frontend review is required..."
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Bash(npm install)",

@@ -6,6 +6,7 @@ useHead({ title: 'Dishes' })
 const appStore = useAppStore()
 const dishesStore = useDishesStore()
 const { dishes: dishRepo } = useRepositories()
+const { show: showSnackbar } = useSnackbar()
 
 const searchDish = shallowRef('')
 const stats = ref<Record<string, DishStats>>({})
@@ -81,6 +82,16 @@ const dishes = computed<Dish[]>(() => {
 const activeDishes = computed(() => allDishes.value.filter((d) => !d.isArchived))
 const archivedDishes = computed(() => allDishes.value.filter((d) => d.isArchived))
 
+const pendingReviewCount = computed(() =>
+  allDishes.value.filter(
+    (d) =>
+      (!d.rolesConfirmed && d.roles?.length) ||
+      (!d.effortLevelConfirmed && d.effortLevel) ||
+      (!d.seasonAffinityConfirmed && d.seasonAffinity) ||
+      (!d.cuisineConfirmed && d.cuisine),
+  ).length,
+)
+
 const hasNoDishesAtAll = computed(() => !loading.value && activeDishes.value.length === 0 && !showArchived.value)
 const hasNoArchivedDishes = computed(() => !loading.value && archivedDishes.value.length === 0 && showArchived.value)
 const hasNoSearchResults = computed(() => !loading.value && dishes.value.length === 0 && !hasNoDishesAtAll.value && !hasNoArchivedDishes.value)
@@ -112,9 +123,12 @@ async function toggleArchived() {
 async function createDish() {
   const trimmed = newDishName.value.trim()
   if (!trimmed) return
-  await dishRepo.create(appStore.activeFamilyId, trimmed)
+  const dishId = await dishRepo.create(appStore.activeFamilyId, trimmed)
   newDishName.value = ''
   newDishDialog.value = false
+  dishRepo.enrich(appStore.activeFamilyId, dishId).catch(() => {
+    showSnackbar('AI analysis failed — you can edit metadata manually from the dish page', { type: 'error' })
+  })
   await init()
 }
 
@@ -136,6 +150,18 @@ watch(
     <div class="catalog__header">
       <h1 class="text-page-title catalog__heading">Dishes</h1>
       <div class="catalog__header-actions">
+        <v-btn
+          v-if="pendingReviewCount > 0"
+          variant="outlined"
+          prepend-icon="mdi-auto-fix"
+          rounded="lg"
+          size="small"
+          :to="'/dishes/review'"
+          :aria-label="`Review ${pendingReviewCount} pending AI suggestions`"
+        >
+          Review AI suggestions
+          <span class="catalog__review-badge" aria-hidden="true">{{ pendingReviewCount }}</span>
+        </v-btn>
         <v-btn
           :color="showArchived ? 'secondary' : undefined"
           :variant="showArchived ? 'tonal' : 'outlined'"
@@ -358,5 +384,21 @@ watch(
 
 .dish-card--archived:hover {
   filter: grayscale(10%) opacity(0.85);
+}
+
+.catalog__review-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--space-4);
+  height: var(--space-4);
+  padding: 0 var(--space-1);
+  margin-left: var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
+  color: white;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1;
 }
 </style>

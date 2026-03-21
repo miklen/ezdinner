@@ -17,6 +17,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         public Uri? Url { get; private set; }
         public IEnumerable<Tag> Tags { get; }
         public string Notes { get; private set; }
+        public DishMetadataValueObject Metadata { get; private set; }
 
         /// <summary>
         /// Rating in 10 steps. Values are between 0-10.
@@ -26,7 +27,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         /// <summary>
         /// For serialization purpose only. Does not protect invariants and constraints.
         /// </summary>
-        public Dish(Guid id, Guid familyId, string name, Uri? url, IEnumerable<Tag> tags, string notes, bool deleted, IEnumerable<Rating> ratings, bool isArchived = false) : base(id)
+        public Dish(Guid id, Guid familyId, string name, Uri? url, IEnumerable<Tag> tags, string notes, bool deleted, IEnumerable<Rating> ratings, bool isArchived = false, DishMetadataValueObject? metadata = null) : base(id)
         {
             FamilyId = familyId;
             Name = name;
@@ -36,6 +37,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
             Deleted = deleted;
             IsArchived = isArchived;
             _ratings = ratings?.ToList() ?? new List<Rating>();
+            Metadata = metadata ?? DishMetadataValueObject.Empty;
         }
 
         public static Dish CreateNew(Guid familyId, string name)
@@ -102,6 +104,11 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         public void SetNotes(string notes)
         {
             Notes = notes;
+        }
+
+        public void UpdateMetadata(DishMetadataValueObject incoming)
+        {
+            Metadata = Metadata.MergeWith(incoming);
         }
 
         public bool MigrateRating(Guid fromMemberId, Guid toMemberId)

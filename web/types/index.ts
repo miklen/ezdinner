@@ -1,5 +1,20 @@
 import type { DateTime } from 'luxon'
 
+export type DishRole = 'Main' | 'Side' | 'Dessert' | 'Other'
+export type EffortLevel = 'Quick' | 'Medium' | 'Elaborate'
+export type SeasonAffinity = 'Summer' | 'Winter' | 'Spring' | 'Autumn' | 'AllYear'
+
+export interface DishMetadata {
+  roles: DishRole[]
+  rolesConfirmed: boolean
+  effortLevel: EffortLevel | null
+  effortLevelConfirmed: boolean
+  seasonAffinity: SeasonAffinity | null
+  seasonAffinityConfirmed: boolean
+  cuisine: string | null
+  cuisineConfirmed: boolean
+}
+
 export interface Tag {
   value: string
   color: string
@@ -48,6 +63,14 @@ export interface Dish {
   dishStats: DishStats
   ratings: Rating[]
   isArchived: boolean
+  roles?: DishRole[]
+  rolesConfirmed?: boolean
+  effortLevel?: EffortLevel | null
+  effortLevelConfirmed?: boolean
+  seasonAffinity?: SeasonAffinity | null
+  seasonAffinityConfirmed?: boolean
+  cuisine?: string | null
+  cuisineConfirmed?: boolean
 }
 
 export interface DishSelector {

@@ -20,6 +20,7 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
             var dinnerList = allDinners.ToList();
             return dishes
                 .Where(d => !d.Deleted)
+                .Where(d => d.Metadata.Roles.Count == 0 || d.Metadata.Roles.Contains(DishRole.Main)) // Count == 0 means not yet enriched — include unenriched dishes so they still surface in suggestions
                 .Select(d => BuildCandidate(d, dinnerList, targetDate));
         }
 

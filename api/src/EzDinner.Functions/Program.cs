@@ -1,3 +1,4 @@
+using EzDinner.Application.Commands.Dishes;
 using EzDinner.Application.Commands.FamilyMembers;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
@@ -12,11 +13,16 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Identity.Web;
+using System.Text.Json.Serialization;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
     .ConfigureServices((context, services) =>
     {
+        services.AddMvcCore().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
         services.AddAuthentication(options =>
             {
                 options.DefaultScheme = Microsoft.Identity.Web.Constants.Bearer;
@@ -34,6 +40,9 @@ var host = new HostBuilder()
             .RegisterCosmosDb(context.Configuration.GetSection("CosmosDb"))
             .RegisterCasbin(context.Configuration.GetSection("CosmosDb"))
             .RegisterRepositories()
+            .RegisterEnrichment(context.Configuration)
+            .AddScoped<UpdateDishMetadataCommandHandler>()
+            .AddScoped<EnrichDishCommandHandler>()
             .AddScoped<MergeNonAutonomousMemberCommand>()
             .AddScoped<SetMemberRoleCommand>()
             .AddScoped<IDinnerService, DinnerService>()
