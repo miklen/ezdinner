@@ -15,11 +15,11 @@ namespace EzDinner.Functions
 {
     public class DishesGet
     {
-        private readonly ILogger<DishCreate> _logger;
+        private readonly ILogger<DishesGet> _logger;
         private readonly IDishQueryRepository _dishRepository;
         private readonly IAuthzService _authz;
 
-        public DishesGet(ILogger<DishCreate> logger, IDishQueryRepository dishRepository, IAuthzService authz)
+        public DishesGet(ILogger<DishesGet> logger, IDishQueryRepository dishRepository, IAuthzService authz)
         {
             _logger = logger;
             _dishRepository = dishRepository;
@@ -35,8 +35,10 @@ namespace EzDinner.Functions
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Dish, Actions.Read)) return new UnauthorizedResult();
 
+            if (!Guid.TryParse(familyId, out var parsedId))
+                return new BadRequestObjectResult("Invalid family ID.");
+
             _logger.LogInformation("GetDishes called for familyId " + familyId);
-            var parsedId = Guid.Parse(familyId);
             var includeArchived = string.Equals(req.Query["includeArchived"], "true", StringComparison.OrdinalIgnoreCase);
             var dishes = await _dishRepository.GetDishesAsync(parsedId, includeArchived);
 

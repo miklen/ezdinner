@@ -24,7 +24,7 @@ namespace EzDinner.Application.Commands.FamilyMembers
 
             family.MergeNonAutonomousMember(nonAutonomousId, autonomousId);
 
-            var dishes = await _dishRepository.GetDishesAsync(familyId);
+            var dishes = await _dishRepository.GetDishesAsync(familyId, includeArchived: true);
             var toSave = dishes.Where(d => d.MigrateRating(nonAutonomousId, autonomousId)).ToList();
 
             await Task.WhenAll(toSave.Select(d => _dishRepository.SaveAsync(d)));

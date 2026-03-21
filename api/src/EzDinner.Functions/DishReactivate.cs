@@ -33,10 +33,13 @@ namespace EzDinner.Functions
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Dish, Actions.Update)) return new UnauthorizedResult();
 
+            if (!Guid.TryParse(familyId, out var parsedFamilyId) || !Guid.TryParse(dishId, out var parsedDishId))
+                return new BadRequestObjectResult("Invalid family or dish ID.");
+
             try
             {
                 var command = new ReactivateDishCommand(_dishRepository);
-                await command.Handle(Guid.Parse(familyId), Guid.Parse(dishId));
+                await command.Handle(parsedFamilyId, parsedDishId);
                 return new OkResult();
             }
             catch (InvalidOperationException e)
