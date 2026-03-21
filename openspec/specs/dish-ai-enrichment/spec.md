@@ -65,3 +65,9 @@ The dish form SHALL display a hint near the notes field explaining what informat
 - **WHEN** a family member opens the dish form (create or edit)
 - **THEN** a hint SHALL be visible near the notes field
 - **AND** the hint SHALL mention prep time, season, and main ingredients as examples of useful notes
+
+## REMOVED Requirements
+
+### Requirement: Bulk review page for pending AI suggestions
+**Reason**: The dedicated `/dishes/review` page and its triggering button in the catalog header are redundant — users can see and confirm AI-suggested metadata directly on each dish's detail page immediately after creation or editing.
+**Migration**: No migration needed. Users edit AI suggestions inline on the dish detail page as before. The `*Confirmed` flags on dish metadata remain unchanged.
