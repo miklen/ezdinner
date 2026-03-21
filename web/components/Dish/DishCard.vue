@@ -54,6 +54,43 @@ const statCaption = computed(() => {
 })
 
 // Left border accent color by rating tier
+const ROLE_ICONS: Record<string, string> = {
+  Main: 'mdi-silverware-fork-knife',
+  Side: 'mdi-food-variant',
+  Dessert: 'mdi-cake-variant-outline',
+  Other: 'mdi-dots-horizontal',
+}
+const EFFORT_ICONS: Record<string, string> = {
+  Quick: 'mdi-lightning-bolt',
+  Medium: 'mdi-clock-outline',
+  Elaborate: 'mdi-chef-hat',
+}
+const SEASON_DATA: Record<string, { icon: string; label: string }> = {
+  Summer: { icon: 'mdi-weather-sunny', label: 'Summer' },
+  Winter: { icon: 'mdi-snowflake', label: 'Winter' },
+  Spring: { icon: 'mdi-flower-outline', label: 'Spring' },
+  Autumn: { icon: 'mdi-leaf', label: 'Autumn' },
+  AllYear: { icon: 'mdi-calendar-blank-outline', label: 'All year' },
+}
+
+const metadataTags = computed(() => {
+  const tags: { icon: string; label: string }[] = []
+  for (const role of props.dish.roles ?? []) {
+    tags.push({ icon: ROLE_ICONS[role] ?? 'mdi-silverware-fork-knife', label: role })
+  }
+  if (props.dish.effortLevel) {
+    tags.push({ icon: EFFORT_ICONS[props.dish.effortLevel] ?? 'mdi-clock-outline', label: props.dish.effortLevel })
+  }
+  if (props.dish.seasonAffinity) {
+    const s = SEASON_DATA[props.dish.seasonAffinity]
+    if (s) tags.push(s)
+  }
+  if (props.dish.cuisine) {
+    tags.push({ icon: 'mdi-earth', label: props.dish.cuisine })
+  }
+  return tags
+})
+
 const accentColor = computed(() => {
   const r = props.dish.rating
   if (r >= 4) return 'var(--color-accent)'
@@ -176,6 +213,15 @@ async function doMove() {
         <p class="dish-card__stat text-caption-label">
           {{ statCaption }}
         </p>
+
+        <!-- Metadata tags -->
+        <div v-if="metadataTags.length" class="dish-card__tags">
+          <span
+            v-for="tag in metadataTags"
+            :key="tag.label"
+            class="meta-tag"
+          ><v-icon :icon="tag.icon" size="9" />{{ tag.label }}</span>
+        </div>
       </div>
     </v-card>
   </div>
@@ -306,6 +352,28 @@ async function doMove() {
 
 .dish-card__stat {
   margin: 0;
+}
+
+.dish-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--space-2);
+}
+
+.meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  line-height: 1.5;
 }
 
 .dish-card__archived-label {

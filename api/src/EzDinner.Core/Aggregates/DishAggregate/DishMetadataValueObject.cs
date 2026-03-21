@@ -60,15 +60,22 @@ namespace EzDinner.Core.Aggregates.DishAggregate
             SeasonAffinity? seasonAffinity,
             string? cuisine)
         {
+            // Never overwrite a field that the user has already manually confirmed.
+            // AI suggestions only fill in unconfirmed or empty fields.
+            var applyRoles = roles?.Count > 0 && !current.RolesConfirmed;
+            var applyEffort = effortLevel.HasValue && !current.EffortLevelConfirmed;
+            var applySeason = seasonAffinity.HasValue && !current.SeasonAffinityConfirmed;
+            var applyCuisine = cuisine != null && !current.CuisineConfirmed;
+
             return new DishMetadataValueObject(
-                roles: roles?.Count > 0 ? roles : current.Roles,
-                rolesConfirmed: roles?.Count > 0 ? false : current.RolesConfirmed,
-                effortLevel: effortLevel ?? current.EffortLevel,
-                effortLevelConfirmed: effortLevel.HasValue ? false : current.EffortLevelConfirmed,
-                seasonAffinity: seasonAffinity ?? current.SeasonAffinity,
-                seasonAffinityConfirmed: seasonAffinity.HasValue ? false : current.SeasonAffinityConfirmed,
-                cuisine: cuisine ?? current.Cuisine,
-                cuisineConfirmed: cuisine != null ? false : current.CuisineConfirmed);
+                roles: applyRoles ? roles! : current.Roles,
+                rolesConfirmed: applyRoles ? false : current.RolesConfirmed,
+                effortLevel: applyEffort ? effortLevel : current.EffortLevel,
+                effortLevelConfirmed: applyEffort ? false : current.EffortLevelConfirmed,
+                seasonAffinity: applySeason ? seasonAffinity : current.SeasonAffinity,
+                seasonAffinityConfirmed: applySeason ? false : current.SeasonAffinityConfirmed,
+                cuisine: applyCuisine ? cuisine : current.Cuisine,
+                cuisineConfirmed: applyCuisine ? false : current.CuisineConfirmed);
         }
 
         public DishMetadataValueObject MergeWith(DishMetadataValueObject incoming)

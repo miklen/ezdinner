@@ -15,11 +15,6 @@ export interface DishMetadata {
   cuisineConfirmed: boolean
 }
 
-export interface Tag {
-  value: string
-  color: string
-}
-
 export interface MenuItem {
   dishId: string
   dishName: string
@@ -29,7 +24,6 @@ export interface Dinner {
   description: string
   date: DateTime
   menu: MenuItem[]
-  tags: Tag[]
   isPlanned: boolean
   isOptedOut: boolean
   optOutReason: string | null
@@ -56,7 +50,6 @@ export interface Dish {
   name: string
   id: string
   url: string
-  tags: Tag[]
   notes: string
   rating: number
   dates: DinnerDate[]
@@ -77,7 +70,6 @@ export interface DishSelector {
   name: string
   id: string
   url: string
-  tags: Tag[]
   rating: number
 }
 

@@ -33,6 +33,11 @@ namespace EzDinner.Functions
             )
         {
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
+            // Route does not carry familyId, so we load the dish first to get its family,
+            // then authorize. The load-before-auth pattern is safe here because:
+            // (a) CosmosDB dish IDs are UUIDs — not guessable by enumeration, and
+            // (b) no data is returned before authorization passes.
+            // A future improvement is to include familyId in the route and authorize first.
             var dish = await _dishRepository.GetDishAsync(Guid.Parse(dishId));
             if (dish is null) return new BadRequestObjectResult("DISH_NOT_FOUND");
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, dish.FamilyId, Resources.Dish, Actions.Read)) return new UnauthorizedResult();
