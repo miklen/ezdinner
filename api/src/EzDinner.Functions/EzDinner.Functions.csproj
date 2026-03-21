@@ -8,7 +8,7 @@
     <UserSecretsId>37e774c1-a07d-44ec-8c7a-d247dd30c82d</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper" Version="15.1.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Casbin.NET" Version="2.19.1" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.51.0" />
