@@ -2,7 +2,7 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
     public class OverdueScoringRule : IScoringRule
     {
-        private const double OverdueWeight = 10.0;
+        private const double OverdueWeight = 3.0;
         private const double DefaultTypicalFrequencyDays = 14.0;
 
         public double Score(DishCandidateValueObject candidate, SuggestionContextValueObject context)

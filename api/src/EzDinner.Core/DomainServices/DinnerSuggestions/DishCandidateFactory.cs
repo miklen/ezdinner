@@ -45,7 +45,9 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
                 dish.Rating,
                 daysSinceLast,
                 typicalFrequencyDays,
-                leftoverFrequencyRatio);
+                leftoverFrequencyRatio,
+                dish.Metadata.EffortLevel,
+                dish.Metadata.SeasonAffinity);
         }
 
         private static double ComputeTypicalFrequencyDays(List<LocalDate> sortedDates)

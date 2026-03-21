@@ -1,3 +1,4 @@
+using EzDinner.Core.Aggregates.DishAggregate;
 using System;
 
 namespace EzDinner.Core.DomainServices.DinnerSuggestions
@@ -10,6 +11,8 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
         public int DaysSinceLast { get; }
         public double TypicalFrequencyDays { get; }
         public double LeftoverFrequencyRatio { get; }
+        public EffortLevel? EffortLevel { get; }
+        public SeasonAffinity? SeasonAffinity { get; }
 
         public DishCandidateValueObject(
             Guid dishId,
@@ -17,7 +20,9 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
             double rating,
             int daysSinceLast,
             double typicalFrequencyDays,
-            double leftoverFrequencyRatio)
+            double leftoverFrequencyRatio,
+            EffortLevel? effortLevel = null,
+            SeasonAffinity? seasonAffinity = null)
         {
             DishId = dishId;
             DishName = dishName;
@@ -25,6 +30,8 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
             DaysSinceLast = daysSinceLast;
             TypicalFrequencyDays = typicalFrequencyDays;
             LeftoverFrequencyRatio = leftoverFrequencyRatio;
+            EffortLevel = effortLevel;
+            SeasonAffinity = seasonAffinity;
         }
     }
 }

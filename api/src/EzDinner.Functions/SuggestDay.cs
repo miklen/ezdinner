@@ -1,5 +1,6 @@
 using AutoMapper;
 using EzDinner.Authorization.Core;
+using EzDinner.Core.Aggregates.DishAggregate;
 using EzDinner.Functions.Models.Query;
 using EzDinner.Query.Core.SuggestionQueries;
 using Microsoft.AspNetCore.Http;
@@ -49,10 +50,11 @@ namespace EzDinner.Functions
             var parsedFamilyId = Guid.Parse(familyId);
             var parsedDate = LocalDatePattern.Iso.Parse(date).GetValueOrThrow();
             var excludedDishIds = ParseExcludedDishIds(req.Query["exclude"]);
+            var effortPreference = ParseEffortLevel(req.Query["effortPreference"]);
 
             _logger.LogInformation("SuggestDay called for familyId={FamilyId}, date={Date}", familyId, date);
 
-            var suggestion = await _suggestionService.SuggestDay(parsedFamilyId, parsedDate, excludedDishIds);
+            var suggestion = await _suggestionService.SuggestDay(parsedFamilyId, parsedDate, excludedDishIds, effortPreference);
 
             if (suggestion is null)
                 return new OkObjectResult((SuggestionQueryModel?)null);
@@ -71,6 +73,14 @@ namespace EzDinner.Functions
                 .Where(g => g.HasValue)
                 .Select(g => g!.Value)
                 .ToList();
+        }
+
+        private static EffortLevel? ParseEffortLevel(Microsoft.Extensions.Primitives.StringValues value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return null;
+
+            return Enum.TryParse<EffortLevel>(value.ToString(), ignoreCase: true, out var level) ? level : null;
         }
     }
 }

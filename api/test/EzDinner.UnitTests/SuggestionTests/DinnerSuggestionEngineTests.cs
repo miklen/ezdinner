@@ -52,7 +52,7 @@ namespace EzDinner.UnitTests.SuggestionTests
 
             var ranked = engine.Rank(new[] { candidate }, _context);
 
-            var expectedScore = 5.0 + 10.0;
+            var expectedScore = 5.0 + 3.0;
             Assert.Equal(expectedScore, ranked[0].TotalScore, precision: 10);
         }
 

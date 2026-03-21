@@ -25,7 +25,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
             _dinnerRepository = dinnerRepository;
         }
 
-        public async Task<DishScoreValueObject?> SuggestDay(Guid familyId, LocalDate date, IReadOnlyList<Guid> excludedDishIds)
+        public async Task<DishScoreValueObject?> SuggestDay(Guid familyId, LocalDate date, IReadOnlyList<Guid> excludedDishIds, EffortLevel? effortPreference = null)
         {
             var existingDinner = await _dinnerRepository.GetAsync(familyId, date);
             if (existingDinner is not null && existingDinner.IsPlanned)
@@ -43,14 +43,14 @@ namespace EzDinner.Query.Core.SuggestionQueries
                 .SelectMany(d => d.Menu.Select(m => m.DishId))
                 .ToList();
 
-            var context = new SuggestionContextValueObject(date, adjacentDishIds, excludedDishIds);
+            var context = new SuggestionContextValueObject(date, adjacentDishIds, excludedDishIds, effortPreference);
             var ranked = _engine.Rank(candidates, context);
 
             return ranked.FirstOrDefault(s => !excludedDishIds.Contains(s.DishId))
                 ?? ranked.FirstOrDefault();
         }
 
-        public async Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds)
+        public async Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds, Dictionary<LocalDate, EffortLevel>? effortPreferences = null)
         {
             var dishes = (await _dishRepository.GetDishesAsync(familyId)).Where(d => !d.IsArchived).ToList();
             var allDinners = new List<Dinner>();
@@ -77,7 +77,8 @@ namespace EzDinner.Query.Core.SuggestionQueries
                 var candidates = DishCandidateFactory.BuildCandidates(dishes, allDinners, date);
 
                 var effectiveExclusions = excludedDishIds.Concat(suggestedThisWeek).ToList();
-                var context = new SuggestionContextValueObject(date, adjacentDishIds, effectiveExclusions);
+                var dayEffortPreference = effortPreferences?.GetValueOrDefault(date);
+                var context = new SuggestionContextValueObject(date, adjacentDishIds, effectiveExclusions, dayEffortPreference);
                 var ranked = _engine.Rank(candidates, context);
 
                 var selected = ranked.FirstOrDefault(s => !effectiveExclusions.Contains(s.DishId))

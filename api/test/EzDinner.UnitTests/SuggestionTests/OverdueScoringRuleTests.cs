@@ -21,7 +21,7 @@ namespace EzDinner.UnitTests.SuggestionTests
 
             var score = _rule.Score(candidate, _context);
 
-            Assert.Equal(10.0, score, precision: 10);
+            Assert.Equal(3.0, score, precision: 10);
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace EzDinner.UnitTests.SuggestionTests
 
             var score = _rule.Score(candidate, _context);
 
-            Assert.Equal(10.0, score, precision: 10);
+            Assert.Equal(3.0, score, precision: 10);
         }
     }
 }

@@ -1,4 +1,4 @@
-import type { DaySuggestion } from '~/types'
+import type { DaySuggestion, EffortLevel } from '~/types'
 
 export function useDinnerSuggestions() {
   const appStore = useAppStore()
@@ -12,14 +12,14 @@ export function useDinnerSuggestions() {
   // Global week-level exclusion list (for rerollWeek)
   const weekExcluded = ref<string[]>([])
 
-  async function suggestWeek(weekStart: string) {
+  async function suggestWeek(weekStart: string, effortPreferences?: Record<string, EffortLevel>) {
     loading.value = true
     exhausted.value = false
     excludedByDate.value = {}
     weekExcluded.value = []
     try {
       const { suggestions: repo } = useRepositories()
-      suggestions.value = await repo.suggestWeek(appStore.activeFamilyId, weekStart)
+      suggestions.value = await repo.suggestWeek(appStore.activeFamilyId, weekStart, undefined, effortPreferences)
       weekExcluded.value = suggestions.value
         .map((s) => s.suggestion?.dishId)
         .filter((id): id is string => !!id)
@@ -28,11 +28,11 @@ export function useDinnerSuggestions() {
     }
   }
 
-  async function suggestDay(date: string) {
+  async function suggestDay(date: string, effortPreference?: EffortLevel | null) {
     loading.value = true
     try {
       const { suggestions: repo } = useRepositories()
-      const result = await repo.suggestDay(appStore.activeFamilyId, date, excludedByDate.value[date])
+      const result = await repo.suggestDay(appStore.activeFamilyId, date, excludedByDate.value[date], effortPreference)
       const idx = suggestions.value.findIndex((s) => s.date === date)
       const entry: DaySuggestion = { date, suggestion: result }
       if (idx >= 0) {
@@ -45,7 +45,7 @@ export function useDinnerSuggestions() {
     }
   }
 
-  async function rerollWeek(weekStart: string) {
+  async function rerollWeek(weekStart: string, effortPreferences?: Record<string, EffortLevel>) {
     loading.value = true
     try {
       const { suggestions: repo } = useRepositories()
@@ -53,6 +53,7 @@ export function useDinnerSuggestions() {
         appStore.activeFamilyId,
         weekStart,
         weekExcluded.value,
+        effortPreferences,
       )
       // Accumulate new suggestions into exclusion list for next reroll
       const newIds = newSuggestions
@@ -68,7 +69,7 @@ export function useDinnerSuggestions() {
     }
   }
 
-  async function rerollDay(date: string) {
+  async function rerollDay(date: string, effortPreference?: EffortLevel | null) {
     const currentSuggestion = suggestions.value.find((s) => s.date === date)?.suggestion
     if (currentSuggestion) {
       excludedByDate.value = {
@@ -76,7 +77,7 @@ export function useDinnerSuggestions() {
         [date]: [...(excludedByDate.value[date] ?? []), currentSuggestion.dishId],
       }
     }
-    await suggestDay(date)
+    await suggestDay(date, effortPreference)
   }
 
   function clearSuggestionForDate(date: string) {

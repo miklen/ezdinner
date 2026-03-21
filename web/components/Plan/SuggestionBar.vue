@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
-import type { Dinner } from '~/types'
+import type { Dinner, EffortLevel } from '~/types'
 
 const props = defineProps<{
   weekStart: DateTime
@@ -16,13 +16,30 @@ const { suggestions, loading, exhausted, suggestWeek, rerollWeek, rerollDay, cle
 
 const weekStartIso = computed(() => props.weekStart.toFormat('yyyy-MM-dd'))
 const hasLoaded = ref(false)
-const expanded = ref(true)
+const expanded = ref(false)
+
+// Per-day effort preferences — ephemeral to this planning session (task 7.3)
+const effortPreferences = ref<Record<string, EffortLevel | null>>({})
+
+const activeEffortPreferences = computed(() => {
+  const result: Record<string, EffortLevel> = {}
+  for (const [date, level] of Object.entries(effortPreferences.value)) {
+    if (level) result[date] = level
+  }
+  return Object.keys(result).length > 0 ? result : undefined
+})
 
 const plannedDates = computed(() =>
   new Set(
     props.plannedDinners
       .filter((d) => d.isPlanned && d.date >= props.weekStart)
       .map((d) => d.date.toFormat('yyyy-MM-dd')),
+  ),
+)
+
+const unplannedWeekDays = computed(() =>
+  Array.from({ length: 7 }, (_, i) => props.weekStart.plus({ days: i }).toFormat('yyyy-MM-dd')).filter(
+    (date) => !plannedDates.value.has(date),
   ),
 )
 
@@ -37,24 +54,27 @@ const showEmptyMessage = computed(() =>
 
 function onReset() {
   reset()
+  effortPreferences.value = {}
   hasLoaded.value = false
-  expanded.value = true
 }
 
 async function onSuggest() {
   if (!hasLoaded.value) {
-    await suggestWeek(weekStartIso.value)
+    await suggestWeek(weekStartIso.value, activeEffortPreferences.value)
     hasLoaded.value = true
-    expanded.value = true
   } else {
-    await rerollWeek(weekStartIso.value)
-    expanded.value = true
+    await rerollWeek(weekStartIso.value, activeEffortPreferences.value)
   }
+  expanded.value = true
 }
 
 function onUse(date: string, dishId: string, dishName: string) {
   clearSuggestionForDate(date)
   emit('dish:used', date, dishId, dishName)
+}
+
+function onReroll(date: string) {
+  rerollDay(date, effortPreferences.value[date] ?? null)
 }
 </script>
 
@@ -62,14 +82,12 @@ function onUse(date: string, dishId: string, dishName: string) {
   <div class="suggestion-bar">
     <div class="bar-header">
       <button
-        class="bar-label-toggle"
-        :class="{ clickable: hasLoaded }"
-        :disabled="!hasLoaded"
-        @click="hasLoaded && (expanded = !expanded)"
+        class="bar-label-toggle clickable"
+        @click="expanded = !expanded"
       >
         <v-icon size="14" class="bar-icon">mdi-lightbulb-outline</v-icon>
         <span class="bar-label">Suggestions</span>
-        <v-icon v-if="hasLoaded" size="14" class="bar-chevron">
+        <v-icon size="14" class="bar-chevron">
           {{ expanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
         </v-icon>
       </button>
@@ -84,27 +102,47 @@ function onUse(date: string, dishId: string, dishName: string) {
       </div>
     </div>
 
-    <template v-if="expanded && hasLoaded">
-      <p v-if="showEmptyMessage" class="empty-message">
-        No more options — all days are covered or candidates exhausted.
-      </p>
-
-      <div v-if="hasSuggestions" class="suggestion-list">
-        <div
-          v-for="(item, i) in visibleSuggestions"
-          :key="item.date"
-          class="suggestion-row"
-          :style="{ animationDelay: `${i * 40}ms` }"
-        >
-          <span class="suggestion-day">{{ DateTime.fromISO(item.date).toFormat('EEE d') }}</span>
-          <PlanSuggestedDish
-            :date="item.date"
-            :suggestion="item.suggestion!"
-            @use="onUse"
-            @reroll="rerollDay"
-          />
+    <template v-if="expanded">
+      <template v-if="!hasLoaded">
+        <div class="suggestion-list">
+          <div
+            v-for="date in unplannedWeekDays"
+            :key="date"
+            class="suggestion-row"
+          >
+            <div class="suggestion-row__meta">
+              <span class="suggestion-day">{{ DateTime.fromISO(date).toFormat('EEE d') }}</span>
+              <PlanEffortSelector v-model="effortPreferences[date]" />
+            </div>
+          </div>
         </div>
-      </div>
+      </template>
+
+      <template v-else>
+        <p v-if="showEmptyMessage" class="empty-message">
+          No more options — all days are covered or candidates exhausted.
+        </p>
+
+        <div v-if="hasSuggestions" class="suggestion-list">
+          <div
+            v-for="(item, i) in visibleSuggestions"
+            :key="item.date"
+            class="suggestion-row"
+            :style="{ animationDelay: `${i * 40}ms` }"
+          >
+            <div class="suggestion-row__meta">
+              <span class="suggestion-day">{{ DateTime.fromISO(item.date).toFormat('EEE d') }}</span>
+              <PlanEffortSelector v-model="effortPreferences[item.date]" />
+            </div>
+            <PlanSuggestedDish
+              :date="item.date"
+              :suggestion="item.suggestion!"
+              @use="onUse"
+              @reroll="onReroll"
+            />
+          </div>
+        </div>
+      </template>
     </template>
   </div>
 </template>
@@ -231,9 +269,27 @@ function onUse(date: string, dishId: string, dishName: string) {
 
 .suggestion-row {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: 5px;
   animation: row-in 0.22s ease both;
+}
+
+.suggestion-row__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (min-width: 600px) {
+  .suggestion-row {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .suggestion-row__meta {
+    flex-shrink: 0;
+  }
 }
 
 @keyframes row-in {
