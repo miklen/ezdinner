@@ -2,6 +2,8 @@
 import { DateTime } from 'luxon'
 import type { Dish, DishStats } from '~/types'
 
+defineOptions({ inheritAttrs: false })
+
 const props = withDefaults(defineProps<{
   dish: Dish
   dishStats?: DishStats
@@ -98,6 +100,7 @@ async function doMove() {
   <!-- Card — full height so sibling cards in the same row align -->
   <div
     class="dish-card-wrap"
+    v-bind="$attrs"
     :style="{ '--accent': accentColor }"
   >
     <v-card

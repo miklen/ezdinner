@@ -57,6 +57,7 @@ Review ONLY the recently written or modified code unless explicitly asked to rev
 
 ### 5. UX Quality (Critical Dimension)
 Evaluate as a UX designer would:
+- **Responsive design**: The app is used both on mobile and desktop. Ensure that all features are designed equally well for both platforms and uses responsive design.
 - **Flow clarity**: Is the user journey obvious? Are CTAs prominent and labeled clearly?
 - **Feedback**: Do actions provide immediate feedback (loading states, success/error messages)?
 - **Error states**: Are errors communicated helpfully, not just technically?

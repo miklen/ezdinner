@@ -8,7 +8,7 @@
 - **Debugging errors**: load `technical-investigator` skill before diagnosing any issue
 
 ## Project Overview
-EzDinner is a family dinner planning app. Users belong to families and plan weekly dinners from a dish catalog. Multi-tenant by family, with per-family RBAC authorization.
+EzDinner is a family dinner planning app. Users belong to families and plan weekly dinners from a dish catalog. Multi-tenant by family, with per-family RBAC authorization. The app is used on both desktop and mobile. Main driver on desktop is planning while main for mobile is viewing the plan. Always ensure that any frontend changes works equally well on mobile and desktop layout.
 
 ## Structure
 A CQRS architecture

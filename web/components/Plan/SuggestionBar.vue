@@ -112,7 +112,10 @@ function onReroll(date: string) {
           >
             <div class="suggestion-row__meta">
               <span class="suggestion-day">{{ DateTime.fromISO(date).toFormat('EEE d') }}</span>
-              <PlanEffortSelector v-model="effortPreferences[date]" />
+              <PlanEffortSelector
+                :model-value="effortPreferences[date] ?? null"
+                @update:model-value="effortPreferences[date] = $event"
+              />
             </div>
           </div>
         </div>
@@ -132,7 +135,10 @@ function onReroll(date: string) {
           >
             <div class="suggestion-row__meta">
               <span class="suggestion-day">{{ DateTime.fromISO(item.date).toFormat('EEE d') }}</span>
-              <PlanEffortSelector v-model="effortPreferences[item.date]" />
+              <PlanEffortSelector
+                :model-value="effortPreferences[item.date] ?? null"
+                @update:model-value="effortPreferences[item.date] = $event"
+              />
             </div>
             <PlanSuggestedDish
               :date="item.date"
