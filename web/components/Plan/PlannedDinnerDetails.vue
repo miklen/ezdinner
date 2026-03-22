@@ -16,13 +16,20 @@ const dishesStore = useDishesStore()
 const dinnersStore = useDinnersStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
 const { smAndDown } = useDisplay()
+const { t } = useI18n()
 
-const DEFAULT_OPT_OUT_PICKS = ['Vacation', 'Eating out', 'Restaurant', 'Guests', 'Leftovers']
+const defaultOptOutPicks = computed(() => [
+  t('plan.optOut.vacation'),
+  t('plan.optOut.eatingOut'),
+  t('plan.optOut.restaurant'),
+  t('plan.optOut.guests'),
+  t('plan.optOut.leftovers'),
+])
 
 const optOutQuickPicks = computed(() =>
   dinnersStore.previousOptOutReasons.length > 0
     ? dinnersStore.previousOptOutReasons
-    : DEFAULT_OPT_OUT_PICKS,
+    : defaultOptOutPicks.value,
 )
 const customOptOutReason = ref('')
 const optOutLoading = ref(false)
@@ -146,7 +153,7 @@ function focusMobileSearch() {
             class="dinner-details__optout-remove"
             @click="removeOptOut"
           >
-            Remove
+            {{ $t('common.remove') }}
           </v-btn>
         </div>
       </template>
@@ -176,7 +183,7 @@ function focusMobileSearch() {
           prepend-icon="mdi-plus"
           @click="mobileSheetOpen = true"
         >
-          Add dish to menu
+          {{ $t('plan.addDishToMenu') }}
         </v-btn>
 
         <v-bottom-sheet
@@ -187,7 +194,7 @@ function focusMobileSearch() {
           <v-card class="sheet-card">
             <div class="sheet-handle" />
             <div class="sheet-header">
-              <span class="sheet-title">Add dish</span>
+              <span class="sheet-title">{{ $t('plan.addDish') }}</span>
             </div>
 
             <div class="sheet-search">
@@ -196,7 +203,7 @@ function focusMobileSearch() {
                 v-model="dishSearch"
                 variant="outlined"
                 density="compact"
-                placeholder="Search dishes..."
+                :placeholder="$t('plan.searchDishes')"
                 prepend-inner-icon="mdi-magnify"
                 clearable
                 hide-details
@@ -221,14 +228,14 @@ function focusMobileSearch() {
                         {{ formatRating(dish.rating) }}
                       </span>
                       <span v-if="getDaysSince(dish) !== null" class="dish-row__days">
-                        {{ getDaysSince(dish) }}d ago
+                        {{ $t('plan.dAgo', { days: getDaysSince(dish) }) }}
                       </span>
                     </div>
                   </v-list-item>
                 </template>
 
                 <v-list-item v-if="filteredDishes.length === 0 && !dishSearch">
-                  <span class="text-body-2 text-medium-emphasis">No dishes yet</span>
+                  <span class="text-body-2 text-medium-emphasis">{{ $t('plan.noDishesYet') }}</span>
                 </v-list-item>
 
                 <template v-if="dishSearch">
@@ -238,7 +245,7 @@ function focusMobileSearch() {
                       <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
                     </template>
                     <span class="text-body-2">
-                      Create <strong>"{{ dishSearch }}"</strong>
+                      {{ $t('plan.createDish', { name: dishSearch }) }}
                     </span>
                   </v-list-item>
                 </template>
@@ -260,8 +267,8 @@ function focusMobileSearch() {
         return-object
         variant="outlined"
         density="compact"
-        label="Add dish to menu"
-        placeholder="Search dishes..."
+        :label="$t('plan.addDishToMenu')"
+        :placeholder="$t('plan.searchDishes')"
         class="dinner-details__autocomplete"
         @update:model-value="onDishSelected"
         @keyup.enter="createDish"
@@ -275,7 +282,7 @@ function focusMobileSearch() {
                 {{ formatRating(item.raw.rating) }}
               </span>
               <span v-if="getDaysSince(item.raw) !== null" class="dish-row__days">
-                {{ getDaysSince(item.raw) }}d ago
+                {{ $t('plan.dAgo', { days: getDaysSince(item.raw) }) }}
               </span>
             </div>
           </v-list-item>
@@ -283,14 +290,14 @@ function focusMobileSearch() {
 
         <template #no-data>
           <v-list-item v-if="!dishSearch">
-            <span class="text-body-2 text-medium-emphasis">Start typing to search</span>
+            <span class="text-body-2 text-medium-emphasis">{{ $t('plan.startTypingToSearch') }}</span>
           </v-list-item>
           <v-list-item v-else class="create-dish-item" @click="createDish">
             <template #prepend>
               <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
             </template>
             <span class="text-body-2">
-              Create <strong>"{{ dishSearch }}"</strong>
+              {{ $t('plan.createDish', { name: dishSearch }) }}
             </span>
           </v-list-item>
         </template>
@@ -303,7 +310,7 @@ function focusMobileSearch() {
                 <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
               </template>
               <span class="text-body-2">
-                Create <strong>"{{ dishSearch }}"</strong>
+                {{ $t('plan.createDish', { name: dishSearch }) }}
               </span>
             </v-list-item>
           </template>
@@ -314,7 +321,7 @@ function focusMobileSearch() {
         <div class="dinner-details__optout-toggle-row">
           <button class="dinner-details__optout-toggle" @click="showOptOut = !showOptOut">
             <v-icon size="13">{{ showOptOut ? 'mdi-chevron-up' : 'mdi-calendar-remove-outline' }}</v-icon>
-            {{ showOptOut ? 'Cancel' : 'Skip day' }}
+            {{ showOptOut ? $t('plan.cancelSkip') : $t('plan.skipDay') }}
           </button>
         </div>
 
@@ -335,7 +342,7 @@ function focusMobileSearch() {
             <input
               v-model="customOptOutReason"
               class="dinner-details__optout-input"
-              placeholder="Other reason..."
+              :placeholder="$t('plan.otherReasonPlaceholder')"
               maxlength="50"
               @keyup.enter="setOptOut(customOptOutReason)"
             >

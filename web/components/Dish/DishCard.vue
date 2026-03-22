@@ -21,6 +21,7 @@ const emit = defineEmits<{
 const appStore = useAppStore()
 const dishesStore = useDishesStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
+const { t } = useI18n()
 
 const confirmDialog = shallowRef(false)
 const moveDialog = shallowRef(false)
@@ -47,10 +48,10 @@ const daysAgo = computed(() =>
 
 const statCaption = computed(() => {
   const n = effectiveStats.value.timesUsed
-  if (n === 0) return 'Never planned for dinner'
-  const times = `${n} time${n === 1 ? '' : 's'}`
-  if (!effectiveStats.value.lastUsed) return `Had ${times}`
-  return `Had ${times} · last ${daysAgo.value}d ago`
+  if (n === 0) return t('dishes.neverPlanned')
+  const times = n === 1 ? t('dishes.hadTime') : t('dishes.hadTimes', { count: n })
+  if (!effectiveStats.value.lastUsed) return times
+  return `${times} · ${daysAgo.value}d`
 })
 
 // Left border accent color by rating tier
@@ -65,25 +66,25 @@ const EFFORT_ICONS: Record<string, string> = {
   Medium: 'mdi-clock-outline',
   Elaborate: 'mdi-chef-hat',
 }
-const SEASON_DATA: Record<string, { icon: string; label: string }> = {
-  Summer: { icon: 'mdi-weather-sunny', label: 'Summer' },
-  Winter: { icon: 'mdi-snowflake', label: 'Winter' },
-  Spring: { icon: 'mdi-flower-outline', label: 'Spring' },
-  Autumn: { icon: 'mdi-leaf', label: 'Autumn' },
-  AllYear: { icon: 'mdi-calendar-blank-outline', label: 'All year' },
+const SEASON_ICONS: Record<string, string> = {
+  Summer: 'mdi-weather-sunny',
+  Winter: 'mdi-snowflake',
+  Spring: 'mdi-flower-outline',
+  Autumn: 'mdi-leaf',
+  AllYear: 'mdi-calendar-blank-outline',
 }
 
 const metadataTags = computed(() => {
   const tags: { icon: string; label: string }[] = []
   for (const role of props.dish.roles ?? []) {
-    tags.push({ icon: ROLE_ICONS[role] ?? 'mdi-silverware-fork-knife', label: role })
+    tags.push({ icon: ROLE_ICONS[role] ?? 'mdi-silverware-fork-knife', label: t(`dishes.roles.${role}`) })
   }
   if (props.dish.effortLevel) {
-    tags.push({ icon: EFFORT_ICONS[props.dish.effortLevel] ?? 'mdi-clock-outline', label: props.dish.effortLevel })
+    tags.push({ icon: EFFORT_ICONS[props.dish.effortLevel] ?? 'mdi-clock-outline', label: t(`dishes.effortLevels.${props.dish.effortLevel}`) })
   }
   if (props.dish.seasonAffinity) {
-    const s = SEASON_DATA[props.dish.seasonAffinity]
-    if (s) tags.push(s)
+    const icon = SEASON_ICONS[props.dish.seasonAffinity]
+    if (icon) tags.push({ icon, label: t(`dishes.seasons.${props.dish.seasonAffinity}`) })
   }
   if (props.dish.cuisine) {
     tags.push({ icon: 'mdi-earth', label: props.dish.cuisine })
@@ -168,7 +169,7 @@ async function doMove() {
           class="dish-card__name text-card-title"
         >
           {{ name }}
-          <span v-if="dish.isArchived" class="dish-card__archived-label">archived</span>
+          <span v-if="dish.isArchived" class="dish-card__archived-label">{{ $t('dishes.archivedLabel') }}</span>
         </div>
 
         <!-- Name: inline edit mode -->
@@ -229,15 +230,12 @@ async function doMove() {
   <!-- Delete confirmation -->
   <v-dialog v-model="confirmDialog" width="400">
     <v-card>
-      <v-card-title>Delete dish?</v-card-title>
-      <v-card-text>
-        Are you sure you want to delete <strong>{{ dish.name }}</strong>?
-        This cannot be undone.
-      </v-card-text>
+      <v-card-title>{{ $t('dishes.deleteDish') }}</v-card-title>
+      <v-card-text>{{ $t('dishes.deleteDishText', { name: dish.name }) }}</v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="confirmDialog = false">Cancel</v-btn>
-        <v-btn variant="text" color="error" @click="doDelete">Delete</v-btn>
+        <v-btn variant="text" @click="confirmDialog = false">{{ $t('common.cancel') }}</v-btn>
+        <v-btn variant="text" color="error" @click="doDelete">{{ $t('common.delete') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -245,7 +243,7 @@ async function doMove() {
   <!-- Move occurrences -->
   <v-dialog v-model="moveDialog" width="440">
     <v-card>
-      <v-card-title>Move occurrences</v-card-title>
+      <v-card-title>{{ $t('dishes.moveOccurrences') }}</v-card-title>
       <v-card-text>
         Move all {{ effectiveStats.timesUsed }}
         dinner occurrence{{ effectiveStats.timesUsed === 1 ? '' : 's' }} of
@@ -257,19 +255,19 @@ async function doMove() {
           return-object
           density="compact"
           variant="outlined"
-          placeholder="Select a dish…"
+          :placeholder="$t('dishes.selectADish')"
           class="mt-3"
         />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="moveDialog = false">Cancel</v-btn>
+        <v-btn variant="text" @click="moveDialog = false">{{ $t('common.cancel') }}</v-btn>
         <v-btn
           variant="text"
           color="primary"
           :disabled="!moveToDish"
           @click="doMove"
-        >Move</v-btn>
+        >{{ $t('common.move') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

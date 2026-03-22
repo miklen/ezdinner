@@ -18,6 +18,7 @@ const emit = defineEmits<{
 const dishesStore = useDishesStore()
 const { dishes: dishRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
+const { t } = useI18n()
 
 const renameDialog = shallowRef(false)
 const newName = shallowRef('')
@@ -37,10 +38,11 @@ const daysAgo = computed(() => {
 
 const statLine = computed(() => {
   const n = effectiveStats.value.timesUsed
-  if (n === 0) return 'Never planned for dinner'
-  const times = `${n} time${n === 1 ? '' : 's'}`
-  if (daysAgo.value === null) return `Had ${times}`
-  return `Had ${times} · last ${daysAgo.value} day${daysAgo.value === 1 ? '' : 's'} ago`
+  if (n === 0) return t('dishes.neverPlanned')
+  const times = n === 1 ? t('dishes.hadTime') : t('dishes.hadTimes', { count: n })
+  if (daysAgo.value === null) return times
+  const lastPart = daysAgo.value === 1 ? t('dishes.lastDayAgo', { days: daysAgo.value }) : t('dishes.lastDaysAgo', { days: daysAgo.value })
+  return `${times} ${lastPart}`
 })
 
 function openRename() {
@@ -55,10 +57,10 @@ async function doRename() {
     await dishRepo.updateName(props.dish.id, trimmed)
     localName.value = trimmed
     await dishesStore.updateDish(props.dish.id)
-    showSnackbar('Dish renamed', { type: 'success' })
+    showSnackbar(t('dishes.dishRenamed'), { type: 'success' })
     emit('renamed')
   } catch {
-    showSnackbar('Failed to rename dish', { type: 'error' })
+    showSnackbar(t('dishes.failedToRename'), { type: 'error' })
   }
   renameDialog.value = false
 }
@@ -79,7 +81,7 @@ async function doRename() {
     <nav class="dish-header__breadcrumb text-caption-label" aria-label="Breadcrumb">
       <NuxtLink to="/dishes" class="dish-header__breadcrumb-link">
         <v-icon size="13" class="dish-header__breadcrumb-icon">mdi-silverware-fork-knife</v-icon>
-        Dishes
+        {{ $t('nav.dishes') }}
       </NuxtLink>
       <span class="dish-header__breadcrumb-sep" aria-hidden="true">/</span>
       <span class="dish-header__breadcrumb-current">{{ localName }}</span>
@@ -113,11 +115,11 @@ async function doRename() {
   <!-- Rename dialog -->
   <v-dialog v-model="renameDialog" width="400">
     <v-card>
-      <v-card-title>Rename dish</v-card-title>
+      <v-card-title>{{ $t('dishes.renameDish') }}</v-card-title>
       <v-card-text>
         <v-text-field
           v-model="newName"
-          label="Dish name"
+          :label="$t('dishes.dishName')"
           variant="outlined"
           density="compact"
           autofocus
@@ -128,8 +130,8 @@ async function doRename() {
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="renameDialog = false">Cancel</v-btn>
-        <v-btn variant="text" color="primary" :disabled="!newName.trim()" @click="doRename">Save</v-btn>
+        <v-btn variant="text" @click="renameDialog = false">{{ $t('common.cancel') }}</v-btn>
+        <v-btn variant="text" color="primary" :disabled="!newName.trim()" @click="doRename">{{ $t('common.save') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -16,6 +16,7 @@ const emit = defineEmits<{
 
 const { dishes: dishRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
+const { t } = useI18n()
 
 // View state — mirrors incoming props, updated on save
 const url = shallowRef(props.initialUrl)
@@ -62,10 +63,10 @@ async function saveEdit() {
     await dishRepo.updateNotes(props.dishId, editNotes.value, editUrl.value)
     notes.value = editNotes.value
     url.value = editUrl.value
-    showSnackbar('Notes saved', { type: 'success' })
+    showSnackbar(t('dishes.notesSaved'), { type: 'success' })
     emit('updated', { notes: notes.value, url: url.value })
   } catch {
-    showSnackbar('Failed to save notes', { type: 'error' })
+    showSnackbar(t('dishes.failedToSaveNotes'), { type: 'error' })
   }
   cancelEdit()
 }
@@ -83,17 +84,17 @@ async function saveEdit() {
   <!-- Loaded -->
   <v-card v-else class="notes-card">
     <div class="notes-card__header">
-      <span class="text-card-title">Recipe &amp; notes</span>
+      <span class="text-card-title">{{ $t('dishes.recipeAndNotes') }}</span>
       <div v-if="editMode" class="notes-card__edit-actions">
-        <v-btn variant="text" size="small" @click="cancelEdit">Cancel</v-btn>
-        <v-btn variant="text" size="small" color="primary" @click="saveEdit">Save</v-btn>
+        <v-btn variant="text" size="small" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
+        <v-btn variant="text" size="small" color="primary" @click="saveEdit">{{ $t('common.save') }}</v-btn>
       </div>
       <v-btn
         v-else
         icon="mdi-pencil-outline"
         variant="text"
         size="small"
-        aria-label="Edit notes"
+        :aria-label="$t('dishes.editNotes')"
         @click="startEdit"
       />
     </div>
@@ -105,7 +106,7 @@ async function saveEdit() {
         <v-text-field
           v-if="editMode"
           v-model="editUrl"
-          label="Recipe URL"
+          :label="$t('dishes.recipeUrl')"
           variant="outlined"
           density="compact"
           hide-details
@@ -125,14 +126,14 @@ async function saveEdit() {
       <!-- Notes: edit mode -->
       <div v-if="editMode" class="notes-card__editor">
         <textarea ref="textareaRef" />
-        <p class="notes-card__hint">Mention prep time, season, and main ingredients for better suggestions</p>
+        <p class="notes-card__hint">{{ $t('dishes.mentionPrepHint') }}</p>
       </div>
 
       <!-- Notes: view mode -->
       <template v-else>
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div v-if="notes" class="notes-card__html" v-html="notesHtml" />
-        <p v-else class="notes-card__empty">No notes added yet.</p>
+        <p v-else class="notes-card__empty">{{ $t('dishes.noNotesAdded') }}</p>
       </template>
     </div>
   </v-card>

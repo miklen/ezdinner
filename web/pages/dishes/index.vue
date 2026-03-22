@@ -7,6 +7,7 @@ const appStore = useAppStore()
 const dishesStore = useDishesStore()
 const { dishes: dishRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
+const { t } = useI18n()
 
 const searchDish = shallowRef('')
 const stats = ref<Record<string, DishStats>>({})
@@ -79,18 +80,14 @@ function selectSort(key: SortKey) {
   }
 }
 
-const sortChips: { key: SortKey; label: string }[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'rating', label: 'Rating' },
-  { key: 'timesUsed', label: 'Times used' },
-  { key: 'lastUsed', label: 'Last used' },
-]
+const sortChips = computed(() => [
+  { key: 'name' as SortKey, label: t('dishes.sortName') },
+  { key: 'rating' as SortKey, label: t('dishes.sortRating') },
+  { key: 'timesUsed' as SortKey, label: t('dishes.sortTimesUsed') },
+  { key: 'lastUsed' as SortKey, label: t('dishes.sortLastUsed') },
+])
 
 // ── Derived filter options (from loaded dish list) ────────────────────────────
-
-const SEASON_LABELS: Record<string, string> = {
-  Summer: 'Summer', Winter: 'Winter', Spring: 'Spring', Autumn: 'Autumn', AllYear: 'All year',
-}
 
 const availableRoles = computed(() => {
   const roles = new Set<string>()
@@ -194,7 +191,7 @@ async function createDish() {
   newDishName.value = ''
   newDishDialog.value = false
   dishRepo.enrich(appStore.activeFamilyId, dishId).catch(() => {
-    showSnackbar('AI analysis failed — you can edit metadata manually from the dish page', { type: 'error' })
+    showSnackbar(t('dishes.aiAnalysisFailed'), { type: 'error' })
   })
   await init()
 }
@@ -215,7 +212,7 @@ watch(
   <div class="catalog">
     <!-- ── Header row ──────────────────────────────────────────────────────── -->
     <div class="catalog__header">
-      <h1 class="text-page-title catalog__heading">Dishes</h1>
+      <h1 class="text-page-title catalog__heading">{{ $t('dishes.dishes') }}</h1>
       <div class="catalog__header-actions">
         <v-btn
           color="primary"
@@ -224,7 +221,7 @@ watch(
           rounded="lg"
           @click="newDishDialog = true"
         >
-          Add dish
+          {{ $t('dishes.addDish') }}
         </v-btn>
       </div>
     </div>
@@ -232,7 +229,7 @@ watch(
     <!-- ── Search bar ──────────────────────────────────────────────────────── -->
     <v-text-field
       v-model="searchDish"
-      placeholder="Find a dish…"
+      :placeholder="$t('dishes.findADish')"
       prepend-inner-icon="mdi-magnify"
       variant="outlined"
       rounded="lg"
@@ -268,12 +265,12 @@ watch(
           aria-controls="filter-panel"
           @click="filtersExpanded = !filtersExpanded"
         >
-          <span class="catalog__filter-label">Filter</span>
+          <span class="catalog__filter-label">{{ $t('dishes.filter') }}</span>
           <span v-if="hasActiveFilters" class="filter-count">{{ activeFilterCount }}</span>
           <span class="filter-chevron" :class="{ 'filter-chevron--open': filtersExpanded }" aria-hidden="true">›</span>
         </button>
         <button v-if="hasActiveFilters" class="filter-clear" @click="clearFilters">
-          × clear
+          {{ $t('dishes.clearFilter') }}
         </button>
       </div>
 
@@ -293,7 +290,7 @@ watch(
               :class="['filter-tag', 'filter-tag--role', { 'filter-tag--active': filterRoles.has(role) }]"
               :aria-pressed="filterRoles.has(role)"
               @click="toggleFilter('roles', role)"
-            ><span class="filter-tag__pip" aria-hidden="true" />{{ role }}</button>
+            ><span class="filter-tag__pip" aria-hidden="true" />{{ $t(`dishes.roles.${role}`) }}</button>
           </template>
 
           <template v-if="availableEffort.length">
@@ -303,7 +300,7 @@ watch(
               :class="['filter-tag', 'filter-tag--effort', { 'filter-tag--active': filterEffort.has(effort) }]"
               :aria-pressed="filterEffort.has(effort)"
               @click="toggleFilter('effort', effort)"
-            ><span class="filter-tag__pip" aria-hidden="true" />{{ effort }}</button>
+            ><span class="filter-tag__pip" aria-hidden="true" />{{ $t(`dishes.effortLevels.${effort}`) }}</button>
           </template>
 
           <template v-if="availableSeason.length">
@@ -313,7 +310,7 @@ watch(
               :class="['filter-tag', 'filter-tag--season', { 'filter-tag--active': filterSeason.has(season) }]"
               :aria-pressed="filterSeason.has(season)"
               @click="toggleFilter('season', season)"
-            ><span class="filter-tag__pip" aria-hidden="true" />{{ SEASON_LABELS[season] ?? season }}</button>
+            ><span class="filter-tag__pip" aria-hidden="true" />{{ $t(`dishes.seasons.${season}`) }}</button>
           </template>
 
           <template v-if="availableCuisine.length">
@@ -330,7 +327,7 @@ watch(
             :class="['filter-tag', 'filter-tag--archive', { 'filter-tag--active': showArchived }]"
             :aria-pressed="showArchived"
             @click="toggleArchived"
-          ><span class="filter-tag__pip" aria-hidden="true" />Archived</button>
+          ><span class="filter-tag__pip" aria-hidden="true" />{{ $t('dishes.archived') }}</button>
         </div>
       </div>
     </div>
@@ -338,7 +335,7 @@ watch(
     <!-- ── Archived view banner ───────────────────────────────────────────── -->
     <div v-if="showArchived && !loading" class="catalog__archived-banner">
       <v-icon size="14" icon="mdi-archive-outline" class="catalog__archived-banner-icon" />
-      Archived dishes are hidden from suggestions and the active catalog.
+      {{ $t('dishes.archivedBannerText') }}
     </div>
 
     <!-- ── Skeleton loaders ────────────────────────────────────────────────── -->
@@ -355,22 +352,22 @@ watch(
     <EmptyState
       v-else-if="hasNoDishesAtAll"
       icon="mdi-silverware-fork-knife"
-      message="No dishes yet. Add your first dish to get started."
-      action-label="Add a dish"
+      :message="$t('dishes.noDishesYet')"
+      :action-label="$t('dishes.addADish')"
     />
 
     <!-- ── Empty: no archived dishes ──────────────────────────────────────── -->
     <EmptyState
       v-else-if="hasNoArchivedDishes"
       icon="mdi-archive-outline"
-      message="No archived dishes."
+      :message="$t('dishes.noArchivedDishes')"
     />
 
     <!-- ── Empty: search returned nothing ─────────────────────────────────── -->
     <EmptyState
       v-else-if="hasNoSearchResults"
       icon="mdi-magnify"
-      :message="`No dishes match &quot;${searchDish}&quot;`"
+      :message="$t('dishes.noSearchResults', { query: searchDish })"
     />
 
     <!-- ── Dish grid ───────────────────────────────────────────────────────── -->
@@ -389,11 +386,11 @@ watch(
     <!-- ── Create dish dialog ──────────────────────────────────────────────── -->
     <v-dialog v-model="newDishDialog" width="440">
       <v-card>
-        <v-card-title class="text-section-title pt-6 px-6">New dish</v-card-title>
+        <v-card-title class="text-section-title pt-6 px-6">{{ $t('dishes.newDish') }}</v-card-title>
         <v-card-text class="px-6">
           <v-text-field
             v-model="newDishName"
-            label="Dish name"
+            :label="$t('dishes.dishName')"
             variant="outlined"
             autofocus
             @keyup.enter="createDish"
@@ -401,13 +398,13 @@ watch(
         </v-card-text>
         <v-card-actions class="px-6 pb-6">
           <v-spacer />
-          <v-btn variant="text" @click="newDishDialog = false">Cancel</v-btn>
+          <v-btn variant="text" @click="newDishDialog = false">{{ $t('common.cancel') }}</v-btn>
           <v-btn
             color="primary"
             variant="tonal"
             :disabled="!newDishName.trim()"
             @click="createDish"
-          >Create</v-btn>
+          >{{ $t('common.create') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

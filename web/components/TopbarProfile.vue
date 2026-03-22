@@ -2,6 +2,7 @@
 const { $msal } = useNuxtApp()
 const appStore = useAppStore()
 const familiesStore = useFamiliesStore()
+const { t } = useI18n()
 
 const menu = shallowRef(false)
 
@@ -24,6 +25,7 @@ const familyName = computed(() =>
 
 <template>
   <span class="topbar-profile">
+    <LanguageSwitcher />
     <span
       v-if="familyName"
       class="family-pill"
@@ -50,7 +52,7 @@ const familyName = computed(() =>
         <FamilyListItems />
         <v-divider />
         <v-list>
-          <v-list-item prepend-icon="mdi-logout" title="Sign out" @click="$msal.signOut()" />
+          <v-list-item prepend-icon="mdi-logout" :title="t('auth.signOut')" @click="$msal.signOut()" />
         </v-list>
       </v-card>
     </v-menu>

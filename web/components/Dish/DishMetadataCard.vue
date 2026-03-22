@@ -13,6 +13,7 @@ const emit = defineEmits<{
 
 const { dishes: dishRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
+const { t } = useI18n()
 
 // ── Inline editing state ───────────────────────────────────────────────────
 
@@ -28,27 +29,33 @@ const editCuisine = shallowRef<string>('')
 // ── Options ─────────────────────────────────────────────────────────────
 
 const roleOptions: DishRole[] = ['Main', 'Side', 'Dessert', 'Other']
-const effortOptions: { value: EffortLevel; label: string; icon: string }[] = [
-  { value: 'Quick', label: 'Quick', icon: 'mdi-lightning-bolt' },
-  { value: 'Medium', label: 'Medium', icon: 'mdi-clock-outline' },
-  { value: 'Elaborate', label: 'Elaborate', icon: 'mdi-chef-hat' },
-]
-const seasonOptions: { value: SeasonAffinity; label: string; icon: string }[] = [
-  { value: 'Summer', label: 'Summer', icon: 'mdi-weather-sunny' },
-  { value: 'Winter', label: 'Winter', icon: 'mdi-snowflake' },
-  { value: 'Spring', label: 'Spring', icon: 'mdi-flower-outline' },
-  { value: 'Autumn', label: 'Autumn', icon: 'mdi-leaf' },
-  { value: 'AllYear', label: 'All year', icon: 'mdi-calendar-blank-outline' },
-]
+const effortOptions = computed(() => [
+  { value: 'Quick' as EffortLevel, label: t('dishes.effortLevels.Quick'), icon: 'mdi-lightning-bolt' },
+  { value: 'Medium' as EffortLevel, label: t('dishes.effortLevels.Medium'), icon: 'mdi-clock-outline' },
+  { value: 'Elaborate' as EffortLevel, label: t('dishes.effortLevels.Elaborate'), icon: 'mdi-chef-hat' },
+])
+const seasonOptions = computed(() => [
+  { value: 'Summer' as SeasonAffinity, label: t('dishes.seasons.Summer'), icon: 'mdi-weather-sunny' },
+  { value: 'Winter' as SeasonAffinity, label: t('dishes.seasons.Winter'), icon: 'mdi-snowflake' },
+  { value: 'Spring' as SeasonAffinity, label: t('dishes.seasons.Spring'), icon: 'mdi-flower-outline' },
+  { value: 'Autumn' as SeasonAffinity, label: t('dishes.seasons.Autumn'), icon: 'mdi-leaf' },
+  { value: 'AllYear' as SeasonAffinity, label: t('dishes.seasons.AllYear'), icon: 'mdi-calendar-blank-outline' },
+])
 
 // ── Field display values ─────────────────────────────────────────────────
 
-const displayRoles = computed(() => props.dish.roles?.length ? props.dish.roles.join(', ') : null)
-const displayEffort = computed(() => props.dish.effortLevel ?? null)
+const displayRoles = computed(() =>
+  props.dish.roles?.length
+    ? props.dish.roles.map((r) => t(`dishes.roles.${r}`)).join(', ')
+    : null,
+)
+const displayEffort = computed(() =>
+  props.dish.effortLevel ? t(`dishes.effortLevels.${props.dish.effortLevel}`) : null,
+)
 const displaySeason = computed(() => {
   const s = props.dish.seasonAffinity
   if (!s) return null
-  return seasonOptions.find((o) => o.value === s)?.label ?? s
+  return t(`dishes.seasons.${s}`)
 })
 const displayCuisine = computed(() => props.dish.cuisine ?? null)
 
@@ -72,7 +79,7 @@ function cancelEdit() {
 
 async function saveField(field: 'roles' | 'effortLevel' | 'seasonAffinity' | 'cuisine') {
   if (field === 'roles' && editRoles.value.length === 0) {
-    showSnackbar('Please select at least one role', { type: 'error' })
+    showSnackbar(t('dishes.pleaseSelectAtLeastOneRole'), { type: 'error' })
     return
   }
   saving.value = true
@@ -86,7 +93,7 @@ async function saveField(field: 'roles' | 'effortLevel' | 'seasonAffinity' | 'cu
     emit('updated')
     cancelEdit()
   } catch {
-    showSnackbar('Failed to save', { type: 'error' })
+    showSnackbar(t('dishes.failedToSave'), { type: 'error' })
   } finally {
     saving.value = false
   }
@@ -94,18 +101,18 @@ async function saveField(field: 'roles' | 'effortLevel' | 'seasonAffinity' | 'cu
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-const effortIcon = computed(() => effortOptions.find((o) => o.value === displayEffort.value)?.icon ?? 'mdi-clock-outline')
-const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.dish.seasonAffinity)?.icon ?? 'mdi-calendar-blank-outline')
+const effortIcon = computed(() => effortOptions.value.find((o) => o.value === props.dish.effortLevel)?.icon ?? 'mdi-clock-outline')
+const seasonIcon = computed(() => seasonOptions.value.find((o) => o.value === props.dish.seasonAffinity)?.icon ?? 'mdi-calendar-blank-outline')
 </script>
 
 <template>
   <v-card class="metadata-card">
     <!-- Header -->
     <div class="metadata-card__header">
-      <span class="text-card-title">Dish metadata</span>
+      <span class="text-card-title">{{ $t('dishes.dishMetadata') }}</span>
       <div class="metadata-card__enriching" :style="{ visibility: enriching ? 'visible' : 'hidden' }">
         <v-progress-circular size="12" width="2" indeterminate color="primary" />
-        <span>Analyzing dish…</span>
+        <span>{{ $t('dishes.analyzingDish') }}</span>
       </div>
     </div>
 
@@ -114,7 +121,7 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
       <div class="metadata-card__field">
         <div class="metadata-card__field-label">
           <v-icon size="13" class="metadata-card__field-icon">mdi-tag-multiple-outline</v-icon>
-          Role
+          {{ $t('dishes.role') }}
         </div>
 
         <!-- Edit mode -->
@@ -131,12 +138,12 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
                 :value="role"
                 class="metadata-card__checkbox"
               />
-              {{ role }}
+              {{ $t(`dishes.roles.${role}`) }}
             </label>
           </div>
           <div class="metadata-card__field-actions">
-            <v-btn size="x-small" variant="text" :disabled="saving" @click="cancelEdit">Cancel</v-btn>
-            <v-btn size="x-small" variant="text" color="primary" :loading="saving" @click="saveField('roles')">Save</v-btn>
+            <v-btn size="x-small" variant="text" :disabled="saving" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
+            <v-btn size="x-small" variant="text" color="primary" :loading="saving" @click="saveField('roles')">{{ $t('common.save') }}</v-btn>
           </div>
         </div>
 
@@ -151,7 +158,7 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
               {{ displayRoles }}
             </span>
           </template>
-          <span v-else class="metadata-card__value--empty">Not set</span>
+          <span v-else class="metadata-card__value--empty">{{ $t('dishes.notSet') }}</span>
           <v-icon size="14" class="metadata-card__edit-icon">mdi-pencil-outline</v-icon>
         </div>
       </div>
@@ -160,7 +167,7 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
       <div class="metadata-card__field">
         <div class="metadata-card__field-label">
           <v-icon size="13" class="metadata-card__field-icon">mdi-clock-outline</v-icon>
-          Effort
+          {{ $t('dishes.effort') }}
         </div>
 
         <!-- Edit mode -->
@@ -180,8 +187,8 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
             </button>
           </div>
           <div class="metadata-card__field-actions">
-            <v-btn size="x-small" variant="text" :disabled="saving" @click="cancelEdit">Cancel</v-btn>
-            <v-btn size="x-small" variant="text" color="primary" :loading="saving" @click="saveField('effortLevel')">Save</v-btn>
+            <v-btn size="x-small" variant="text" :disabled="saving" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
+            <v-btn size="x-small" variant="text" color="primary" :loading="saving" @click="saveField('effortLevel')">{{ $t('common.save') }}</v-btn>
           </div>
         </div>
 
@@ -197,7 +204,7 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
               {{ displayEffort }}
             </span>
           </template>
-          <span v-else class="metadata-card__value--empty">Not set</span>
+          <span v-else class="metadata-card__value--empty">{{ $t('dishes.notSet') }}</span>
           <v-icon size="14" class="metadata-card__edit-icon">mdi-pencil-outline</v-icon>
         </div>
       </div>
@@ -206,7 +213,7 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
       <div class="metadata-card__field">
         <div class="metadata-card__field-label">
           <v-icon size="13" class="metadata-card__field-icon">mdi-calendar-blank-outline</v-icon>
-          Season
+          {{ $t('dishes.season') }}
         </div>
 
         <!-- Edit mode -->
@@ -226,8 +233,8 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
             </button>
           </div>
           <div class="metadata-card__field-actions">
-            <v-btn size="x-small" variant="text" :disabled="saving" @click="cancelEdit">Cancel</v-btn>
-            <v-btn size="x-small" variant="text" color="primary" :loading="saving" @click="saveField('seasonAffinity')">Save</v-btn>
+            <v-btn size="x-small" variant="text" :disabled="saving" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
+            <v-btn size="x-small" variant="text" color="primary" :loading="saving" @click="saveField('seasonAffinity')">{{ $t('common.save') }}</v-btn>
           </div>
         </div>
 
@@ -243,7 +250,7 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
               {{ displaySeason }}
             </span>
           </template>
-          <span v-else class="metadata-card__value--empty">Not set</span>
+          <span v-else class="metadata-card__value--empty">{{ $t('dishes.notSet') }}</span>
           <v-icon size="14" class="metadata-card__edit-icon">mdi-pencil-outline</v-icon>
         </div>
       </div>
@@ -252,14 +259,14 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
       <div class="metadata-card__field">
         <div class="metadata-card__field-label">
           <v-icon size="13" class="metadata-card__field-icon">mdi-earth</v-icon>
-          Cuisine
+          {{ $t('dishes.cuisine') }}
         </div>
 
         <!-- Edit mode -->
         <div v-if="editingField === 'cuisine'" class="metadata-card__edit-row">
           <v-text-field
             v-model="editCuisine"
-            placeholder="e.g. Danish, Italian…"
+            :placeholder="$t('dishes.cuisinePlaceholder')"
             aria-label="Cuisine type"
             variant="outlined"
             density="compact"
@@ -270,8 +277,8 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
             @keyup.esc="cancelEdit"
           />
           <div class="metadata-card__field-actions">
-            <v-btn size="x-small" variant="text" :disabled="saving" @click="cancelEdit">Cancel</v-btn>
-            <v-btn size="x-small" variant="text" color="primary" :loading="saving" @click="saveField('cuisine')">Save</v-btn>
+            <v-btn size="x-small" variant="text" :disabled="saving" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
+            <v-btn size="x-small" variant="text" color="primary" :loading="saving" @click="saveField('cuisine')">{{ $t('common.save') }}</v-btn>
           </div>
         </div>
 
@@ -286,7 +293,7 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
               {{ displayCuisine }}
             </span>
           </template>
-          <span v-else class="metadata-card__value--empty">Not set</span>
+          <span v-else class="metadata-card__value--empty">{{ $t('dishes.notSet') }}</span>
           <v-icon size="14" class="metadata-card__edit-icon">mdi-pencil-outline</v-icon>
         </div>
       </div>
@@ -297,7 +304,7 @@ const seasonIcon = computed(() => seasonOptions.find((o) => o.value === props.di
         class="metadata-card__ai-legend"
       >
         <v-icon size="11" class="metadata-card__ai-legend-icon">mdi-auto-fix</v-icon>
-        AI suggestion — click a field to confirm or edit
+        {{ $t('dishes.aiSuggestion') }}
       </div>
     </div>
   </v-card>

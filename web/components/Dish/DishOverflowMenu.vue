@@ -18,6 +18,7 @@ const appStore = useAppStore()
 const dishesStore = useDishesStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
+const { t } = useI18n()
 
 // Use prop if provided (overview cards), fall back to route param (detail page)
 const routeDishId = computed(() => route.params.id as string | undefined)
@@ -36,16 +37,16 @@ async function doArchive() {
   try {
     if (isCurrentlyArchived) {
       await dishRepo.reactivate(appStore.activeFamilyId, dishId.value)
-      showSnackbar('Dish reactivated', { type: 'success' })
+      showSnackbar(t('dishes.dishReactivated'), { type: 'success' })
     } else {
       await dishRepo.archive(appStore.activeFamilyId, dishId.value)
-      showSnackbar('Dish archived', { type: 'success' })
+      showSnackbar(t('dishes.dishArchived'), { type: 'success' })
     }
     dishesStore.populateDishes()
     archiveDialog.value = false
     emit('archived')
   } catch {
-    showSnackbar('Failed, please try again', { type: 'error' })
+    showSnackbar(t('dishes.failedPleaseTryAgain'), { type: 'error' })
     archiveDialog.value = false
   } finally {
     archiveLoading.value = false
@@ -56,13 +57,13 @@ const convertDialog = shallowRef(false)
 const convertReason = ref('')
 const convertLoading = shallowRef(false)
 
-const CONVERT_QUICK_PICKS = [
-  'Vacation',
-  'Eating out',
-  'Restaurant',
-  'Guests',
-  'Leftovers',
-]
+const convertQuickPicks = computed(() => [
+  t('plan.optOut.vacation'),
+  t('plan.optOut.eatingOut'),
+  t('plan.optOut.restaurant'),
+  t('plan.optOut.guests'),
+  t('plan.optOut.leftovers'),
+])
 
 function openConvertDialog() {
   convertReason.value = currentDish.value?.name ?? ''
@@ -76,10 +77,10 @@ async function doConvert() {
     await dinnerRepo.convertDishToOptOut(appStore.activeFamilyId, dishId.value, convertReason.value.trim())
     await dishRepo.delete(appStore.activeFamilyId, dishId.value)
     dishesStore.populateDishes()
-    showSnackbar('Converted to opt-outs', { type: 'success' })
+    showSnackbar(t('dishes.convertedToOptOuts'), { type: 'success' })
     emit('converted')
   } catch {
-    showSnackbar('Failed to convert', { type: 'error' })
+    showSnackbar(t('dishes.failedToConvert'), { type: 'error' })
     convertDialog.value = false
     convertLoading.value = false
   }
@@ -95,7 +96,7 @@ async function doConvert() {
         variant="text"
         density="compact"
         size="small"
-        aria-label="More actions"
+        :aria-label="$t('dishes.moreActions')"
         class="overflow-btn"
         @click.stop
       />
@@ -103,30 +104,30 @@ async function doConvert() {
     <v-list density="compact" min-width="168">
       <v-list-item
         prepend-icon="mdi-pencil-outline"
-        title="Rename"
+        :title="$t('dishes.rename')"
         @click="emit('edit-name')"
       />
       <v-list-item
         prepend-icon="mdi-transfer-right"
-        title="Move occurrences"
+        :title="$t('dishes.moveOccurrences')"
         @click="emit('move')"
       />
       <v-list-item
         v-if="dishId"
         prepend-icon="mdi-calendar-remove-outline"
-        title="Convert to opt-outs"
+        :title="$t('dishes.convertToOptOuts')"
         @click="openConvertDialog"
       />
       <v-list-item
         v-if="dishId"
         :prepend-icon="currentDish?.isArchived ? 'mdi-archive-arrow-up-outline' : 'mdi-archive-arrow-down-outline'"
-        :title="currentDish?.isArchived ? 'Reactivate' : 'Archive'"
+        :title="currentDish?.isArchived ? $t('common.reactivate') : $t('common.archive')"
         @click="archiveDialog = true"
       />
       <v-divider />
       <v-list-item
         prepend-icon="mdi-delete-outline"
-        title="Delete"
+        :title="$t('common.delete')"
         class="text-error"
         @click="emit('delete')"
       />
@@ -136,26 +137,22 @@ async function doConvert() {
   <!-- Archive / Reactivate dialog -->
   <v-dialog v-model="archiveDialog" width="400">
     <v-card>
-      <v-card-title>{{ currentDish?.isArchived ? 'Reactivate dish?' : 'Archive dish?' }}</v-card-title>
+      <v-card-title>{{ currentDish?.isArchived ? $t('dishes.reactivateDishTitle') : $t('dishes.archiveDishTitle') }}</v-card-title>
       <v-card-text>
-        <template v-if="currentDish?.isArchived">
-          <strong>{{ currentDish?.name }}</strong> will be restored to the active catalog and become eligible for suggestions again.
-        </template>
-        <template v-else>
-          <strong>{{ currentDish?.name }}</strong> will be removed from suggestions and the active catalog.
-          You can reactivate it at any time.
-        </template>
+        {{ currentDish?.isArchived
+          ? $t('dishes.reactivateDishText', { name: currentDish?.name })
+          : $t('dishes.archiveDishText', { name: currentDish?.name }) }}
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" :disabled="archiveLoading" @click="archiveDialog = false">Cancel</v-btn>
+        <v-btn variant="text" :disabled="archiveLoading" @click="archiveDialog = false">{{ $t('common.cancel') }}</v-btn>
         <v-btn
           variant="text"
           :color="currentDish?.isArchived ? 'primary' : undefined"
           :loading="archiveLoading"
           @click="doArchive"
         >
-          {{ currentDish?.isArchived ? 'Reactivate' : 'Archive' }}
+          {{ currentDish?.isArchived ? $t('common.reactivate') : $t('common.archive') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -164,15 +161,12 @@ async function doConvert() {
   <!-- Convert to opt-outs dialog -->
   <v-dialog v-model="convertDialog" width="440">
     <v-card>
-      <v-card-title>Convert to opt-outs</v-card-title>
+      <v-card-title>{{ $t('dishes.convertToOptOuts') }}</v-card-title>
       <v-card-text>
-        <p class="text-body-2 mb-3">
-          Convert all occurrences of
-          <strong>{{ currentDish?.name }}</strong> to opt-outs with this reason:
-        </p>
+        <p class="text-body-2 mb-3">{{ $t('dishes.convertText', { name: currentDish?.name }) }}</p>
         <div class="convert-picks">
           <button
-            v-for="pick in CONVERT_QUICK_PICKS"
+            v-for="pick in convertQuickPicks"
             :key="pick"
             class="convert-pick-chip"
             :class="{ 'convert-pick-chip--active': convertReason === pick }"
@@ -183,7 +177,7 @@ async function doConvert() {
         </div>
         <v-text-field
           v-model="convertReason"
-          label="Reason"
+          :label="$t('dishes.reason')"
           variant="outlined"
           density="compact"
           class="mt-3"
@@ -192,7 +186,7 @@ async function doConvert() {
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="convertDialog = false">Cancel</v-btn>
+        <v-btn variant="text" @click="convertDialog = false">{{ $t('common.cancel') }}</v-btn>
         <v-btn
           variant="text"
           color="primary"
@@ -200,7 +194,7 @@ async function doConvert() {
           :loading="convertLoading"
           @click="doConvert"
         >
-          Convert &amp; delete dish
+          {{ $t('dishes.convertAndDelete') }}
         </v-btn>
       </v-card-actions>
     </v-card>

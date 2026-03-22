@@ -10,7 +10,7 @@
     </v-list-item>
 
     <v-list-item v-if="familiesStore.familySelectors.length === 0" to="/families">
-      <v-list-item-title>Create or join a family</v-list-item-title>
+      <v-list-item-title>{{ $t('families.createOrJoinFamily') }}</v-list-item-title>
     </v-list-item>
   </v-list>
 </template>

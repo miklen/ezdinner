@@ -4,7 +4,7 @@
       <v-col v-for="family in families" :key="family.id" cols="12" sm="12" md="6" lg="4">
         <v-card rounded="lg">
           <v-card-title>{{ family.name }}</v-card-title>
-          <v-card-subtitle>Family members</v-card-subtitle>
+          <v-card-subtitle>{{ $t('families.familyMembers') }}</v-card-subtitle>
           <v-list>
             <v-list-item
               v-for="member in family.familyMembers"
@@ -25,7 +25,7 @@
                   icon="mdi-shield-plus"
                   size="small"
                   variant="text"
-                  title="Make Owner"
+                  :title="$t('families.makeOwner')"
                   @click.stop="changeRole(family.id, member.id, true)"
                 />
                 <v-tooltip
@@ -43,27 +43,23 @@
                       />
                     </span>
                   </template>
-                  {{ ownerCount(family.id) <= 1 ? 'A family must have at least one owner' : 'Remove Owner' }}
+                  {{ ownerCount(family.id) <= 1 ? $t('families.mustHaveOneOwner') : $t('families.removeOwner') }}
                 </v-tooltip>
               </template>
             </v-list-item>
           </v-list>
           <v-card-actions>
-            <v-btn v-if="isOwnerOf(family.id)" variant="text" color="primary" @click="openInviteDialog(family.id)">Invite</v-btn>
-            <v-btn v-if="isOwnerOf(family.id)" variant="text" color="primary" @click="openAddMemberDialog(family.id)">Create</v-btn>
+            <v-btn v-if="isOwnerOf(family.id)" variant="text" color="primary" @click="openInviteDialog(family.id)">{{ $t('common.invite') }}</v-btn>
+            <v-btn v-if="isOwnerOf(family.id)" variant="text" color="primary" @click="openAddMemberDialog(family.id)">{{ $t('common.create') }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
 
       <v-col cols="12" sm="12" md="6" lg="4">
         <v-card rounded="lg">
-          <v-card-title>Create family</v-card-title>
-          <v-card-text>
-            To begin planning you need to create a family. After you've created your family you can
-            then invite other family members to participate in planning or create family members
-            which are used to rate dishes.
-          </v-card-text>
-          <v-card-text>You can participate in more than one family!</v-card-text>
+          <v-card-title>{{ $t('families.createFamily') }}</v-card-title>
+          <v-card-text>{{ $t('families.createFamilyBody1') }}</v-card-text>
+          <v-card-text>{{ $t('families.createFamilyBody2') }}</v-card-text>
           <v-card-actions>
             <v-btn variant="text" color="primary" @click="newFamilyDialog = true">
               <v-icon>mdi-account-multiple-plus</v-icon>
@@ -76,29 +72,27 @@
     <!-- Invite member dialog -->
     <v-dialog v-model="inviteDialog" width="500">
       <v-card>
-        <v-card-title class="text-h5">Invite family member</v-card-title>
+        <v-card-title class="text-h5">{{ $t('families.inviteFamilyMember') }}</v-card-title>
         <v-divider />
-        <v-card-text style="padding-top: 16px">
-          Invite someone to join as a family member. Users must have an account before they can be invited.
-        </v-card-text>
+        <v-card-text style="padding-top: 16px">{{ $t('families.inviteText') }}</v-card-text>
         <v-card-text>
           <v-text-field
             v-model="inviteEmail"
             autofocus
-            placeholder="Family member email address"
+            :placeholder="$t('families.familyMemberEmail')"
             @keyup.enter="inviteMember"
           />
           <v-alert v-model="notFoundAlert" closable type="warning" border="start" variant="tonal">
-            User not found
+            {{ $t('families.userNotFound') }}
           </v-alert>
           <v-alert v-model="errorAlert" closable type="error" border="start" variant="tonal">
-            An error occurred
+            {{ $t('common.anErrorOccurred') }}
           </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="inviteDialog = false">Cancel</v-btn>
-          <v-btn variant="text" color="primary" @click="inviteMember">Invite</v-btn>
+          <v-btn variant="text" @click="inviteDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn variant="text" color="primary" @click="inviteMember">{{ $t('common.invite') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -106,19 +100,19 @@
     <!-- Create family dialog -->
     <v-dialog v-model="newFamilyDialog" width="500">
       <v-card>
-        <v-card-title class="text-h5">New family</v-card-title>
+        <v-card-title class="text-h5">{{ $t('families.newFamily') }}</v-card-title>
         <v-divider />
-        <v-card-text style="padding-top: 16px">Give your family a recognizable name.</v-card-text>
+        <v-card-text style="padding-top: 16px">{{ $t('families.newFamilyText') }}</v-card-text>
         <v-card-text>
-          <v-text-field v-model="newFamilyName" autofocus placeholder="Family name" @keyup.enter="createFamily" />
+          <v-text-field v-model="newFamilyName" autofocus :placeholder="$t('families.familyName')" @keyup.enter="createFamily" />
           <v-alert v-model="errorAlert" closable type="error" border="start" variant="tonal">
-            An error occurred
+            {{ $t('common.anErrorOccurred') }}
           </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="newFamilyDialog = false">Cancel</v-btn>
-          <v-btn variant="text" color="primary" @click="createFamily">Create</v-btn>
+          <v-btn variant="text" @click="newFamilyDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn variant="text" color="primary" @click="createFamily">{{ $t('common.create') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -126,12 +120,9 @@
     <!-- Merge non-autonomous member dialog -->
     <v-dialog v-model="mergeDialog" width="500">
       <v-card>
-        <v-card-title class="text-h5">Merge into account</v-card-title>
+        <v-card-title class="text-h5">{{ $t('families.mergeIntoAccount') }}</v-card-title>
         <v-divider />
-        <v-card-text style="padding-top: 16px">
-          Transfer all dish ratings from this member to an existing account, then remove this entry.
-          If both have rated the same dish, the account holder's rating is kept.
-        </v-card-text>
+        <v-card-text style="padding-top: 16px">{{ $t('families.mergeText') }}</v-card-text>
         <v-card-text>
           <v-select
             v-if="mergeIsOwner"
@@ -139,16 +130,16 @@
             :items="mergeTargetOptions"
             item-title="name"
             item-value="id"
-            label="Merge into"
+            :label="$t('families.mergeInto')"
           />
           <v-alert v-model="mergeErrorAlert" closable type="error" border="start" variant="tonal">
-            An error occurred
+            {{ $t('common.anErrorOccurred') }}
           </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="mergeDialog = false">Cancel</v-btn>
-          <v-btn variant="text" color="primary" :disabled="!mergeAutonomousId" @click="mergeMember">Merge</v-btn>
+          <v-btn variant="text" @click="mergeDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn variant="text" color="primary" :disabled="!mergeAutonomousId" @click="mergeMember">{{ $t('common.merge') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -161,21 +152,19 @@
     <!-- Create member without account dialog -->
     <v-dialog v-model="addMemberDialog" width="500">
       <v-card>
-        <v-card-title class="text-h5">Create family member</v-card-title>
+        <v-card-title class="text-h5">{{ $t('families.createFamilyMember') }}</v-card-title>
         <v-divider />
-        <v-card-text style="padding-top: 16px">
-          Create a family member without an account (e.g. children) to track their dish ratings.
-        </v-card-text>
+        <v-card-text style="padding-top: 16px">{{ $t('families.createFamilyMemberText') }}</v-card-text>
         <v-card-text>
-          <v-text-field v-model="memberName" autofocus placeholder="Family member name" @keyup.enter="addMember" />
+          <v-text-field v-model="memberName" autofocus :placeholder="$t('families.familyMemberName')" @keyup.enter="addMember" />
           <v-alert v-model="errorAlert" closable type="error" border="start" variant="tonal">
-            An error occurred
+            {{ $t('common.anErrorOccurred') }}
           </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="addMemberDialog = false">Cancel</v-btn>
-          <v-btn variant="text" color="primary" @click="addMember">Create</v-btn>
+          <v-btn variant="text" @click="addMemberDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn variant="text" color="primary" @click="addMember">{{ $t('common.create') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -190,6 +179,7 @@ useHead({ title: 'Families' })
 const familiesStore = useFamiliesStore()
 const { families: familyRepo } = useRepositories()
 const { $msal } = useNuxtApp()
+const { t } = useI18n()
 
 const userId = computed(() => $msal.getObjectId())
 
@@ -249,7 +239,7 @@ async function changeRole(familyId: string, memberId: string, isOwner: boolean) 
   try {
     await familyRepo.setMemberRole(familyId, memberId, isOwner)
     families.value = await familyRepo.all()
-    roleChangeMessage.value = isOwner ? 'Member promoted to Owner' : 'Owner role removed'
+    roleChangeMessage.value = isOwner ? t('families.memberPromoted') : t('families.ownerRoleRemoved')
     roleChangeSnackbar.value = true
   } catch {
     errorAlert.value = true

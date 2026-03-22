@@ -12,6 +12,7 @@ const TIMELINE_MONTHS = 6
 const SHOW_COUNT = 10
 
 const showAll = shallowRef(false)
+const { t } = useI18n()
 
 // ── Summary ────────────────────────────────────────────────────────────────────
 
@@ -25,10 +26,10 @@ const averageInterval = computed(() => {
 
 const summaryText = computed(() => {
   const n = props.dates.length
-  if (n === 0) return `${props.dishName} hasn't been had yet.`
-  if (n === 1) return 'Had once.'
+  if (n === 0) return t('dishes.notHadYet', { name: props.dishName })
+  if (n === 1) return t('dishes.hadOnce')
   const avg = averageInterval.value
-  return avg ? `Had ${n} times · roughly every ${avg} days` : `Had ${n} times`
+  return avg ? t('dishes.hadTimesEvery', { n, avg }) : t('dishes.hadTimesNoAvg', { n })
 })
 
 // ── Dot Timeline ───────────────────────────────────────────────────────────────
@@ -85,9 +86,9 @@ function formatDate(iso: string) {
 
 function daysAgoLabel(iso: string) {
   const days = Math.floor(DateTime.now().diff(DateTime.fromISO(iso), 'days').days)
-  if (days === 0) return 'Today'
-  if (days === 1) return 'Yesterday'
-  return `${days}d ago`
+  if (days === 0) return t('dishes.today')
+  if (days === 1) return t('dishes.yesterday')
+  return t('dishes.daysAgoShort', { days })
 }
 </script>
 
@@ -104,7 +105,7 @@ function daysAgoLabel(iso: string) {
   <!-- Loaded -->
   <v-card v-else class="dates-card">
     <div class="dates-card__header">
-      <span class="text-card-title">Dinner history</span>
+      <span class="text-card-title">{{ $t('dishes.dinnerHistory') }}</span>
     </div>
 
     <div class="dates-card__body">
@@ -138,7 +139,7 @@ function daysAgoLabel(iso: string) {
       </div>
 
       <p v-else-if="!props.dates.length" class="dates-card__empty">
-        No dinner history yet.
+        {{ $t('dishes.noDinnerHistoryYet') }}
       </p>
 
       <!-- Date list -->
@@ -164,7 +165,7 @@ function daysAgoLabel(iso: string) {
           class="dates-card__show-more"
           @click="showAll = true"
         >
-          Show {{ props.dates.length - SHOW_COUNT }} more
+          {{ $t('dishes.showMore', { count: props.dates.length - SHOW_COUNT }) }}
         </button>
       </div>
     </div>

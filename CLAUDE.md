@@ -8,7 +8,7 @@
 - **Debugging errors**: load `technical-investigator` skill before diagnosing any issue
 
 ## Project Overview
-EzDinner is a family dinner planning app. Users belong to families and plan weekly dinners from a dish catalog. Multi-tenant by family, with per-family RBAC authorization. The app is used on both desktop and mobile. Main driver on desktop is planning while main for mobile is viewing the plan. Always ensure that any frontend changes works equally well on mobile and desktop layout.
+EzDinner is a family dinner planning app. Users belong to families and plan weekly dinners from a dish catalog. Multi-tenant by family, with per-family RBAC authorization. The app is used on both desktop and mobile. Main driver on desktop is planning while main for mobile is viewing the plan. Always ensure that any frontend changes works equally well on mobile and desktop layout. All text must always be localized to available languages!
 
 ## Structure
 A CQRS architecture
@@ -113,6 +113,14 @@ DomainServices/XxxYyy/       # one folder per domain service capability
 - B2C local accounts (created via IEF) have no `mail` attribute in Graph API — email lives in the `identities` collection as `signInType=emailAddress`. `UserRepository.GetUser(string)` first tries `mail eq`, then falls back to `identities/any(i:i/issuerAssignedId eq '{email}' and i/issuer eq '{tenantDomain}')` with `ConsistencyLevel: eventual` + `$count=true` (both required by Graph API for this filter).
 - In `AAD-UserWriteUsingLogonEmail` (and any AAD write TP), never add `<PersistedClaim PartnerClaimType="email" />`. The `email` PartnerClaimType maps to the Azure AD `mail` attribute, which is **read-only** for B2C local accounts (auto-derived from `signInNames.emailAddress`). Writing it causes the AAD write to fail silently as `AADB2C90278 "Unable to validate the information provided"`. Use `PartnerClaimType="otherMails"` if you need the alternate email collection.
 - `JourneyInsights` telemetry only works in `RelyingParty/UserJourneyBehaviors`, not in the `UserJourney` element directly.
+
+## i18n (Internationalisation)
+- All user-visible text added to the frontend must use `$t()` / `t()` with keys in both `web/i18n/locales/en.json` and `web/i18n/locales/da.json`. Never hardcode English strings in templates or scripts.
+- @nuxtjs/i18n v10 resolves `langDir` relative to `{rootDir}/i18n/` (not `{rootDir}`). Use `langDir: 'locales'` with locale files at `web/i18n/locales/en.json` etc.
+- @nuxtjs/i18n built-in `detectBrowserLanguage` localStorage persistence is unreliable in SPA mode. Use `detectBrowserLanguage: false` and a `plugins/locale.client.ts` that reads/writes localStorage via `nuxtApp.$i18n` (not `useI18n()` — that composable cannot be called in plugins).
+- `useI18n()` cannot be called in Nuxt plugins. Use `nuxtApp.$i18n` (cast as needed) to access `locale` and `setLocale()` in plugin context.
+- Luxon `toFormat()` uses the system locale, not the Vue i18n locale. Call `.setLocale(locale.value)` before `.toFormat()` for locale-aware day/month names (e.g. `date.setLocale(locale.value).toFormat('EEEE')`).
+- Translated option arrays (e.g. `effortOptions`, `seasonOptions`) must be `computed()` not `const` — plain arrays referencing `t()` are evaluated once and don't re-render when locale changes.
 
 ## Non-Obvious Gotchas
 - Global CSS token sheet is at `web/assets/global.scss`. Primary color opacity variants use `--color-primary-rgb: 212, 101, 42` — write `rgba(var(--color-primary-rgb), 0.08)` not the raw value.

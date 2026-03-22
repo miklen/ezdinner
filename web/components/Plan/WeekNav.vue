@@ -11,6 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const navEl = ref<HTMLElement | null>(null)
+const { t, locale } = useI18n()
 
 const weekStart = computed(() => props.modelValue.startOf('week'))
 const weekEnd = computed(() => weekStart.value.endOf('week'))
@@ -19,15 +20,15 @@ const weekNumber = computed(() => weekStart.value.weekNumber)
 const weekLabel = computed(() => {
   const todayWeek = DateTime.now().startOf('week')
   const diffWeeks = Math.round(weekStart.value.diff(todayWeek, 'weeks').weeks)
-  if (diffWeeks === 0) return 'This week'
-  if (diffWeeks === -1) return 'Last week'
-  if (diffWeeks === 1) return 'Next week'
-  return weekStart.value.toFormat('MMM d') + ' – ' + weekEnd.value.toFormat('MMM d')
+  if (diffWeeks === 0) return t('plan.thisWeek')
+  if (diffWeeks === -1) return t('plan.lastWeek')
+  if (diffWeeks === 1) return t('plan.nextWeek')
+  return weekStart.value.setLocale(locale.value).toFormat('MMM d') + ' – ' + weekEnd.value.setLocale(locale.value).toFormat('MMM d')
 })
 
 const weekRangeDetail = computed(() => {
-  const s = weekStart.value
-  const e = weekEnd.value
+  const s = weekStart.value.setLocale(locale.value)
+  const e = weekEnd.value.setLocale(locale.value)
   const currentYear = DateTime.now().year
   let dates: string
   if (s.month === e.month) {
@@ -39,7 +40,7 @@ const weekRangeDetail = computed(() => {
       ? `${s.toFormat('MMM d')} – ${e.toFormat('MMM d, yyyy')}`
       : `${s.toFormat('MMM d')} – ${e.toFormat('MMM d')}`
   }
-  return `${dates} · Wk ${weekNumber.value}`
+  return `${dates} · ${t('plan.wk')} ${weekNumber.value}`
 })
 
 const isCurrentWeek = computed(() =>
@@ -70,17 +71,17 @@ useSwipe(navEl, {
 
 <template>
   <div ref="navEl" class="week-nav">
-    <button class="week-nav__arrow" aria-label="Previous week" @click="prev">
+    <button class="week-nav__arrow" :aria-label="$t('plan.previousWeekAriaLabel')" @click="prev">
       <v-icon size="20">mdi-chevron-left</v-icon>
     </button>
 
     <button class="week-nav__center" @click="goToThisWeek">
       <span class="week-nav__label">{{ weekLabel }}</span>
       <span class="week-nav__range">{{ weekRangeDetail }}</span>
-      <span v-if="!isCurrentWeek" class="week-nav__today-hint">Tap to return to this week</span>
+      <span v-if="!isCurrentWeek" class="week-nav__today-hint">{{ $t('plan.tapToReturnToThisWeek') }}</span>
     </button>
 
-    <button class="week-nav__arrow" aria-label="Next week" @click="next">
+    <button class="week-nav__arrow" :aria-label="$t('plan.nextWeekAriaLabel')" @click="next">
       <v-icon size="20">mdi-chevron-right</v-icon>
     </button>
   </div>

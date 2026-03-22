@@ -14,6 +14,7 @@ const emit = defineEmits<{
   'dinner:optoutupdated': []
 }>()
 
+const { t, locale } = useI18n()
 const today = DateTime.now().startOf('day')
 
 const isToday = computed(() => props.dinner.date.hasSame(today, 'day'))
@@ -31,8 +32,8 @@ const cardState = computed(() => {
   return 'future-unplanned'
 })
 
-const dayName = computed(() => props.dinner.date.toFormat('EEEE'))
-const dateStr = computed(() => props.dinner.date.toFormat('MMM d'))
+const dayName = computed(() => props.dinner.date.setLocale(locale.value).toFormat('EEEE'))
+const dateStr = computed(() => props.dinner.date.setLocale(locale.value).toFormat('MMM d'))
 
 function handleHeaderClick() {
   if (props.selected) {
@@ -57,7 +58,7 @@ function handleHeaderClick() {
       <div class="dinner-card__day-info">
         <span class="dinner-card__day-name">{{ dayName }}</span>
         <span class="dinner-card__date">{{ dateStr }}</span>
-        <span v-if="isToday" class="today-badge">TODAY</span>
+        <span v-if="isToday" class="today-badge">{{ t('plan.todayBadge') }}</span>
       </div>
 
       <div class="dinner-card__summary">
@@ -78,10 +79,10 @@ function handleHeaderClick() {
           </div>
         </template>
         <span v-else-if="isPast && !dinner.isResolved" class="dinner-card__hint dinner-card__hint--muted">
-          not tracked
+          {{ t('plan.notTracked') }}
         </span>
         <span v-else-if="!dinner.isPlanned && !dinner.isOptedOut && !selected" class="dinner-card__hint dinner-card__hint--cta">
-          Tap to plan
+          {{ t('plan.tapToPlan') }}
         </span>
       </div>
 

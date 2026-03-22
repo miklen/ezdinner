@@ -7,16 +7,18 @@ const props = defineProps<{
   firstName?: string
 }>()
 
+const { t, locale } = useI18n()
+
 const greeting = computed(() => {
   const hour = new Date().getHours()
-  const name = props.firstName ? `, ${props.firstName}` : ''
-  if (hour < 12) return `Good morning${name}`
-  if (hour < 17) return `Good afternoon${name}`
-  return `Good evening${name}`
+  const base = hour < 12 ? t('home.greeting.morning') : hour < 17 ? t('home.greeting.afternoon') : t('home.greeting.evening')
+  return props.firstName ? `${base}, ${props.firstName}` : base
 })
 
+const localeString = computed(() => locale.value === 'da' ? 'da-DK' : 'en-US')
+
 const todayLabel = computed(() =>
-  new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+  new Date().toLocaleDateString(localeString.value, { weekday: 'long', month: 'long', day: 'numeric' }),
 )
 </script>
 
@@ -38,18 +40,18 @@ const todayLabel = computed(() =>
       @keydown.enter="navigateTo('/plan')"
       @keydown.space.prevent="navigateTo('/plan')"
     >
-      <div class="hero-card__eyebrow">TONIGHT</div>
+      <div class="hero-card__eyebrow">{{ $t('home.tonight') }}</div>
       <template v-if="dinner && dinner.menu.length">
         <div class="hero-card__menu">
           <DishPill v-for="item in dinner.menu" :key="item.dishId" :name="item.dishName" :to="`/dishes/${item.dishId}`" size="md" />
         </div>
-        <span class="hero-card__hint">View plan</span>
+        <span class="hero-card__hint">{{ $t('home.viewPlan') }}</span>
       </template>
       <div v-else @click.stop>
         <EmptyState
           icon="mdi-silverware-fork-knife"
-          message="Nothing planned for tonight"
-          action-label="Plan tonight"
+          :message="$t('home.nothingPlannedTonight')"
+          :action-label="$t('home.planTonight')"
           action-to="/plan"
         />
       </div>

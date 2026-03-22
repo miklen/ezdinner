@@ -60,7 +60,7 @@ async function updateRating(val: number, familyMemberId: string) {
     <!-- Loaded -->
     <template v-else>
       <div class="ratings-card__header">
-        <span class="text-card-title">Family ratings</span>
+        <span class="text-card-title">{{ $t('dishes.familyRatings') }}</span>
         <div v-if="averageRating !== null" class="ratings-card__avg">
           <v-icon size="13" color="primary">mdi-heart</v-icon>
           <span class="ratings-card__avg-value">{{ averageRating.toFixed(1) }} avg</span>
@@ -91,7 +91,7 @@ async function updateRating(val: number, familyMemberId: string) {
           <!-- Name + You badge -->
           <div class="ratings-card__member">
             <span class="ratings-card__name">{{ member.name }}</span>
-            <span v-if="member.id === userId" class="ratings-card__you-badge">You</span>
+            <span v-if="member.id === userId" class="ratings-card__you-badge">{{ $t('dishes.youBadge') }}</span>
           </div>
 
           <!-- Rating hearts -->

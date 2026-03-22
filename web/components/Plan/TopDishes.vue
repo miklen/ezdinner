@@ -33,7 +33,7 @@ onMounted(async () => {
 <template>
   <div class="top-dishes">
     <div class="top-dishes__header">
-      <span class="text-section-title top-dishes__title">Top Dishes</span>
+      <span class="text-section-title top-dishes__title">{{ $t('dishes.topDishes') }}</span>
       <v-select
         v-model="top"
         :items="choices"

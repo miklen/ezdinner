@@ -10,6 +10,7 @@ const dishesStore = useDishesStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
 const { $msal } = useNuxtApp()
 const { show: showSnackbar } = useSnackbar()
+const { t } = useI18n()
 
 // ── Data ───────────────────────────────────────────────────────────────────────
 
@@ -40,7 +41,7 @@ async function triggerEnrich() {
     await dishRepo.enrich(appStore.activeFamilyId, route.params.id as string)
     await loadDish()
   } catch {
-    showSnackbar('AI analysis failed — metadata not updated', { type: 'error' })
+    showSnackbar(t('dishes.aiAnalysisFailedMetadata'), { type: 'error' })
   } finally {
     enriching.value = false
   }
@@ -65,9 +66,9 @@ async function doMove() {
   if (!dish.value || !moveToDish.value) return
   try {
     await dinnerRepo.moveDinnerDishes(appStore.activeFamilyId, dish.value.id, moveToDish.value.id)
-    showSnackbar('Occurrences moved', { type: 'success' })
+    showSnackbar(t('dishes.occurrencesMoved'), { type: 'success' })
   } catch {
-    showSnackbar('Failed to move occurrences', { type: 'error' })
+    showSnackbar(t('dishes.failedToMove'), { type: 'error' })
   }
   moveDialog.value = false
   moveToDish.value = null
@@ -84,7 +85,7 @@ async function doDelete() {
     dishesStore.populateDishes()
     await navigateTo('/dishes')
   } catch {
-    showSnackbar('Failed to delete dish', { type: 'error' })
+    showSnackbar(t('dishes.failedToDelete'), { type: 'error' })
     deleteDialog.value = false
   }
 }
@@ -104,9 +105,9 @@ async function doArchive() {
     archiveDialog.value = false
     await loadDish()
     dishesStore.populateDishes()
-    showSnackbar('Dish archived', { type: 'success' })
+    showSnackbar(t('dishes.dishArchived'), { type: 'success' })
   } catch {
-    showSnackbar('Failed to archive dish', { type: 'error' })
+    showSnackbar(t('dishes.failedToArchive'), { type: 'error' })
     archiveDialog.value = false
   } finally {
     archiveLoading.value = false
@@ -121,9 +122,9 @@ async function doReactivate() {
     reactivateDialog.value = false
     await loadDish()
     dishesStore.populateDishes()
-    showSnackbar('Dish reactivated', { type: 'success' })
+    showSnackbar(t('dishes.dishReactivated'), { type: 'success' })
   } catch {
-    showSnackbar('Failed to reactivate dish', { type: 'error' })
+    showSnackbar(t('dishes.failedToReactivate'), { type: 'error' })
     reactivateDialog.value = false
   } finally {
     reactivateLoading.value = false
@@ -136,8 +137,8 @@ async function doReactivate() {
     <!-- Archived status banner -->
     <div v-if="dish?.isArchived" class="dish-detail__archived-banner">
       <v-icon size="14" icon="mdi-archive-outline" class="dish-detail__archived-icon" />
-      This dish is archived — it won't appear in suggestions or the active catalog.
-      <span class="dish-detail__archived-hint">Reactivate anytime below.</span>
+      {{ $t('dishes.archivedDetailBanner') }}
+      <span class="dish-detail__archived-hint">{{ $t('dishes.reactivateAnytime') }}</span>
     </div>
 
     <!-- Header: breadcrumb + name + rating + stat + overflow menu -->
@@ -159,7 +160,7 @@ async function doReactivate() {
         @click="archiveDialog = true"
       >
         <v-icon size="14" icon="mdi-archive-arrow-down-outline" />
-        Archive dish
+        {{ $t('dishes.archiveDish') }}
       </button>
       <button
         v-else
@@ -167,7 +168,7 @@ async function doReactivate() {
         @click="reactivateDialog = true"
       >
         <v-icon size="14" icon="mdi-archive-arrow-up-outline" />
-        Reactivate dish
+        {{ $t('dishes.reactivateDish') }}
       </button>
     </div>
 
@@ -221,7 +222,7 @@ async function doReactivate() {
     <!-- Move occurrences dialog -->
     <v-dialog v-model="moveDialog" width="440">
       <v-card>
-        <v-card-title>Move occurrences</v-card-title>
+        <v-card-title>{{ $t('dishes.moveOccurrences') }}</v-card-title>
         <v-card-text>
           Move all {{ dish?.dishStats?.timesUsed ?? 0 }}
           dinner occurrence{{ (dish?.dishStats?.timesUsed ?? 0) === 1 ? '' : 's' }} of
@@ -233,20 +234,20 @@ async function doReactivate() {
             return-object
             density="compact"
             variant="outlined"
-            placeholder="Select a dish…"
+            :placeholder="$t('dishes.selectADish')"
             class="mt-3"
           />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="moveDialog = false">Cancel</v-btn>
+          <v-btn variant="text" @click="moveDialog = false">{{ $t('common.cancel') }}</v-btn>
           <v-btn
             variant="text"
             color="primary"
             :disabled="!moveToDish"
             @click="doMove"
           >
-            Move
+            {{ $t('common.move') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -255,15 +256,12 @@ async function doReactivate() {
     <!-- Delete confirmation dialog -->
     <v-dialog v-model="deleteDialog" width="400">
       <v-card>
-        <v-card-title>Delete dish?</v-card-title>
-        <v-card-text>
-          Are you sure you want to delete <strong>{{ dish?.name }}</strong>?
-          This cannot be undone.
-        </v-card-text>
+        <v-card-title>{{ $t('dishes.deleteDish') }}</v-card-title>
+        <v-card-text>{{ $t('dishes.deleteDishText', { name: dish?.name }) }}</v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn variant="text" color="error" @click="doDelete">Delete</v-btn>
+          <v-btn variant="text" @click="deleteDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn variant="text" color="error" @click="doDelete">{{ $t('common.delete') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -271,15 +269,12 @@ async function doReactivate() {
     <!-- Archive confirmation dialog -->
     <v-dialog v-model="archiveDialog" width="400">
       <v-card>
-        <v-card-title>Archive dish?</v-card-title>
-        <v-card-text>
-          <strong>{{ dish?.name }}</strong> will be removed from suggestions and the active catalog.
-          You can reactivate it at any time.
-        </v-card-text>
+        <v-card-title>{{ $t('dishes.archiveDishTitle') }}</v-card-title>
+        <v-card-text>{{ $t('dishes.archiveDishText', { name: dish?.name }) }}</v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" :disabled="archiveLoading" @click="archiveDialog = false">Cancel</v-btn>
-          <v-btn variant="text" color="warning" :loading="archiveLoading" @click="doArchive">Archive</v-btn>
+          <v-btn variant="text" :disabled="archiveLoading" @click="archiveDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn variant="text" color="warning" :loading="archiveLoading" @click="doArchive">{{ $t('dishes.archiveDish') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -287,14 +282,12 @@ async function doReactivate() {
     <!-- Reactivate confirmation dialog -->
     <v-dialog v-model="reactivateDialog" width="400">
       <v-card>
-        <v-card-title>Reactivate dish?</v-card-title>
-        <v-card-text>
-          <strong>{{ dish?.name }}</strong> will be restored to the active catalog and become eligible for suggestions again.
-        </v-card-text>
+        <v-card-title>{{ $t('dishes.reactivateDishTitle') }}</v-card-title>
+        <v-card-text>{{ $t('dishes.reactivateDishText', { name: dish?.name }) }}</v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" :disabled="reactivateLoading" @click="reactivateDialog = false">Cancel</v-btn>
-          <v-btn variant="text" color="primary" :loading="reactivateLoading" @click="doReactivate">Reactivate</v-btn>
+          <v-btn variant="text" :disabled="reactivateLoading" @click="reactivateDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn variant="text" color="primary" :loading="reactivateLoading" @click="doReactivate">{{ $t('dishes.reactivateDish') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

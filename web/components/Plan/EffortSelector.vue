@@ -9,11 +9,13 @@ const emit = defineEmits<{
   'update:modelValue': [value: EffortLevel | null]
 }>()
 
-const options: { label: string; value: EffortLevel }[] = [
-  { label: 'Quick', value: 'Quick' },
-  { label: 'Med', value: 'Medium' },
-  { label: 'Elab', value: 'Elaborate' },
-]
+const { t } = useI18n()
+
+const options = computed(() => [
+  { label: t('plan.effort.quick'), value: 'Quick' as EffortLevel },
+  { label: t('plan.effort.medium'), value: 'Medium' as EffortLevel },
+  { label: t('plan.effort.elaborate'), value: 'Elaborate' as EffortLevel },
+])
 
 function toggle(value: EffortLevel) {
   emit('update:modelValue', props.modelValue === value ? null : value)

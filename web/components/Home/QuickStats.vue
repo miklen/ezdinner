@@ -5,6 +5,8 @@ defineProps<{
   overdueFavoriteDays: number | null
   loading: boolean
 }>()
+
+useI18n()
 </script>
 
 <template>
@@ -18,12 +20,12 @@ defineProps<{
       <div class="stat-card">
         <v-icon size="18" class="stat-card__icon">mdi-silverware-fork-knife</v-icon>
         <span class="stat-card__value">{{ weekDishCount }}</span>
-        <span class="stat-card__label">dishes planned this week</span>
+        <span class="stat-card__label">{{ $t('home.dishesPlannedThisWeek') }}</span>
       </div>
       <div class="stat-card">
         <v-icon size="18" class="stat-card__icon">mdi-heart</v-icon>
         <span class="stat-card__value stat-card__value--name">{{ overdueFavoriteName ?? '—' }}</span>
-        <span class="stat-card__label">{{ overdueFavoriteDays !== null ? `top rated, not had in ${overdueFavoriteDays} days` : 'no rated dishes yet' }}</span>
+        <span class="stat-card__label">{{ overdueFavoriteDays !== null ? $t('home.topRatedNotHadInDays', { days: overdueFavoriteDays }) : $t('home.noRatedDishesYet') }}</span>
       </div>
     </template>
   </div>

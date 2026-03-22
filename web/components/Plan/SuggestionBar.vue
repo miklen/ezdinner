@@ -11,6 +11,7 @@ const emit = defineEmits<{
   'dish:used': [date: string, dishId: string, dishName: string]
 }>()
 
+const { locale } = useI18n()
 const { suggestions, loading, exhausted, suggestWeek, rerollWeek, rerollDay, clearSuggestionForDate, reset } =
   useDinnerSuggestions()
 
@@ -88,7 +89,7 @@ function onReroll(date: string) {
           @click="expanded = !expanded"
         >
           <v-icon size="14" class="bar-icon">mdi-lightbulb-outline</v-icon>
-          <span class="bar-label">Suggestions</span>
+          <span class="bar-label">{{ $t('plan.suggestions') }}</span>
           <v-icon size="14" class="bar-chevron">
             {{ expanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
           </v-icon>
@@ -103,19 +104,19 @@ function onReroll(date: string) {
         </button>
       </div>
       <div class="bar-actions">
-        <button v-if="hasLoaded" class="reset-btn" title="Clear suggestions" @click="onReset">
+        <button v-if="hasLoaded" class="reset-btn" :title="$t('plan.clearSuggestions')" @click="onReset">
           <v-icon size="14">mdi-close</v-icon>
         </button>
         <button class="suggest-btn" :class="{ loading }" :disabled="loading" @click="onSuggest">
           <v-icon size="14">{{ hasLoaded ? 'mdi-dice-multiple' : 'mdi-lightbulb-outline' }}</v-icon>
-          {{ hasLoaded ? 'Suggest again' : 'Suggest week' }}
+          {{ hasLoaded ? $t('plan.suggestAgain') : $t('plan.suggestWeek') }}
         </button>
       </div>
     </div>
 
     <div class="algo-info-wrapper" :class="{ open: showAlgorithmInfo }">
       <div class="algo-info">
-        Ranked by: <strong>rating</strong> · <strong>how long overdue</strong> · <strong>seasonal fit</strong> · <strong>effort match</strong> · <strong>leftover patterns</strong>. Dishes served in the last 7 days are down-ranked.
+        {{ $t('plan.rankedBy') }}
       </div>
     </div>
 
@@ -128,7 +129,7 @@ function onReroll(date: string) {
             class="suggestion-row"
           >
             <div class="suggestion-row__meta">
-              <span class="suggestion-day">{{ DateTime.fromISO(date).toFormat('EEE d') }}</span>
+              <span class="suggestion-day">{{ DateTime.fromISO(date).setLocale(locale).toFormat('EEE d') }}</span>
               <PlanEffortSelector
                 :model-value="effortPreferences[date] ?? null"
                 @update:model-value="effortPreferences[date] = $event"
@@ -140,7 +141,7 @@ function onReroll(date: string) {
 
       <template v-else>
         <p v-if="showEmptyMessage" class="empty-message">
-          No more options — all days are covered or candidates exhausted.
+          {{ $t('plan.noMoreOptions') }}
         </p>
 
         <div v-if="hasSuggestions" class="suggestion-list">
@@ -151,7 +152,7 @@ function onReroll(date: string) {
             :style="{ animationDelay: `${i * 40}ms` }"
           >
             <div class="suggestion-row__meta">
-              <span class="suggestion-day">{{ DateTime.fromISO(item.date).toFormat('EEE d') }}</span>
+              <span class="suggestion-day">{{ DateTime.fromISO(item.date).setLocale(locale).toFormat('EEE d') }}</span>
               <PlanEffortSelector
                 :model-value="effortPreferences[item.date] ?? null"
                 @update:model-value="effortPreferences[item.date] = $event"

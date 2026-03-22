@@ -35,7 +35,20 @@ export default defineNuxtConfig({
     'vuetify-nuxt-module',
     '@pinia/nuxt',
     '@nuxt/eslint',
+    '@nuxtjs/i18n',
   ],
+
+  i18n: {
+    strategy: 'no_prefix',
+    locales: [
+      { code: 'en', language: 'en-US', file: 'en.json' },
+      { code: 'da', language: 'da-DK', file: 'da.json' },
+    ],
+    defaultLocale: 'en',
+    langDir: 'locales',
+    lazy: true,
+    detectBrowserLanguage: false,
+  },
 
   vuetify: {
     moduleOptions: {

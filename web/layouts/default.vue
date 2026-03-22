@@ -4,6 +4,7 @@ const appStore = useAppStore()
 const familiesStore = useFamiliesStore()
 const snackbar = useSnackbar()
 const route = useRoute()
+const { t } = useI18n()
 
 const loading = shallowRef(true)
 
@@ -22,13 +23,13 @@ function hideRailTooltip() {
 
 const links = computed(() => {
   const nav = [
-    { icon: 'mdi-home-outline', iconActive: 'mdi-home', title: 'Home', to: '/home' },
-    { icon: 'mdi-account-group-outline', iconActive: 'mdi-account-group', title: 'Families', to: '/families' },
+    { icon: 'mdi-home-outline', iconActive: 'mdi-home', title: t('nav.home'), to: '/home' },
+    { icon: 'mdi-account-group-outline', iconActive: 'mdi-account-group', title: t('nav.families'), to: '/families' },
   ]
   if (appStore.activeFamilyId) {
     nav.push(
-      { icon: 'mdi-silverware-fork-knife', iconActive: 'mdi-silverware-fork-knife', title: 'Dishes', to: '/dishes' },
-      { icon: 'mdi-calendar-blank-outline', iconActive: 'mdi-calendar-blank', title: 'Plan', to: '/plan' },
+      { icon: 'mdi-silverware-fork-knife', iconActive: 'mdi-silverware-fork-knife', title: t('nav.dishes'), to: '/dishes' },
+      { icon: 'mdi-calendar-blank-outline', iconActive: 'mdi-calendar-blank', title: t('nav.plan'), to: '/plan' },
     )
   }
   return nav

@@ -12,6 +12,7 @@ const emit = defineEmits<{
   'reroll': [date: string]
 }>()
 
+const { t } = useI18n()
 const showReasons = ref(false)
 
 function formatRating(rating: number): string {
@@ -19,9 +20,8 @@ function formatRating(rating: number): string {
 }
 
 function formatDaysAgo(days: number): string {
-  if (days <= 0) return 'never'
-  if (days === 1) return '1d ago'
-  return `${days}d ago`
+  if (days <= 0) return t('plan.never')
+  return t('plan.dAgo', { days })
 }
 </script>
 
@@ -43,15 +43,15 @@ function formatDaysAgo(days: number): string {
           v-if="suggestion.reasons.length > 0"
           class="info-btn"
           :class="{ active: showReasons }"
-          :aria-label="showReasons ? 'Hide reasons for this suggestion' : 'Show reasons for this suggestion'"
+          :aria-label="showReasons ? $t('plan.hideReasons') : $t('plan.showReasons')"
           @click="showReasons = !showReasons"
         >
           <v-icon size="13">mdi-information-outline</v-icon>
         </button>
         <button class="use-btn" @click="emit('use', date, suggestion.dishId, suggestion.dishName)">
-          Use
+          {{ $t('plan.use') }}
         </button>
-        <button class="reroll-btn" title="Reroll this day" @click="emit('reroll', date)">
+        <button class="reroll-btn" :title="$t('plan.rerollThisDay')" @click="emit('reroll', date)">
           <v-icon size="13">mdi-dice-multiple</v-icon>
         </button>
       </div>

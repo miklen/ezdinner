@@ -72,8 +72,8 @@ watch(() => appStore.activeFamilyId, init, { immediate: true })
       <div class="no-family">
         <EmptyState
           icon="mdi-account-group"
-          message="Get started by creating a family and begin tracking and planning your meals."
-          action-label="Go to Families"
+          :message="$t('home.getStartedMessage')"
+          :action-label="$t('home.goToFamilies')"
           action-to="/families"
         />
       </div>
@@ -86,7 +86,7 @@ watch(() => appStore.activeFamilyId, init, { immediate: true })
         <!-- Tomorrow preview -->
         <v-skeleton-loader v-if="loading" type="text" height="56" rounded="lg" />
         <div v-else class="tomorrow-card">
-          <span class="tomorrow-card__label">TOMORROW</span>
+          <span class="tomorrow-card__label">{{ $t('home.tomorrow') }}</span>
           <template v-if="tomorrow && tomorrow.menu.length">
             <div class="tomorrow-card__menu">
               <DishPill
@@ -99,8 +99,8 @@ watch(() => appStore.activeFamilyId, init, { immediate: true })
             </div>
           </template>
           <span v-else class="tomorrow-card__empty">
-            Nothing planned —
-            <NuxtLink to="/plan" class="tomorrow-card__link">plan tomorrow</NuxtLink>
+            {{ $t('home.nothingPlanned') }}
+            <NuxtLink to="/plan" class="tomorrow-card__link">{{ $t('home.planTomorrow') }}</NuxtLink>
           </span>
         </div>
 

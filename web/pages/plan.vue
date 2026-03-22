@@ -89,9 +89,11 @@ const prevWeekendDinners = computed(() =>
 
 // Label for the prev-weekend section — always uses week number so it
 // remains accurate whether browsing current, past, or future weeks.
+const { t } = useI18n()
+
 const prevWeekendLabel = computed(() => {
   const wk = weekStart.value.minus({ days: 2 }).weekNumber
-  return `Week ${wk} weekend`
+  return t('plan.weekWeekend', { week: wk })
 })
 
 const currentWeekDinners = computed(() =>

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@azure/msal-browser": "^3.28.0",
+    "@nuxtjs/i18n": "^10.2.3",
     "@pinia/nuxt": "^0.9.0",
     "@vueuse/core": "^14.2.1",
     "easymde": "^2.18.0",
