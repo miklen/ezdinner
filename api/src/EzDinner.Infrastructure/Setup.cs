@@ -89,9 +89,11 @@ namespace EzDinner.Infrastructure
 
         public static IServiceCollection RegisterWebPush(this IServiceCollection services, IConfiguration configuration)
         {
-            var publicKey = configuration.GetValue<string>("WebPush:VapidPublicKey")!;
-            var privateKey = configuration.GetValue<string>("WebPush:VapidPrivateKey")!;
-            var subject = configuration.GetValue<string>("WebPush:Subject")!;
+            var publicKey = configuration.GetValue<string>("WebPush:VapidPublicKey");
+            var privateKey = configuration.GetValue<string>("WebPush:VapidPrivateKey");
+            var subject = configuration.GetValue<string>("WebPush:Subject");
+            if (string.IsNullOrEmpty(publicKey) || string.IsNullOrEmpty(privateKey) || string.IsNullOrEmpty(subject))
+                throw new InvalidOperationException("WebPush VAPID configuration is missing. Set WebPush:VapidPublicKey, WebPush:VapidPrivateKey, and WebPush:Subject in app settings.");
             var client = new WebPushClient();
             client.SetVapidDetails(subject, publicKey, privateKey);
             services.AddSingleton(client);
