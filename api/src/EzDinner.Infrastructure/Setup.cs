@@ -8,7 +8,9 @@ using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.DishAggregate;
 using EzDinner.Core.Aggregates.FamilyAggregate;
+using EzDinner.Core.Aggregates.PushSubscriptionAggregate;
 using EzDinner.Core.Aggregates.UserAggregate;
+using EzDinner.Query.Core.PushSubscriptionQueries;
 using EzDinner.Infrastructure.Models.Json;
 using EzDinner.Query.Core.DishQueries;
 using EzDinner.Query.Core.FamilyQueries;
@@ -22,6 +24,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
+using WebPush;
 
 namespace EzDinner.Infrastructure
 {
@@ -78,7 +81,20 @@ namespace EzDinner.Infrastructure
             services.AddScoped<IDishQueryRepository, DishRepository>();
             services.AddScoped<IDinnerRepository, DinnerRepository>();
             services.AddScoped<IFamilyQueryRepository, FamilyRepository>();
+            services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
+            services.AddScoped<IPushSubscriptionQueryRepository, PushSubscriptionRepository>();
             services.AddSingleton<IAuthzRepository, AuthzRepository>();
+            return services;
+        }
+
+        public static IServiceCollection RegisterWebPush(this IServiceCollection services, IConfiguration configuration)
+        {
+            var publicKey = configuration.GetValue<string>("WebPush:VapidPublicKey")!;
+            var privateKey = configuration.GetValue<string>("WebPush:VapidPrivateKey")!;
+            var subject = configuration.GetValue<string>("WebPush:Subject")!;
+            var client = new WebPushClient();
+            client.SetVapidDetails(subject, publicKey, privateKey);
+            services.AddSingleton(client);
             return services;
         }
 

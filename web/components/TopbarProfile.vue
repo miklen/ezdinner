@@ -44,7 +44,7 @@ const familyName = computed(() =>
           <span class="avatar-btn__initials">{{ initials }}</span>
         </button>
       </template>
-      <v-card min-width="220" rounded="lg">
+      <v-card min-width="240" rounded="lg">
         <v-list>
           <v-list-item prepend-icon="mdi-account" :title="fullName" />
         </v-list>
@@ -52,6 +52,7 @@ const familyName = computed(() =>
         <FamilyListItems />
         <v-divider />
         <v-list>
+          <NotificationsToggle />
           <v-list-item prepend-icon="mdi-logout" :title="t('auth.signOut')" @click="$msal.signOut()" />
         </v-list>
       </v-card>

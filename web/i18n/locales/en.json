@@ -196,6 +196,15 @@
       "AllYear": "All year"
     }
   },
+  "notifications": {
+    "title": "Notifications",
+    "subscribeSuccess": "Notifications enabled",
+    "unsubscribeSuccess": "Notifications disabled",
+    "permissionDenied": "Allow notifications in your browser settings to enable this feature",
+    "iosInstallRequired": "Install EzDinner to your home screen to enable push notifications",
+    "enableFailed": "Failed to enable notifications",
+    "disableFailed": "Failed to disable notifications"
+  },
   "families": {
     "familyMembers": "Family members",
     "createFamily": "Create family",

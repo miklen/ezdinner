@@ -196,6 +196,15 @@
       "AllYear": "Hele \u00e5ret"
     }
   },
+  "notifications": {
+    "title": "Notifikationer",
+    "subscribeSuccess": "Notifikationer aktiveret",
+    "unsubscribeSuccess": "Notifikationer deaktiveret",
+    "permissionDenied": "Tillad notifikationer i dine browserindstillinger for at aktivere denne funktion",
+    "iosInstallRequired": "Installer EzDinner på din startskærm for at aktivere push-notifikationer",
+    "enableFailed": "Kunne ikke aktivere notifikationer",
+    "disableFailed": "Kunne ikke deaktivere notifikationer"
+  },
   "families": {
     "familyMembers": "Familiemedlemmer",
     "createFamily": "Opret familie",
