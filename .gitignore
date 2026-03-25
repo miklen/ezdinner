@@ -84,10 +84,16 @@ dist
 .claude/settings.local.json
 
 # Service worker
-sw.*
+#sw.*
 
 # macOS
 .DS_Store
 
 # Vim swap files
 *.swp
+
+# Azurite local storage
+__azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
+__tablestorage__/
