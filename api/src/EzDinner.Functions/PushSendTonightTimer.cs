@@ -34,7 +34,7 @@ namespace EzDinner.Functions
         // Runs at 16:00 daily. WEBSITE_TIME_ZONE must be set to "Central European Standard Time"
         // (Windows) or "Europe/Copenhagen" (Linux) so the cron is interpreted in Copenhagen time.
         [Function(nameof(PushSendTonightTimer))]
-        public async Task Run([TimerTrigger("0 0 16 * * *")] TimerInfo timer)
+        public async Task Run([TimerTrigger("0 0 15 * * *")] TimerInfo timer)
         {
             _logger.LogInformation("PushSendTonightTimer fired.");
 
