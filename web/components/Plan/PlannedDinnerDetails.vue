@@ -17,6 +17,7 @@ const dinnersStore = useDinnersStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
 const { smAndDown } = useDisplay()
 const { t } = useI18n()
+const { show: showSnackbar } = useSnackbar()
 
 const defaultOptOutPicks = computed(() => [
   t('plan.optOut.vacation'),
@@ -99,6 +100,9 @@ async function createDish() {
   dishSearch.value = ''
   dishSelector.value?.blur()
   const dishId = (await dishRepo.create(appStore.activeFamilyId, dishName)) as string
+  dishRepo.enrich(appStore.activeFamilyId, dishId).catch(() => {
+    showSnackbar(t('dishes.aiAnalysisFailed'), { type: 'error' })
+  })
   await dishesStore.updateDish(dishId)
   await addDishToMenu(dishId)
 }
