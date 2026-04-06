@@ -286,6 +286,8 @@ async function doMove() {
     transform var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out);
   text-decoration: none;
+  user-select: none;
+  touch-action: manipulation;
 }
 
 /* Reveal overflow button on card hover/focus-within */
