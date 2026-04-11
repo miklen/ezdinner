@@ -35,7 +35,7 @@ const rating = computed(() =>
     </span>
 
     <span class="dish-row__rating">
-      <v-icon size="12" color="primary">mdi-heart</v-icon>
+      <v-icon size="12" color="#C05040">mdi-heart</v-icon>
       {{ rating }}
     </span>
 

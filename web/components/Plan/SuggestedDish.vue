@@ -32,7 +32,7 @@ function formatDaysAgo(days: number): string {
         <span class="dish-name">{{ suggestion.dishName }}</span>
         <div class="dish-meta">
           <span class="dish-rating">
-            <v-icon size="11" color="primary">mdi-heart</v-icon>
+            <v-icon size="11" color="#C05040">mdi-heart</v-icon>
             {{ formatRating(suggestion.rating) }}
           </span>
           <span class="dish-days">{{ formatDaysAgo(suggestion.daysSinceLast) }}</span>
