@@ -95,6 +95,11 @@ namespace EzDinner.Authorization.Core
             {
                 await _authzRepository.AssignPolicyToRole(Roles.FamilyMember, familyId, Resources.Family, Actions.Read);
             }
+
+            if (!_authzRepository.RoleHasPolicy(Roles.FamilyMember, familyId, Resources.Wishlist, Actions.All))
+            {
+                await _authzRepository.AssignPolicyToRole(Roles.FamilyMember, familyId, Resources.Wishlist, Actions.All);
+            }
         }
 
         public bool Authorize(Guid userId, Guid familyId, string resource, string action)

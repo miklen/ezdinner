@@ -59,7 +59,7 @@ namespace EzDinner.Functions
         {
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!Guid.TryParse(familyId, out var parsedFamilyId)) return new BadRequestObjectResult("Invalid family ID.");
-            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Family, Actions.Read)) return new UnauthorizedResult();
+            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Wishlist, Actions.Read)) return new UnauthorizedResult();
 
             var userId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId()!);
             var query = new GetWishlistQuery(_wishlistQueryRepo, _familyQueryService);
@@ -74,7 +74,7 @@ namespace EzDinner.Functions
         {
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!Guid.TryParse(familyId, out var parsedFamilyId)) return new BadRequestObjectResult("Invalid family ID.");
-            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Family, Actions.Create)) return new UnauthorizedResult();
+            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Wishlist, Actions.Create)) return new UnauthorizedResult();
 
             var userId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId()!);
             var model = await req.GetBodyAs<AddWishCommandModel>();
@@ -99,7 +99,7 @@ namespace EzDinner.Functions
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!Guid.TryParse(familyId, out var parsedFamilyId)) return new BadRequestObjectResult("Invalid family ID.");
             if (!Guid.TryParse(wishId, out var parsedWishId)) return new BadRequestObjectResult("Invalid wish ID.");
-            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Family, Actions.Update)) return new UnauthorizedResult();
+            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Wishlist, Actions.Update)) return new UnauthorizedResult();
 
             var userId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId()!);
             var command = new UpvoteWishCommand(_wishlistRepo, _pushRepo, _webPushClient, SystemClock.Instance, _logger);
@@ -123,7 +123,7 @@ namespace EzDinner.Functions
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
             if (!Guid.TryParse(familyId, out var parsedFamilyId)) return new BadRequestObjectResult("Invalid family ID.");
             if (!Guid.TryParse(wishId, out var parsedWishId)) return new BadRequestObjectResult("Invalid wish ID.");
-            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Family, Actions.Delete)) return new UnauthorizedResult();
+            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Wishlist, Actions.Delete)) return new UnauthorizedResult();
 
             var userId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId()!);
             var command = new RemoveWishCommand(_wishlistRepo, _familyRepo);
