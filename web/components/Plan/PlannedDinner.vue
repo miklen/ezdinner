@@ -216,8 +216,8 @@ function handleHeaderClick() {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-primary-dark);
-  background: rgba(var(--color-primary-rgb), 0.12);
+  color: #8a6518;
+  background: rgba(212, 168, 75, 0.15);
   border-radius: var(--radius-sm);
   padding: 2px 6px;
   line-height: 1.6;

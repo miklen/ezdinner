@@ -18,12 +18,12 @@ useI18n()
     </template>
     <template v-else>
       <div class="stat-card">
-        <v-icon size="18" class="stat-card__icon">mdi-silverware-fork-knife</v-icon>
+        <v-icon size="18" class="stat-card__icon stat-card__icon--plan">mdi-silverware-fork-knife</v-icon>
         <span class="stat-card__value">{{ weekDishCount }}</span>
         <span class="stat-card__label">{{ $t('home.dishesPlannedThisWeek') }}</span>
       </div>
       <div class="stat-card">
-        <v-icon size="18" class="stat-card__icon">mdi-heart</v-icon>
+        <v-icon size="18" class="stat-card__icon stat-card__icon--fave">mdi-heart</v-icon>
         <span class="stat-card__value stat-card__value--name">{{ overdueFavoriteName ?? '—' }}</span>
         <span class="stat-card__label">{{ overdueFavoriteDays !== null ? $t('home.topRatedNotHadInDays', { days: overdueFavoriteDays }) : $t('home.noRatedDishesYet') }}</span>
       </div>
@@ -55,8 +55,12 @@ useI18n()
   overflow: hidden;
 }
 
-.stat-card__icon {
+.stat-card__icon--plan {
   color: var(--color-primary);
+}
+
+.stat-card__icon--fave {
+  color: var(--color-accent);
 }
 
 .stat-card__value {

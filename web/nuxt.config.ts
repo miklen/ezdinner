@@ -12,7 +12,7 @@ export default defineNuxtConfig({
         { property: 'og:title', content: 'EzDinner' },
         { property: 'og:description', content: 'Plan and track your family dinners — get suggestions based on your history!' },
         { property: 'og:site_name', content: 'EzDinner' },
-        { name: 'theme-color', content: '#B8511D' },
+        { name: 'theme-color', content: '#3A6B4A' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
@@ -63,11 +63,11 @@ export default defineNuxtConfig({
         themes: {
           light: {
             colors: {
-              primary: '#D4652A',
-              'primary-darken-1': '#B8511D',
-              'primary-lighten-1': '#E8884F',
-              secondary: '#6B8F5E',
-              accent: '#E5A83B',
+              primary: '#6FAF7A',
+              'primary-darken-1': '#3A6B4A',
+              'primary-lighten-1': '#8FC49A',
+              secondary: '#8C7060',
+              accent: '#D4A84B',
               background: '#FAF7F4',
               surface: '#FFFFFF',
               'surface-variant': '#F5F0EB',

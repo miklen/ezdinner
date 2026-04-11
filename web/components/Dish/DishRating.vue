@@ -1,6 +1,6 @@
 <template>
   <v-rating
-    color="primary"
+    color="accent"
     half-increments
     empty-icon="mdi-heart-outline"
     full-icon="mdi-heart"
