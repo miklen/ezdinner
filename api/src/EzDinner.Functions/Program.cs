@@ -7,6 +7,7 @@ using EzDinner.Query.Core.DishQueries;
 using EzDinner.Query.Core.FamilyQueries;
 using EzDinner.Core.DomainServices.DinnerSuggestions;
 using EzDinner.Query.Core.SuggestionQueries;
+using EzDinner.Query.Core.WishlistQueries;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.Functions.Worker;
@@ -57,7 +58,8 @@ var host = new HostBuilder()
             .AddScoped<IScoringRule, LeftoverPatternRule>()
             .AddScoped<IScoringRule, SeasonalAffinityRule>()
             .AddScoped<IScoringRule, EffortMatchRule>()
-            .AddScoped<IDinnerSuggestionService, DinnerSuggestionService>();
+            .AddScoped<IDinnerSuggestionService, DinnerSuggestionService>()
+            .AddScoped<GetWishlistQuery>();
     })
     .Build();
 

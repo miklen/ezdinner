@@ -12,7 +12,7 @@ const timeout = ref(3000)
 const colorMap: Record<SnackbarType, string> = {
   success: 'success',
   error: 'error',
-  info: 'surface-variant',
+  info: 'primary',
 }
 
 export function useSnackbar() {

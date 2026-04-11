@@ -7,10 +7,13 @@ const route = useRoute()
 const appStore = useAppStore()
 const familiesStore = useFamiliesStore()
 const dishesStore = useDishesStore()
+const wishlistStore = useWishlistStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
 const { $msal } = useNuxtApp()
 const { show: showSnackbar } = useSnackbar()
 const { t } = useI18n()
+
+const addWishDialog = shallowRef(false)
 
 // ── Data ───────────────────────────────────────────────────────────────────────
 
@@ -47,7 +50,10 @@ async function triggerEnrich() {
   }
 }
 
-onMounted(loadDish)
+onMounted(() => {
+  loadDish()
+  wishlistStore.fetchWishes()
+})
 onUnmounted(() => { enriching.value = false })
 watch(() => appStore.activeFamilyId, () => navigateTo('/dishes'))
 
@@ -152,7 +158,7 @@ async function doReactivate() {
       @renamed="triggerEnrich"
     />
 
-    <!-- Archive / Reactivate action -->
+    <!-- Archive / Reactivate action + Add to wish list -->
     <div v-if="dish && !loading" class="dish-detail__archive-action mb-4">
       <button
         v-if="!dish.isArchived"
@@ -170,7 +176,22 @@ async function doReactivate() {
         <v-icon size="14" icon="mdi-archive-arrow-up-outline" />
         {{ $t('dishes.reactivateDish') }}
       </button>
+
+      <button
+        class="dish-detail__wish-btn"
+        @click="addWishDialog = true"
+      >
+        <v-icon size="14" :icon="wishlistStore.wishes.some(w => w.dishId === dish!.id) ? 'mdi-heart' : 'mdi-heart-plus-outline'" />
+        {{ wishlistStore.wishes.some(w => w.dishId === dish!.id) ? $t('wishlist.onWishList') : $t('wishlist.addToWishList') }}
+      </button>
     </div>
+
+    <!-- Add to wish list dialog -->
+    <WishAddWishDialog
+      v-if="dish"
+      v-model="addWishDialog"
+      :preselected-dish="dish"
+    />
 
     <!-- Two-column layout: notes on left, ratings + dates on right -->
     <!-- align="start" prevents Vuetify from stretching columns to equal height -->
@@ -299,6 +320,12 @@ async function doReactivate() {
   padding: 0 var(--space-2);
 }
 
+.dish-detail__archive-action {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .dish-detail__side {
   display: flex;
   flex-direction: column;
@@ -368,5 +395,29 @@ async function doReactivate() {
   background-color: rgba(var(--color-primary-rgb), 0.06);
   border-color: var(--color-primary-dark);
   color: var(--color-primary-dark);
+}
+
+/* Wish list action button — warm heart accent */
+.dish-detail__wish-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-3);
+  background: none;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.35);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.dish-detail__wish-btn:hover {
+  background-color: rgba(var(--color-primary-rgb), 0.06);
+  border-color: var(--color-primary);
 }
 </style>

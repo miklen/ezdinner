@@ -2,6 +2,7 @@ import { DishesRepository } from '~/repository/dishes-repository'
 import { DinnerRepository } from '~/repository/dinner-repository'
 import { FamilyRepository } from '~/repository/family-repository'
 import { SuggestionsRepository } from '~/repository/suggestions-repository'
+import { WishlistRepository } from '~/repository/wishlist-repository'
 
 /**
  * Provides typed repository instances pre-wired with auth.
@@ -17,5 +18,6 @@ export function useRepositories() {
     dinners: new DinnerRepository(apiFetch),
     families: new FamilyRepository(apiFetch, apiFetchRaw),
     suggestions: new SuggestionsRepository(apiFetch),
+    wishlist: new WishlistRepository(apiFetch, apiFetchRaw),
   }
 }

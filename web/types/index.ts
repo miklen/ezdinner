@@ -103,3 +103,20 @@ export interface DaySuggestion {
   date: string
   suggestion: DishSuggestion | null
 }
+
+export interface WishlistItem {
+  wishId: string
+  dishId: string
+  dishName: string
+  addedById: string
+  addedByName: string
+  voteCount: number
+  voterIds: string[]
+  expiresAt: string
+  isVotedByCurrentUser: boolean
+}
+
+export interface AddWishRequest {
+  dishId: string
+  dishName: string
+}

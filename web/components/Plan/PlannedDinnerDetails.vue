@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { DateTime } from 'luxon'
 import { useDisplay } from 'vuetify'
-import type { Dinner, Dish } from '~/types'
+import type { Dinner } from '~/types'
 
 const props = defineProps<{ dinner: Dinner }>()
 
@@ -67,25 +66,20 @@ const dishSelector = ref<HTMLElement | null>(null)
 const mobileSheetOpen = ref(false)
 const mobileSearchRef = ref<InstanceType<typeof import('vuetify/components').VTextField> | null>(null)
 
-function getDaysSince(dish: Dish): number | null {
-  const lastUsed = dish.dishStats?.lastUsed
-  if (!lastUsed) return null
-  const days = Math.round(
-    DateTime.now()
-      .diff(DateTime.fromISO(lastUsed as unknown as string), 'days')
-      .days,
-  )
-  return days >= 0 ? days : null
-}
-
-function formatRating(rating: number): string {
-  return rating > 0 ? rating.toFixed(1) : '—'
-}
+const wishlistStore = useWishlistStore()
 
 const filteredDishes = computed(() => {
   const q = dishSearch.value.toLowerCase().trim()
-  if (!q) return dishesStore.dishes
-  return dishesStore.dishes.filter((d) => d.name.toLowerCase().includes(q))
+  const dishes = q
+    ? dishesStore.dishes.filter((d) => d.name.toLowerCase().includes(q))
+    : dishesStore.dishes
+  // Wished dishes float to the top
+  const wishedIds = new Set(wishlistStore.wishes.map((w) => w.dishId))
+  return [...dishes].sort((a, b) => {
+    const aWished = wishedIds.has(a.id) ? 0 : 1
+    const bWished = wishedIds.has(b.id) ? 0 : 1
+    return aWished - bWished
+  })
 })
 
 async function onDishSelected(dish: Dish | null) {
@@ -225,16 +219,7 @@ function focusMobileSearch() {
                     min-height="48"
                     @click="selectDishFromSheet(dish)"
                   >
-                    <div class="dish-row__inner">
-                      <span class="dish-row__name">{{ dish.name }}</span>
-                      <span class="dish-row__rating">
-                        <v-icon size="12" color="primary">mdi-heart</v-icon>
-                        {{ formatRating(dish.rating) }}
-                      </span>
-                      <span v-if="getDaysSince(dish) !== null" class="dish-row__days">
-                        {{ $t('plan.dAgo', { days: getDaysSince(dish) }) }}
-                      </span>
-                    </div>
+                    <PlanDishRow :dish="dish" />
                   </v-list-item>
                 </template>
 
@@ -265,10 +250,11 @@ function focusMobileSearch() {
         ref="dishSelector"
         v-model="selectedDish"
         v-model:search="dishSearch"
-        :items="dishesStore.dishes"
+        :items="filteredDishes"
         item-title="name"
         item-value="id"
         return-object
+        no-filter
         variant="outlined"
         density="compact"
         :label="$t('plan.addDishToMenu')"
@@ -279,16 +265,7 @@ function focusMobileSearch() {
       >
         <template #item="{ item, props: itemProps }">
           <v-list-item v-bind="itemProps" :title="undefined" min-height="36" class="dish-row">
-            <div class="dish-row__inner">
-              <span class="dish-row__name">{{ item.raw.name }}</span>
-              <span class="dish-row__rating">
-                <v-icon size="12" color="primary">mdi-heart</v-icon>
-                {{ formatRating(item.raw.rating) }}
-              </span>
-              <span v-if="getDaysSince(item.raw) !== null" class="dish-row__days">
-                {{ $t('plan.dAgo', { days: getDaysSince(item.raw) }) }}
-              </span>
-            </div>
+            <PlanDishRow :dish="item.raw" />
           </v-list-item>
         </template>
 
@@ -534,40 +511,6 @@ function focusMobileSearch() {
   letter-spacing: 0;
 }
 
-/* Compact dish row (shared desktop + mobile) */
-.dish-row__inner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  min-height: 0;
-  padding: 0;
-}
-
-.dish-row__name {
-  flex: 1;
-  font-size: var(--text-sm);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dish-row__rating {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.dish-row__days {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
 
 /* Create new dish row */
 .create-dish-item {

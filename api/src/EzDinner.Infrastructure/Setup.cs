@@ -10,10 +10,12 @@ using EzDinner.Core.Aggregates.DishAggregate;
 using EzDinner.Core.Aggregates.FamilyAggregate;
 using EzDinner.Core.Aggregates.PushSubscriptionAggregate;
 using EzDinner.Core.Aggregates.UserAggregate;
+using EzDinner.Core.Aggregates.WishlistAggregate;
 using EzDinner.Query.Core.PushSubscriptionQueries;
 using EzDinner.Infrastructure.Models.Json;
 using EzDinner.Query.Core.DishQueries;
 using EzDinner.Query.Core.FamilyQueries;
+using EzDinner.Query.Core.WishlistQueries;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.EntityFrameworkCore;
@@ -83,6 +85,9 @@ namespace EzDinner.Infrastructure
             services.AddScoped<IFamilyQueryRepository, FamilyRepository>();
             services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
             services.AddScoped<IPushSubscriptionQueryRepository, PushSubscriptionRepository>();
+            services.AddScoped<IWishlistRepository, WishlistRepository>();
+            services.AddScoped<IWishlistQueryRepository, WishlistRepository>();
+            services.AddScoped<IWishStatsRepository, WishStatsRepository>();
             services.AddSingleton<IAuthzRepository, AuthzRepository>();
             return services;
         }

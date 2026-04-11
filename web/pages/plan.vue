@@ -52,7 +52,7 @@
     </div>
 
     <template #support>
-      <PlanTopDishes />
+      <PlanWishList />
     </template>
   </Content>
 </template>
@@ -66,6 +66,7 @@ useHead({ title: 'Plan' })
 const appStore = useAppStore()
 const dishesStore = useDishesStore()
 const dinnersStore = useDinnersStore()
+const wishlistStore = useWishlistStore()
 
 // Default to next week when today is Saturday (6) or Sunday (7) —
 // the user is likely planning ahead rather than the week that's ending.
@@ -106,6 +107,7 @@ async function loadWeek() {
     dishesStore.populateDishes(),
     dinnersStore.populateDinners(loadFrom.value, weekEnd.value),
     dinnersStore.fetchOptOutReasons(),
+    wishlistStore.fetchWishes(),
   ])
   loading.value = false
 }
@@ -116,14 +118,19 @@ function isDinnerSelected(dinner: Dinner) {
 
 function menuUpdated() {
   dinnersStore.populateDinners(loadFrom.value, weekEnd.value)
+  wishlistStore.fetchWishes()
 }
 
 async function onSuggestionUsed(date: string, dishId: string, _dishName: string) {
   const { dinners: dinnerRepo } = useRepositories()
   const dt = DateTime.fromISO(date)
   await dinnerRepo.addDishToMenu(appStore.activeFamilyId, dt, dishId)
-  await dinnersStore.populateDinners(loadFrom.value, weekEnd.value)
+  await Promise.all([
+    dinnersStore.populateDinners(loadFrom.value, weekEnd.value),
+    wishlistStore.fetchWishes(),
+  ])
 }
+
 
 onMounted(loadWeek)
 watch(weekStart, () => {

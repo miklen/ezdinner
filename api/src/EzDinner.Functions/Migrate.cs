@@ -10,6 +10,7 @@ using EzDinner.Core.Aggregates.DishAggregate;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.FamilyAggregate;
 using EzDinner.Core.Aggregates.PushSubscriptionAggregate;
+using EzDinner.Core.Aggregates.WishlistAggregate;
 using System.Collections.Generic;
 using EzDinner.Authorization.Core;  
 using Casbin.Persist.Adapter.EFCore;
@@ -95,6 +96,8 @@ namespace EzDinner.Functions
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(DinnerRepository.CONTAINER, $"/{nameof(Dinner.PartitionKey).ToCamelCase()}"));
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(FamilyRepository.CONTAINER, $"/{nameof(Family.PartitionKey).ToCamelCase()}"));
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(PushSubscriptionRepository.CONTAINER, $"/{nameof(PushSubscription.FamilyId).ToCamelCase()}"));
+            await db.CreateContainerIfNotExistsAsync(new ContainerProperties(WishlistRepository.CONTAINER, "/familyId"));
+            await db.CreateContainerIfNotExistsAsync(new ContainerProperties(WishStatsRepository.CONTAINER, "/familyId"));
             return db;
         }
 
