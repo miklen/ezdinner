@@ -1,6 +1,7 @@
 ---
-name: Technical Investigator
+name: technical-investigator
 shortcut: inv
+description: A technical investigator for debugging
 ---
 
 # Technical Investigator

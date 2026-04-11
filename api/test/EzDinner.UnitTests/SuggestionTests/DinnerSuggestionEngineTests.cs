@@ -65,5 +65,28 @@ namespace EzDinner.UnitTests.SuggestionTests
 
             Assert.Empty(ranked);
         }
+
+        [Fact]
+        public void Rank_WishedDishOutranksEqualCandidateWithNoWish()
+        {
+            var engine = EngineWith(new WishlistBoostRule());
+
+            var wishedId = Guid.NewGuid();
+            var unwishedId = Guid.NewGuid();
+
+            var wishedDishIds = new Dictionary<Guid, int> { [wishedId] = 2 };
+            var context = new SuggestionContextValueObject(
+                new LocalDate(2025, 1, 15),
+                Array.Empty<Guid>(),
+                Array.Empty<Guid>(),
+                wishedDishIds: wishedDishIds);
+
+            var wished = new DishCandidateValueObject(wishedId, "Wished", rating: 5, 14, 14, 0);
+            var unwished = new DishCandidateValueObject(unwishedId, "Unwished", rating: 5, 14, 14, 0);
+
+            var ranked = engine.Rank(new[] { unwished, wished }, context);
+
+            Assert.Equal(wishedId, ranked[0].DishId);
+        }
     }
 }

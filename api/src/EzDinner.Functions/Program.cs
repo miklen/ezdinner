@@ -58,6 +58,7 @@ var host = new HostBuilder()
             .AddScoped<IScoringRule, LeftoverPatternRule>()
             .AddScoped<IScoringRule, SeasonalAffinityRule>()
             .AddScoped<IScoringRule, EffortMatchRule>()
+            .AddScoped<IScoringRule, WishlistBoostRule>()
             .AddScoped<IDinnerSuggestionService, DinnerSuggestionService>()
             .AddScoped<GetWishlistQuery>();
     })

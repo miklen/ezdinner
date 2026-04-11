@@ -48,12 +48,18 @@ Create `api/src/EzDinner.Functions/local.settings.json`:
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "CosmosDb:ConnectionString": "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
     "CosmosDb:Database": "EzDinner",
+    "Anthropic:ApiKey": "<your-anthropic-api-key>",
     "AzureAdB2C:Instance": "<your-b2c-instance>",
     "AzureAdB2C:TenantId": "<your-tenant-id>",
     "AzureAdB2C:ClientId": "<your-client-id>",
     "AzureAdB2C:Domain": "<your-domain>",
     "AzureAdB2C:SignUpSignInPolicyId": "<your-policy-id>",
-    "AzureAdB2C:ClientSecret": "<your-client-secret>"
+    "AzureAdB2C:ClientSecret": "<your-client-secret>",
+    "WEBSITE_TIME_ZONE": "Central European Standard Time",
+    "WebPush:VapidPublicKey": "<your-vapid-public-key>",
+    "WebPush:VapidPrivateKey": "<your-vapid-private-key>",
+    "WebPush:Subject": "mailto:<your-email>",
+    "WebPush:SendTonightSecret": "<a-secret-string-for-the-send-tonight-endpoint>"
   },
   "Host": {
     "CORS": "*"
@@ -61,7 +67,12 @@ Create `api/src/EzDinner.Functions/local.settings.json`:
 }
 ```
 
-The `CosmosDb:ConnectionString` value above is the standard local emulator connection string.
+Notes:
+- `CosmosDb:ConnectionString` above is the standard local Cosmos DB emulator connection string — no changes needed for local dev.
+- `Anthropic:ApiKey` — required for AI dish enrichment. Get one from [console.anthropic.com](https://console.anthropic.com).
+- `AzureAdB2C:*` — obtain from your Azure AD B2C tenant (app registration for ClientId/ClientSecret).
+- `WebPush:VapidPublicKey` / `VapidPrivateKey` — generate a VAPID key pair with `npx web-push generate-vapid-keys`. Required for push notifications; the app works without them if push is not needed locally.
+- `WebPush:SendTonightSecret` — any string; used to authenticate the send-tonight webhook endpoint.
 
 ### 4. Start the backend
 
