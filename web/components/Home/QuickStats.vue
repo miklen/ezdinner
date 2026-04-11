@@ -60,7 +60,7 @@ useI18n()
 }
 
 .stat-card__icon--fave {
-  color: var(--color-accent);
+  color: var(--color-heart);
 }
 
 .stat-card__value {

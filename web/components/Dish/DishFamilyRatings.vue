@@ -62,7 +62,7 @@ async function updateRating(val: number, familyMemberId: string) {
       <div class="ratings-card__header">
         <span class="text-card-title">{{ $t('dishes.familyRatings') }}</span>
         <div v-if="averageRating !== null" class="ratings-card__avg">
-          <v-icon size="13" color="primary">mdi-heart</v-icon>
+          <v-icon size="13" :color="'#C05040'">mdi-heart</v-icon>
           <span class="ratings-card__avg-value">{{ averageRating.toFixed(1) }} avg</span>
         </div>
       </div>
@@ -97,7 +97,7 @@ async function updateRating(val: number, familyMemberId: string) {
           <!-- Rating hearts -->
           <div class="ratings-card__stars">
             <v-rating
-              color="primary"
+              color="#C05040"
               half-increments
               empty-icon="mdi-heart-outline"
               full-icon="mdi-heart"
