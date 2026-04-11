@@ -77,6 +77,22 @@ namespace EzDinner.Core.Aggregates.WishlistAggregate
         }
 
         /// <summary>
+        /// Removes an existing upvote for the user.
+        /// Throws if the user is the wish requester or has not voted.
+        /// </summary>
+        public void RemoveUpvote(Guid userId)
+        {
+            if (userId == AddedBy)
+                throw new InvalidOperationException("REQUESTER_CANNOT_REMOVE_VOTE");
+
+            var vote = _votes.FirstOrDefault(v => v.UserId == userId);
+            if (vote is null)
+                throw new InvalidOperationException("NOT_VOTED");
+
+            _votes.Remove(vote);
+        }
+
+        /// <summary>
         /// Records an upvote. Extends expiry to at least 14 days from now.
         /// Throws if the user has already voted.
         /// </summary>

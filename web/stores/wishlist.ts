@@ -28,11 +28,21 @@ export const useWishlistStore = defineStore('wishlist', () => {
     return result
   }
 
+  async function removeUpvote(wishId: string) {
+    const { wishlist } = useRepositories()
+    await wishlist.removeUpvote(appStore.activeFamilyId, wishId)
+    const wish = wishes.value.find((w) => w.wishId === wishId)
+    if (wish) {
+      wish.isVotedByCurrentUser = false
+      wish.voteCount = Math.max(0, wish.voteCount - 1)
+    }
+  }
+
   async function removeWish(wishId: string) {
     const { wishlist } = useRepositories()
     await wishlist.removeWish(appStore.activeFamilyId, wishId)
     wishes.value = wishes.value.filter((w) => w.wishId !== wishId)
   }
 
-  return { wishes, fetchWishes, addWish, upvoteWish, removeWish }
+  return { wishes, fetchWishes, addWish, upvoteWish, removeUpvote, removeWish }
 })

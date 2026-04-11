@@ -217,6 +217,7 @@
     "tapToUpvote": "tryk for +1",
     "upvoteTooltip": "+1 til dette ønske",
     "alreadyVotedTooltip": "Du har allerede stemt",
+    "removeVoteTooltip": "Fjern din stemme",
     "removeTooltip": "Fjern ønske",
     "searchDishesPlaceholder": "Søg retter…",
     "noMatchingDishes": "Ingen matchende retter",

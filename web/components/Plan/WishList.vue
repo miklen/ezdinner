@@ -34,6 +34,18 @@ async function upvote(wish: WishlistItem) {
   }
 }
 
+async function removeUpvote(wish: WishlistItem) {
+  if (upvotingId.value) return
+  upvotingId.value = wish.wishId
+  try {
+    await wishlistStore.removeUpvote(wish.wishId)
+  } catch {
+    showSnackbar(t('wishlist.errorUpvoting'), { type: 'error' })
+  } finally {
+    upvotingId.value = null
+  }
+}
+
 async function removeWish(wish: WishlistItem) {
   if (removingId.value) return
   removingId.value = wish.wishId
@@ -64,8 +76,12 @@ function canRemove(wish: WishlistItem): boolean {
 
     <!-- Empty state -->
     <div v-if="wishlistStore.wishes.length === 0" class="wish-list__empty">
-      <v-icon size="28" icon="mdi-star-outline" class="wish-list__empty-icon" />
-      <p class="wish-list__empty-text">{{ $t('wishlist.emptyState') }}</p>
+      <v-icon size="28" icon="mdi-star-outline" class="wish-list__empty-icon wish-list__stagger-1" />
+      <p class="wish-list__empty-text wish-list__stagger-2">{{ $t('wishlist.emptyState') }}</p>
+      <button class="wish-list__add-btn wish-list__stagger-3" @click="addWishDialogOpen = true">
+        <v-icon size="16" icon="mdi-plus" />
+        {{ $t('wishlist.add') }}
+      </button>
     </div>
 
     <!-- Wish rows -->
@@ -77,7 +93,9 @@ function canRemove(wish: WishlistItem): boolean {
       >
         <!-- Left: dish name + requester -->
         <div class="wish-row__info">
-          <span class="wish-row__dish">{{ wish.dishName }}</span>
+          <NuxtLink :to="'/dishes/' + wish.dishId" class="wish-row__dish-link">
+            <span class="wish-row__dish">{{ wish.dishName }}</span>
+          </NuxtLink>
           <span class="wish-row__by">{{ $t('wishlist.addedBy', { name: wish.addedByName || $t('wishlist.someone') }) }}</span>
         </div>
 
@@ -89,16 +107,16 @@ function canRemove(wish: WishlistItem): boolean {
             {{ wish.voteCount }}
           </span>
 
-          <!-- +1 button -->
+          <!-- +1 / remove-vote button -->
           <v-tooltip theme="dark">
             <template #activator="{ props: tooltipProps }">
               <button
                 v-bind="tooltipProps"
                 class="wish-row__upvote"
                 :class="{ 'wish-row__upvote--voted': wish.isVotedByCurrentUser }"
-                :disabled="wish.isVotedByCurrentUser || upvotingId === wish.wishId"
+                :disabled="upvotingId === wish.wishId || (wish.isVotedByCurrentUser && wish.addedById === currentUserId)"
                 :aria-label="wish.isVotedByCurrentUser ? $t('wishlist.alreadyVotedTooltip') : $t('wishlist.upvoteTooltip')"
-                @click="upvote(wish)"
+                @click="wish.isVotedByCurrentUser ? removeUpvote(wish) : upvote(wish)"
               >
                 <v-progress-circular
                   v-if="upvotingId === wish.wishId"
@@ -109,7 +127,7 @@ function canRemove(wish: WishlistItem): boolean {
                 <v-icon v-else size="15" icon="mdi-thumb-up-outline" />
               </button>
             </template>
-            {{ wish.isVotedByCurrentUser ? $t('wishlist.alreadyVotedTooltip') : $t('wishlist.upvoteTooltip') }}
+            {{ wish.isVotedByCurrentUser && wish.addedById === currentUserId ? $t('wishlist.alreadyVotedTooltip') : wish.isVotedByCurrentUser ? $t('wishlist.removeVoteTooltip') : $t('wishlist.upvoteTooltip') }}
           </v-tooltip>
 
           <!-- Remove button -->
@@ -204,6 +222,36 @@ function canRemove(wish: WishlistItem): boolean {
   margin: 0;
 }
 
+/* Stagger-in animation for empty state */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wish-list__stagger-1,
+.wish-list__stagger-2,
+.wish-list__stagger-3 {
+  animation: fade-up var(--duration-normal) var(--ease-out) both;
+}
+
+.wish-list__stagger-1 { animation-delay: 0ms; }
+.wish-list__stagger-2 { animation-delay: 80ms; }
+.wish-list__stagger-3 { animation-delay: 160ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wish-list__stagger-1,
+  .wish-list__stagger-2,
+  .wish-list__stagger-3 {
+    animation: none;
+  }
+}
+
 /* Wish item rows */
 .wish-list__items {
   display: flex;
@@ -230,14 +278,26 @@ function canRemove(wish: WishlistItem): boolean {
   min-width: 0;
 }
 
+.wish-row__dish-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wish-row__dish-link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary-dark);
+  text-underline-offset: 2px;
+}
+
 .wish-row__dish {
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .wish-row__by {
@@ -256,15 +316,15 @@ function canRemove(wish: WishlistItem): boolean {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: var(--text-xs);
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: 700;
   color: var(--color-text-secondary);
   min-width: 28px;
   justify-content: flex-end;
 }
 
 .wish-row__star {
-  color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 .wish-row__upvote,
@@ -281,17 +341,21 @@ function canRemove(wish: WishlistItem): boolean {
   color: var(--color-text-muted);
   transition:
     color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-instant) var(--ease-out);
 }
 
 .wish-row__upvote:hover:not(:disabled) {
-  color: var(--color-primary);
-  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-accent);
+  background: rgba(var(--color-accent-rgb), 0.08);
+}
+
+.wish-row__upvote:active:not(:disabled) {
+  transform: scale(0.88);
 }
 
 .wish-row__upvote--voted {
-  color: var(--color-primary) !important;
-  cursor: default;
+  color: var(--color-accent) !important;
 }
 
 .wish-row__upvote:disabled,
@@ -302,6 +366,6 @@ function canRemove(wish: WishlistItem): boolean {
 
 .wish-row__remove:hover:not(:disabled) {
   color: var(--color-error);
-  background: rgba(var(--color-error), 0.06);
+  background: rgba(var(--color-error-rgb), 0.06);
 }
 </style>

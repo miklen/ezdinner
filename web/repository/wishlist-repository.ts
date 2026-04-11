@@ -33,6 +33,10 @@ export class WishlistRepository {
     return { alreadyVoted: status === 409 }
   }
 
+  removeUpvote(familyId: string, wishId: string): Promise<void> {
+    return this.apiFetch(`/api/families/${familyId}/wishlist/${wishId}/upvote`, { method: 'DELETE' })
+  }
+
   removeWish(familyId: string, wishId: string): Promise<void> {
     return this.apiFetch(`/api/families/${familyId}/wishlist/${wishId}`, { method: 'DELETE' })
   }

@@ -114,6 +114,31 @@ namespace EzDinner.Functions
             };
         }
 
+        [Function("WishlistRemoveUpvote")]
+        public async Task<IActionResult> RemoveUpvote(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "families/{familyId}/wishlist/{wishId}/upvote")] HttpRequest req,
+            string familyId,
+            string wishId)
+        {
+            if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
+            if (!Guid.TryParse(familyId, out var parsedFamilyId)) return new BadRequestObjectResult("Invalid family ID.");
+            if (!Guid.TryParse(wishId, out var parsedWishId)) return new BadRequestObjectResult("Invalid wish ID.");
+            if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, familyId, Resources.Wishlist, Actions.Update)) return new UnauthorizedResult();
+
+            var userId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId()!);
+            var command = new RemoveUpvoteCommand(_wishlistRepo);
+            var result = await command.HandleAsync(parsedFamilyId, parsedWishId, userId);
+
+            return result switch
+            {
+                RemoveUpvoteResult.Removed => new NoContentResult(),
+                RemoveUpvoteResult.NotFound => new NotFoundResult(),
+                RemoveUpvoteResult.NotVoted => new ConflictObjectResult("NOT_VOTED"),
+                RemoveUpvoteResult.Forbidden => new ObjectResult(null) { StatusCode = 403 },
+                _ => new StatusCodeResult(500),
+            };
+        }
+
         [Function("WishlistRemove")]
         public async Task<IActionResult> RemoveWish(
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "families/{familyId}/wishlist/{wishId}")] HttpRequest req,

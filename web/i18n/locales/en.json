@@ -217,6 +217,7 @@
     "tapToUpvote": "tap to +1",
     "upvoteTooltip": "+1 this wish",
     "alreadyVotedTooltip": "You already voted",
+    "removeVoteTooltip": "Remove your vote",
     "removeTooltip": "Remove wish",
     "searchDishesPlaceholder": "Search dishes…",
     "noMatchingDishes": "No matching dishes",
