@@ -196,6 +196,23 @@
       "AllYear": "All year"
     }
   },
+  "assistant": {
+    "plan": "Plan",
+    "wishlist": "Wishlist",
+    "search": "Search dishes...",
+    "noDishes": "No dishes found",
+    "neverUsed": "never used",
+    "assignToDay": "Assign to day",
+    "planWithAi": "Plan this week with AI",
+    "aiLoading": "Planning your week...",
+    "aiContextPlaceholder": "Add context (e.g. busy Tuesday, guests on Friday)...",
+    "aiDraft": "AI suggestion",
+    "accept": "Accept",
+    "skip": "Skip",
+    "acceptAll": "Accept all",
+    "resuggestRemaining": "Re-suggest remaining",
+    "aiError": "Failed to generate plan — please try again"
+  },
   "notifications": {
     "title": "Notifications",
     "subscribeSuccess": "Notifications enabled",

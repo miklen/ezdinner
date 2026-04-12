@@ -3,6 +3,7 @@ using Azure.Identity;
 using Casbin;
 using Casbin.Persist.Adapter.EFCore;
 using Casbin.Model;
+using EzDinner.Query.Core.AiPlanningQueries;
 using EzDinner.Application.Commands.Dishes;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
@@ -110,6 +111,7 @@ namespace EzDinner.Infrastructure
             var apiKey = configuration.GetValue<string>("Anthropic:ApiKey")!;
             services.AddSingleton(_ => new AnthropicClient(new APIAuthentication(apiKey)));
             services.AddScoped<IDishEnrichmentProvider, AnthropicEnrichmentProvider>();
+            services.AddScoped<IAiWeekPlannerService, AnthropicWeekPlannerService>();
             return services;
         }
 

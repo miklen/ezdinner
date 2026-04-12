@@ -61,4 +61,11 @@ export class DinnerRepository {
   getOptOutReasons(familyId: string) {
     return this.apiFetch<string[]>(`/api/dinners/family/${familyId}/optout/reasons`)
   }
+
+  aiWeekPlan(familyId: string, weekStart: string, context?: string, excludedDishIds?: string[]) {
+    return this.apiFetch(`/api/families/${familyId}/suggest/ai-week`, {
+      method: 'POST',
+      body: { weekStart, context, excludedDishIds },
+    })
+  }
 }

@@ -1,4 +1,4 @@
-import type { Dish } from '~/types'
+import type { Dish, DishStats } from '~/types'
 
 export const useDishesStore = defineStore('dishes', () => {
   const appStore = useAppStore()
@@ -22,6 +22,18 @@ export const useDishesStore = defineStore('dishes', () => {
     return updating
   }
 
+  async function populateStats() {
+    const { dishes: dishRepo } = useRepositories()
+    const stats = await dishRepo.allUsageStats(appStore.activeFamilyId)
+    applyStats(stats)
+  }
+
+  function applyStats(stats: Record<string, DishStats>) {
+    dishes.value = dishes.value.map((dish) =>
+      stats[dish.id] ? { ...dish, dishStats: stats[dish.id] } : dish,
+    )
+  }
+
   async function updateDish(dishId: string) {
     const { dishes: dishRepo } = useRepositories()
     const dish = await dishRepo.get(dishId)
@@ -30,5 +42,5 @@ export const useDishesStore = defineStore('dishes', () => {
     else dishes.value[index] = dish
   }
 
-  return { dishes, dishMap, populateDishes, updateDish }
+  return { dishes, dishMap, populateDishes, populateStats, applyStats, updateDish }
 })

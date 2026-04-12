@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DateTime } from 'luxon'
 import { useDisplay } from 'vuetify'
 import type { Dinner } from '~/types'
 
@@ -73,12 +74,18 @@ const filteredDishes = computed(() => {
   const dishes = q
     ? dishesStore.dishes.filter((d) => d.name.toLowerCase().includes(q))
     : dishesStore.dishes
-  // Wished dishes float to the top
+  // Wished dishes float to the top; within each group sort by last-used (longest ago first)
   const wishedIds = new Set(wishlistStore.wishes.map((w) => w.dishId))
   return [...dishes].sort((a, b) => {
     const aWished = wishedIds.has(a.id) ? 0 : 1
     const bWished = wishedIds.has(b.id) ? 0 : 1
-    return aWished - bWished
+    if (aWished !== bWished) return aWished - bWished
+    // Sort by last-used ascending (oldest date = longest ago = highest priority)
+    const aLastUsed = a.dishStats?.lastUsed
+    const bLastUsed = b.dishStats?.lastUsed
+    const aLast = aLastUsed instanceof DateTime ? aLastUsed.toMillis() : (aLastUsed ? DateTime.fromISO(aLastUsed as unknown as string).toMillis() : -Infinity)
+    const bLast = bLastUsed instanceof DateTime ? bLastUsed.toMillis() : (bLastUsed ? DateTime.fromISO(bLastUsed as unknown as string).toMillis() : -Infinity)
+    return aLast - bLast
   })
 })
 

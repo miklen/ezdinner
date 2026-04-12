@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
-import type { Dish } from '~/types'
+import type { Dish, EffortLevel } from '~/types'
 
 const props = defineProps<{ dish: Dish }>()
 
@@ -23,6 +23,28 @@ const daysSince = computed(() => {
 const rating = computed(() =>
   props.dish.rating > 0 ? props.dish.rating.toFixed(1) : '—',
 )
+
+const effortLabel = computed<string | null>(() => {
+  const level = props.dish.effortLevel as EffortLevel | null | undefined
+  if (!level) return null
+  const map: Record<EffortLevel, string> = {
+    Quick: t('plan.effort.quick'),
+    Medium: t('plan.effort.medium'),
+    Elaborate: t('plan.effort.elaborate'),
+  }
+  return map[level] ?? null
+})
+
+const effortClass = computed<string | null>(() => {
+  const level = props.dish.effortLevel as EffortLevel | null | undefined
+  if (!level) return null
+  const map: Record<EffortLevel, string> = {
+    Quick: 'effort--quick',
+    Medium: 'effort--medium',
+    Elaborate: 'effort--elaborate',
+  }
+  return map[level] ?? null
+})
 </script>
 
 <template>
@@ -32,6 +54,10 @@ const rating = computed(() =>
     <span v-if="wish" class="dish-row__wish">
       <v-icon size="11" icon="mdi-star" />
       {{ wish.voteCount }}
+    </span>
+
+    <span v-if="effortLabel" class="dish-row__effort" :class="effortClass">
+      {{ effortLabel }}
     </span>
 
     <span class="dish-row__rating">
@@ -85,6 +111,31 @@ const rating = computed(() =>
   color: var(--color-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.dish-row__effort {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  padding: 1px 5px;
+}
+
+.effort--quick {
+  background: rgba(80, 160, 90, 0.12);
+  color: rgb(50, 130, 60);
+}
+
+.effort--medium {
+  background: rgba(200, 150, 40, 0.12);
+  color: rgb(160, 110, 20);
+}
+
+.effort--elaborate {
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
 }
 
 .dish-row__days {

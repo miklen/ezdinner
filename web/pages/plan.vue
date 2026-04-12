@@ -1,5 +1,6 @@
 <template>
-  <Content split>
+  <div>
+  <Content split desktop-only-support>
     <div class="plan-page">
       <PlanWeekNav v-model="weekStart" class="mb-4" />
 
@@ -11,14 +12,6 @@
       </template>
 
       <template v-else>
-        <!-- Suggestion bar — show below week header, above dinner list -->
-        <PlanSuggestionBar
-          :week-start="weekStart"
-          :planned-dinners="dinnersStore.dinners"
-          class="mb-4"
-          @dish:used="onSuggestionUsed"
-        />
-
         <!-- Previous weekend — visually separated -->
         <template v-if="prevWeekendDinners.length > 0">
           <div class="week-section-label">{{ prevWeekendLabel }}</div>
@@ -52,9 +45,40 @@
     </div>
 
     <template #support>
-      <PlanWishList />
+      <PlanAssistantPanel
+        :week-start="weekStart"
+        :dinners="dinnersStore.dinners"
+        @dish:assigned="onDishAssigned"
+      />
     </template>
   </Content>
+
+  <!-- Mobile: FAB to open panel as bottom sheet -->
+  <v-btn
+    class="d-flex d-md-none plan-fab"
+    icon="mdi-auto-fix"
+    color="primary"
+    size="large"
+    elevation="4"
+    @click="mobileSheetOpen = true"
+  />
+
+  <v-bottom-sheet
+    v-model="mobileSheetOpen"
+    class="d-md-none"
+    :max-height="'85dvh'"
+    scrollable
+  >
+    <v-sheet class="mobile-sheet">
+      <div class="mobile-sheet__handle" />
+      <PlanAssistantPanel
+        :week-start="weekStart"
+        :dinners="dinnersStore.dinners"
+        @dish:assigned="onMobileSheetDishAssigned"
+      />
+    </v-sheet>
+  </v-bottom-sheet>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -78,6 +102,7 @@ const defaultWeekStart = todayWeekday >= 6
 const weekStart = ref(defaultWeekStart)
 const selectedDate = ref<DateTime | null>(null)
 const loading = ref(false)
+const mobileSheetOpen = ref(false)
 
 // Load from the Saturday before the week's Monday so we always include
 // the prev weekend at the top of the list.
@@ -108,6 +133,7 @@ async function loadWeek() {
     dinnersStore.populateDinners(loadFrom.value, weekEnd.value),
     dinnersStore.fetchOptOutReasons(),
     wishlistStore.fetchWishes(),
+    dishesStore.populateStats(),
   ])
   loading.value = false
 }
@@ -121,16 +147,15 @@ function menuUpdated() {
   wishlistStore.fetchWishes()
 }
 
-async function onSuggestionUsed(date: string, dishId: string, _dishName: string) {
-  const { dinners: dinnerRepo } = useRepositories()
-  const dt = DateTime.fromISO(date)
-  await dinnerRepo.addDishToMenu(appStore.activeFamilyId, dt, dishId)
-  await Promise.all([
-    dinnersStore.populateDinners(loadFrom.value, weekEnd.value),
-    wishlistStore.fetchWishes(),
-  ])
+function onDishAssigned(_date: string, _dishId: string) {
+  dinnersStore.populateDinners(loadFrom.value, weekEnd.value)
+  wishlistStore.fetchWishes()
 }
 
+function onMobileSheetDishAssigned(date: string, dishId: string) {
+  mobileSheetOpen.value = false
+  onDishAssigned(date, dishId)
+}
 
 onMounted(loadWeek)
 watch(weekStart, () => {
@@ -174,5 +199,29 @@ watch(
 /* Slightly reduced opacity to distinguish prev-week cards from this week */
 :deep(.dinner-prev-weekend) {
   opacity: 0.8;
+}
+
+.plan-fab {
+  position: fixed;
+  bottom: calc(64px + var(--space-4));
+  right: var(--space-4);
+  z-index: 100;
+}
+
+.mobile-sheet {
+  padding: var(--space-4);
+  height: 85dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mobile-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.15);
+  margin: 0 auto var(--space-4);
+  flex-shrink: 0;
 }
 </style>

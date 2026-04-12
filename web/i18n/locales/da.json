@@ -196,6 +196,23 @@
       "AllYear": "Hele \u00e5ret"
     }
   },
+  "assistant": {
+    "plan": "Planlæg",
+    "wishlist": "Ønsker",
+    "search": "Søg retter...",
+    "noDishes": "Ingen retter fundet",
+    "neverUsed": "aldrig brugt",
+    "assignToDay": "Tildel til dag",
+    "planWithAi": "Planlæg denne uge med AI",
+    "aiLoading": "Planlægger din uge...",
+    "aiContextPlaceholder": "Tilføj kontekst (f.eks. travl tirsdag, gæster fredag)...",
+    "aiDraft": "AI-forslag",
+    "accept": "Accepter",
+    "skip": "Spring over",
+    "acceptAll": "Accepter alle",
+    "resuggestRemaining": "Genforsalg de resterende",
+    "aiError": "Kunne ikke generere plan — prøv igen"
+  },
   "notifications": {
     "title": "Notifikationer",
     "subscribeSuccess": "Notifikationer aktiveret",
