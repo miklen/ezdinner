@@ -3,7 +3,6 @@ using Azure.Identity;
 using Casbin;
 using Casbin.Persist.Adapter.EFCore;
 using Casbin.Model;
-using EzDinner.Query.Core.AiPlanningQueries;
 using EzDinner.Application.Commands.Dishes;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
@@ -13,6 +12,7 @@ using EzDinner.Core.Aggregates.PushSubscriptionAggregate;
 using EzDinner.Core.Aggregates.UserAggregate;
 using EzDinner.Core.Aggregates.WishlistAggregate;
 using EzDinner.Query.Core.PushSubscriptionQueries;
+using EzDinner.Query.Core.SuggestionQueries;
 using EzDinner.Infrastructure.Models.Json;
 using EzDinner.Query.Core.DishQueries;
 using EzDinner.Query.Core.FamilyQueries;
@@ -111,7 +111,7 @@ namespace EzDinner.Infrastructure
             var apiKey = configuration.GetValue<string>("Anthropic:ApiKey")!;
             services.AddSingleton(_ => new AnthropicClient(new APIAuthentication(apiKey)));
             services.AddScoped<IDishEnrichmentProvider, AnthropicEnrichmentProvider>();
-            services.AddScoped<IAiWeekPlannerService, AnthropicWeekPlannerService>();
+            services.AddScoped<ILlmWeekPlanClient, AnthropicWeekPlanClient>();
             return services;
         }
 

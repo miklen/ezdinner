@@ -1,4 +1,4 @@
-using EzDinner.Query.Core.AiPlanningQueries;
+using EzDinner.Query.Core.SuggestionQueries;
 using EzDinner.Authorization.Core;
 using EzDinner.Functions.Models.Command;
 using EzDinner.Functions.Models.Query;
@@ -7,7 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
+using NodaTime;
+using NodaTime.Text;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,16 +19,16 @@ namespace EzDinner.Functions
     public class AiWeekPlanFunction
     {
         private readonly ILogger<AiWeekPlanFunction> _logger;
-        private readonly IAiWeekPlannerService _plannerService;
+        private readonly IDinnerSuggestionService _suggestionService;
         private readonly IAuthzService _authz;
 
         public AiWeekPlanFunction(
             ILogger<AiWeekPlanFunction> logger,
-            IAiWeekPlannerService plannerService,
+            IDinnerSuggestionService suggestionService,
             IAuthzService authz)
         {
             _logger = logger;
-            _plannerService = plannerService;
+            _suggestionService = suggestionService;
             _authz = authz;
         }
 
@@ -56,27 +59,41 @@ namespace EzDinner.Functions
                 return new BadRequestObjectResult("weekStart is required");
 
             var parsedFamilyId = Guid.Parse(familyId);
+            var weekStart = LocalDatePattern.Iso.Parse(request.WeekStart).GetValueOrThrow();
+
+            var excludedDishIds = ParseExcludedDishIds(request.ExcludedDishIds);
 
             _logger.LogInformation(
                 "AiWeekPlan requested for family={FamilyId}, weekStart={WeekStart}",
                 familyId, request.WeekStart);
 
-            var suggestions = await _plannerService.PlanWeekAsync(
-                parsedFamilyId,
-                request.WeekStart,
-                request.Context,
-                request.ExcludedDishIds,
-                req.HttpContext.RequestAborted);
+            var suggestions = await _suggestionService.SuggestWeek(parsedFamilyId, weekStart, excludedDishIds);
 
-            var result = suggestions.Select(s => new AiWeekPlanSuggestion
-            {
-                Date = s.Date,
-                DishId = s.DishId.ToString(),
-                DishName = s.DishName,
-                Reason = s.Reason,
-            }).ToList();
+            var result = suggestions
+                .Where(s => s.Suggestion is not null)
+                .Select(s => new AiWeekPlanSuggestion
+                {
+                    Date = LocalDatePattern.Iso.Format(s.Date),
+                    DishId = s.Suggestion!.DishId.ToString(),
+                    DishName = s.Suggestion.DishName,
+                    Reason = s.Suggestion.Reasons.FirstOrDefault() ?? string.Empty,
+                }).ToList();
 
             return new OkObjectResult(result);
+        }
+
+        private static IReadOnlyList<Guid> ParseExcludedDishIds(string[]? ids)
+        {
+            if (ids == null || ids.Length == 0)
+                return Array.Empty<Guid>();
+
+            var result = new List<Guid>();
+            foreach (var id in ids)
+            {
+                if (Guid.TryParse(id, out var guid))
+                    result.Add(guid);
+            }
+            return result;
         }
     }
 }

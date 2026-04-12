@@ -1,7 +1,6 @@
-using EzDinner.Core.DomainServices.DinnerSuggestions;
 using NodaTime;
 
-namespace EzDinner.Query.Core.SuggestionQueries
+namespace EzDinner.Core.DomainServices.DinnerSuggestions
 {
     public class DaySuggestion
     {

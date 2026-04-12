@@ -16,17 +16,23 @@ namespace EzDinner.Query.Core.SuggestionQueries
         private readonly IDishRepository _dishRepository;
         private readonly IDinnerRepository _dinnerRepository;
         private readonly IWishlistRepository _wishlistRepository;
+        private readonly IDinnerWeekPlanner _weekPlanner;
+        private readonly SuggestionContextAssembler _contextAssembler;
 
         public DinnerSuggestionService(
             DinnerSuggestionEngineService engine,
             IDishRepository dishRepository,
             IDinnerRepository dinnerRepository,
-            IWishlistRepository wishlistRepository)
+            IWishlistRepository wishlistRepository,
+            IDinnerWeekPlanner weekPlanner,
+            SuggestionContextAssembler contextAssembler)
         {
             _engine = engine;
             _dishRepository = dishRepository;
             _dinnerRepository = dinnerRepository;
             _wishlistRepository = wishlistRepository;
+            _weekPlanner = weekPlanner;
+            _contextAssembler = contextAssembler;
         }
 
         public async Task<DishScoreValueObject?> SuggestDay(Guid familyId, LocalDate date, IReadOnlyList<Guid> excludedDishIds, EffortLevel? effortPreference = null)
@@ -57,49 +63,15 @@ namespace EzDinner.Query.Core.SuggestionQueries
 
         public async Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds, Dictionary<LocalDate, EffortLevel>? effortPreferences = null)
         {
-            var dishes = (await _dishRepository.GetDishesAsync(familyId)).Where(d => !d.IsArchived).ToList();
-            var allDinners = new List<Dinner>();
-            await foreach (var dinner in _dinnerRepository.GetAsync(familyId, LocalDate.MinIsoValue, LocalDate.MaxIsoValue))
-                allDinners.Add(dinner);
+            var context = await _contextAssembler.AssembleAsync(familyId, excludedDishIds, effortPreferences);
 
             var weekEnd = weekStart.PlusDays(6);
-            var weekDinnersByDate = allDinners
-                .Where(d => d.Date >= weekStart && d.Date <= weekEnd)
-                .ToDictionary(d => d.Date);
+            var alreadyPlanned = context.HistoricalDinners
+                .Where(d => d.Date >= weekStart && d.Date <= weekEnd && d.IsPlanned)
+                .Select(d => d.Date)
+                .ToList();
 
-            var wishedDishIds = await BuildWishedDishIds(familyId);
-
-            var results = new List<DaySuggestion>();
-            var suggestedByDate = new Dictionary<LocalDate, Guid?>();
-            var suggestedThisWeek = new HashSet<Guid>();
-
-            for (var i = 0; i < 7; i++)
-            {
-                var date = weekStart.PlusDays(i);
-
-                if (weekDinnersByDate.TryGetValue(date, out var planned) && planned.IsPlanned)
-                    continue;
-
-                var adjacentDishIds = BuildAdjacentDishIds(date, allDinners, suggestedByDate);
-                var candidates = DishCandidateFactory.BuildCandidates(dishes, allDinners, date);
-
-                var effectiveExclusions = excludedDishIds.Concat(suggestedThisWeek).ToList();
-                var dayEffortPreference = effortPreferences?.GetValueOrDefault(date);
-                var context = new SuggestionContextValueObject(date, adjacentDishIds, effectiveExclusions, dayEffortPreference, wishedDishIds);
-                var ranked = _engine.Rank(candidates, context);
-
-                var selected = ranked.FirstOrDefault(s => !effectiveExclusions.Contains(s.DishId))
-                    ?? ranked.FirstOrDefault(s => !excludedDishIds.Contains(s.DishId))
-                    ?? ranked.FirstOrDefault();
-
-                if (selected is not null)
-                    suggestedThisWeek.Add(selected.DishId);
-
-                suggestedByDate[date] = selected?.DishId;
-                results.Add(new DaySuggestion(date, selected));
-            }
-
-            return results;
+            return await _weekPlanner.PlanWeekAsync(context, weekStart, alreadyPlanned);
         }
 
         private async Task<IReadOnlyDictionary<Guid, int>> BuildWishedDishIds(Guid familyId)
@@ -109,24 +81,6 @@ namespace EzDinner.Query.Core.SuggestionQueries
             return wishItems
                 .Where(w => !w.IsExpired(now))
                 .ToDictionary(w => w.DishId, w => w.Votes.Count);
-        }
-
-        private static List<Guid> BuildAdjacentDishIds(
-            LocalDate date,
-            List<Dinner> allDinners,
-            Dictionary<LocalDate, Guid?> suggestedByDate)
-        {
-            var prevDate = date.PlusDays(-1);
-            var ids = new List<Guid>();
-
-            var prevDinner = allDinners.FirstOrDefault(d => d.Date == prevDate);
-            if (prevDinner is not null)
-                ids.AddRange(prevDinner.Menu.Select(m => m.DishId));
-
-            if (suggestedByDate.TryGetValue(prevDate, out var prevSuggestion) && prevSuggestion.HasValue)
-                ids.Add(prevSuggestion.Value);
-
-            return ids;
         }
     }
 }
