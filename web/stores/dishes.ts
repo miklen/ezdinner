@@ -16,7 +16,10 @@ export const useDishesStore = defineStore('dishes', () => {
     if (updating) return updating
     const { dishes: dishRepo } = useRepositories()
     updating = dishRepo.all(appStore.activeFamilyId).then((result) => {
-      dishes.value = result
+      // Preserve any client-side dishStats that were previously applied via populateStats(),
+      // since those come from a separate API call and are not included in the dishes list response.
+      const statsMap = new Map(dishes.value.filter(d => d.dishStats).map(d => [d.id, d.dishStats]))
+      dishes.value = result.map(d => statsMap.has(d.id) ? { ...d, dishStats: statsMap.get(d.id)! } : d)
       updating = null
     })
     return updating
