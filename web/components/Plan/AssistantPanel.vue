@@ -13,13 +13,24 @@ interface AiSuggestion {
 }
 
 const props = defineProps<{
-  weekStart: DateTime
+  weekStart?: DateTime
   dinners: Dinner[]
 }>()
 
 const emit = defineEmits<{
   'dish:assigned': [date: string, dishId: string]
+  'week:changed': [weekStart: DateTime]
 }>()
+
+// Internal week navigation — used when weekStart prop is absent (standalone mode)
+const { weekStart: internalWeekStart } = useWeekNav()
+const resolvedWeekStart = computed(() => props.weekStart ?? internalWeekStart.value)
+
+watch(internalWeekStart, (newWeek) => {
+  if (!props.weekStart) {
+    emit('week:changed', newWeek)
+  }
+})
 
 const appStore = useAppStore()
 const dishesStore = useDishesStore()
@@ -85,7 +96,7 @@ const activePickerDate = ref<string | null>(null)
 
 // 7 day slots for the current week (used in date reassignment picker)
 const weekDays = computed(() =>
-  Array.from({ length: 7 }, (_, i) => props.weekStart.plus({ days: i })),
+  Array.from({ length: 7 }, (_, i) => resolvedWeekStart.value.plus({ days: i })),
 )
 
 function weekDayLabel(day: DateTime): string {
@@ -106,7 +117,7 @@ async function planWithAi() {
     const excluded = skippedDishIds.value.size > 0 ? [...skippedDishIds.value] : undefined
     const result = await dinnerRepo.aiWeekPlan(
       appStore.activeFamilyId,
-      props.weekStart.toFormat('yyyy-MM-dd'),
+      resolvedWeekStart.value.toFormat('yyyy-MM-dd'),
       aiContext.value.trim() || undefined,
       excluded,
     )
@@ -185,6 +196,9 @@ function effortClass(level: EffortLevel | null | undefined): string | null {
 
 <template>
   <div class="ap">
+    <!-- ─── Standalone week navigation (only when weekStart is not provided) ── -->
+    <PlanWeekNav v-if="!weekStart" v-model="internalWeekStart" class="ap__week-nav" />
+
     <!-- ─── Mode toggle ─────────────────────────────────────────────────────── -->
     <div class="ap__tabs">
       <button
@@ -377,7 +391,7 @@ function effortClass(level: EffortLevel | null | undefined): string | null {
           v-for="dish in filteredDishes"
           :key="dish.id"
           :dish="dish"
-          :week-start="weekStart"
+          :week-start="resolvedWeekStart"
           :dinners="dinners"
           @dish:assigned="onDishAssigned"
         />
@@ -399,6 +413,11 @@ function effortClass(level: EffortLevel | null | undefined): string | null {
   height: 100%;
   width: 100%;
   min-width: 0;
+}
+
+/* Standalone week nav */
+.ap__week-nav {
+  flex-shrink: 0;
 }
 
 /* Mode tabs */

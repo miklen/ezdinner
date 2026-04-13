@@ -210,8 +210,9 @@
     "accept": "Accepter",
     "skip": "Spring over",
     "acceptAll": "Accepter alle",
-    "resuggestRemaining": "Genforsalg de resterende",
-    "aiError": "Kunne ikke generere plan — prøv igen"
+    "resuggestRemaining": "Genforslå de resterende",
+    "aiError": "Kunne ikke generere plan — prøv igen",
+    "openPanelAriaLabel": "Åbn planlægningsassistent"
   },
   "notifications": {
     "title": "Notifikationer",

@@ -211,7 +211,8 @@
     "skip": "Skip",
     "acceptAll": "Accept all",
     "resuggestRemaining": "Re-suggest remaining",
-    "aiError": "Failed to generate plan — please try again"
+    "aiError": "Failed to generate plan — please try again",
+    "openPanelAriaLabel": "Open planning assistant"
   },
   "notifications": {
     "title": "Notifications",

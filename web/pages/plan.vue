@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { DateTime } from 'luxon'
+import type { DateTime } from 'luxon'
 import type { Dinner } from '~/types'
 
 useHead({ title: 'Plan' })
@@ -92,14 +92,7 @@ const dishesStore = useDishesStore()
 const dinnersStore = useDinnersStore()
 const wishlistStore = useWishlistStore()
 
-// Default to next week when today is Saturday (6) or Sunday (7) —
-// the user is likely planning ahead rather than the week that's ending.
-const todayWeekday = DateTime.now().weekday
-const defaultWeekStart = todayWeekday >= 6
-  ? DateTime.now().plus({ weeks: 1 }).startOf('week')
-  : DateTime.now().startOf('week')
-
-const weekStart = ref(defaultWeekStart)
+const { weekStart } = useWeekNav()
 const selectedDate = ref<DateTime | null>(null)
 const loading = ref(false)
 const mobileSheetOpen = ref(false)

@@ -1,13 +1,66 @@
 <script setup lang="ts">
+import type { DateTime } from 'luxon'
 import type { Dish, DishStats } from '~/types'
 
 useHead({ title: 'Dishes' })
 
 const appStore = useAppStore()
 const dishesStore = useDishesStore()
+const dinnersStore = useDinnersStore()
+const wishlistStore = useWishlistStore()
 const { dishes: dishRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
 const { t } = useI18n()
+
+// ── Assistant panel (sidebar + mobile sheet) ──────────────────────────────────
+
+const { weekStart: panelWeekStart } = useWeekNav()
+const mobileSheetOpen = ref(false)
+const mobilePanelDataLoaded = ref(false)
+
+const { mdAndUp } = useDisplay()
+
+const panelWeekEnd = computed(() => panelWeekStart.value.endOf('week'))
+
+async function loadPanelData() {
+  await Promise.all([
+    dinnersStore.populateDinners(panelWeekStart.value, panelWeekEnd.value),
+    wishlistStore.fetchWishes(),
+  ])
+}
+
+function onPanelWeekChanged(week: DateTime) {
+  panelWeekStart.value = week
+}
+
+function onDishAssigned(_date: string, _dishId: string) {
+  dinnersStore.populateDinners(panelWeekStart.value, panelWeekEnd.value)
+  wishlistStore.fetchWishes()
+}
+
+function onMobileDishAssigned(date: string, dishId: string) {
+  mobileSheetOpen.value = false
+  onDishAssigned(date, dishId)
+}
+
+async function openMobilePanel() {
+  mobileSheetOpen.value = true
+  if (!mobilePanelDataLoaded.value) {
+    mobilePanelDataLoaded.value = true
+    await loadPanelData()
+  }
+}
+
+// Desktop: load panel data eagerly since sidebar is always visible.
+// Mobile: load on first FAB tap via openMobilePanel().
+onMounted(() => {
+  if (mdAndUp.value) {
+    loadPanelData()
+  }
+})
+
+// Re-load when the panel navigates to a different week
+watch(panelWeekStart, loadPanelData)
 
 const searchDish = shallowRef('')
 const stats = ref<Record<string, DishStats>>({})
@@ -172,7 +225,10 @@ async function loadDishes() {
 
 async function init() {
   loading.value = true
+  // populateStats() maps over dishes.value — must run after populateDishes() resolves,
+  // otherwise it operates on an empty array and stats are never applied.
   await Promise.all([loadDishes(), dishesStore.populateDishes(), loadStats()])
+  await dishesStore.populateStats()
   loading.value = false
 }
 
@@ -209,7 +265,9 @@ watch(
 </script>
 
 <template>
-  <div class="catalog">
+  <div>
+  <Content split desktop-only-support>
+    <div class="catalog">
     <!-- ── Header row ──────────────────────────────────────────────────────── -->
     <div class="catalog__header">
       <h1 class="text-page-title catalog__heading">{{ $t('dishes.dishes') }}</h1>
@@ -408,6 +466,43 @@ watch(
         </v-card-actions>
       </v-card>
     </v-dialog>
+  </div>
+
+    <template #support>
+      <PlanAssistantPanel
+        :dinners="dinnersStore.dinners"
+        @dish:assigned="onDishAssigned"
+        @week:changed="onPanelWeekChanged"
+      />
+    </template>
+  </Content>
+
+  <!-- Mobile: FAB to open panel as bottom sheet -->
+  <v-btn
+    class="d-flex d-md-none dishes-fab"
+    icon="mdi-auto-fix"
+    color="primary"
+    size="large"
+    elevation="4"
+    :aria-label="$t('assistant.openPanelAriaLabel')"
+    @click="openMobilePanel"
+  />
+
+  <v-bottom-sheet
+    v-model="mobileSheetOpen"
+    class="d-md-none"
+    :max-height="'85dvh'"
+    scrollable
+  >
+    <v-sheet class="mobile-sheet">
+      <div class="mobile-sheet__handle" />
+      <PlanAssistantPanel
+        :dinners="dinnersStore.dinners"
+        @dish:assigned="onMobileDishAssigned"
+        @week:changed="onPanelWeekChanged"
+      />
+    </v-sheet>
+  </v-bottom-sheet>
   </div>
 </template>
 
@@ -704,5 +799,29 @@ watch(
 
 .dish-card--archived:hover {
   filter: grayscale(10%) opacity(0.85);
+}
+
+.dishes-fab {
+  position: fixed;
+  bottom: calc(64px + var(--space-4));
+  right: var(--space-4);
+  z-index: 100;
+}
+
+.mobile-sheet {
+  padding: var(--space-4);
+  height: 85dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mobile-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.15);
+  margin: 0 auto var(--space-4);
+  flex-shrink: 0;
 }
 </style>
