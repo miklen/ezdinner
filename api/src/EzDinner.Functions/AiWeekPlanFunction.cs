@@ -63,11 +63,18 @@ namespace EzDinner.Functions
 
             var excludedDishIds = ParseExcludedDishIds(request.ExcludedDishIds);
 
-            _logger.LogInformation(
-                "AiWeekPlan requested for family={FamilyId}, weekStart={WeekStart}",
-                familyId, request.WeekStart);
+            const int MaxContextLength = 200;
+            var userContext = string.IsNullOrWhiteSpace(request.Context)
+                ? null
+                : request.Context.Length > MaxContextLength
+                    ? request.Context[..MaxContextLength]
+                    : request.Context;
 
-            var suggestions = await _suggestionService.SuggestWeek(parsedFamilyId, weekStart, excludedDishIds);
+            _logger.LogInformation(
+                "AiWeekPlan requested for family={FamilyId}, weekStart={WeekStart}, hasContext={HasContext}",
+                familyId, request.WeekStart, userContext is not null);
+
+            var suggestions = await _suggestionService.SuggestWeek(parsedFamilyId, weekStart, excludedDishIds, userContext: userContext);
 
             var result = suggestions
                 .Where(s => s.Suggestion is not null)

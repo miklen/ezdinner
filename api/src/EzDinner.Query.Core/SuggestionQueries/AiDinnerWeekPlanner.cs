@@ -23,7 +23,8 @@ namespace EzDinner.Query.Core.SuggestionQueries
         public async Task<IReadOnlyList<DaySuggestion>> PlanWeekAsync(
             FamilySuggestionContext context,
             LocalDate weekStart,
-            IReadOnlyList<LocalDate> alreadyPlanned)
+            IReadOnlyList<LocalDate> alreadyPlanned,
+            string? userContext = null)
         {
             var alreadyPlannedSet = new HashSet<LocalDate>(alreadyPlanned);
 
@@ -43,7 +44,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
                 return Array.Empty<DaySuggestion>();
 
             var catalog = BuildCatalog(dishes, context);
-            var aiResults = await _client.PlanWeekAsync(catalog, weekStart, unplannedDates, null, CancellationToken.None);
+            var aiResults = await _client.PlanWeekAsync(catalog, weekStart, unplannedDates, userContext, CancellationToken.None);
 
             var validDishIds = new HashSet<Guid>(dishes.Select(d => d.Id));
             var unplannedDateStrings = new HashSet<string>(unplannedDates.Select(d => LocalDatePattern.Iso.Format(d)));

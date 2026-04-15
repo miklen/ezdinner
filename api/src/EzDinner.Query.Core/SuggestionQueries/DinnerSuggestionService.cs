@@ -61,7 +61,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
                 ?? ranked.FirstOrDefault();
         }
 
-        public async Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds, Dictionary<LocalDate, EffortLevel>? effortPreferences = null)
+        public async Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds, Dictionary<LocalDate, EffortLevel>? effortPreferences = null, string? userContext = null)
         {
             var context = await _contextAssembler.AssembleAsync(familyId, excludedDishIds, effortPreferences);
 
@@ -71,7 +71,7 @@ namespace EzDinner.Query.Core.SuggestionQueries
                 .Select(d => d.Date)
                 .ToList();
 
-            return await _weekPlanner.PlanWeekAsync(context, weekStart, alreadyPlanned);
+            return await _weekPlanner.PlanWeekAsync(context, weekStart, alreadyPlanned, userContext);
         }
 
         private async Task<IReadOnlyDictionary<Guid, int>> BuildWishedDishIds(Guid familyId)

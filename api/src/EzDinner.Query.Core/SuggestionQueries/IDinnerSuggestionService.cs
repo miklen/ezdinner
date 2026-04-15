@@ -10,6 +10,6 @@ namespace EzDinner.Query.Core.SuggestionQueries
     public interface IDinnerSuggestionService
     {
         Task<DishScoreValueObject?> SuggestDay(Guid familyId, LocalDate date, IReadOnlyList<Guid> excludedDishIds, EffortLevel? effortPreference = null);
-        Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds, Dictionary<LocalDate, EffortLevel>? effortPreferences = null);
+        Task<IReadOnlyList<DaySuggestion>> SuggestWeek(Guid familyId, LocalDate weekStart, IReadOnlyList<Guid> excludedDishIds, Dictionary<LocalDate, EffortLevel>? effortPreferences = null, string? userContext = null);
     }
 }

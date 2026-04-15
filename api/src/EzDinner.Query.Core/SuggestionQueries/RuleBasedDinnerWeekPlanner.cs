@@ -20,7 +20,8 @@ namespace EzDinner.Query.Core.SuggestionQueries
         public Task<IReadOnlyList<DaySuggestion>> PlanWeekAsync(
             FamilySuggestionContext context,
             LocalDate weekStart,
-            IReadOnlyList<LocalDate> alreadyPlanned)
+            IReadOnlyList<LocalDate> alreadyPlanned,
+            string? userContext = null)
         {
             var alreadyPlannedSet = new HashSet<LocalDate>(alreadyPlanned);
             var results = new List<DaySuggestion>();

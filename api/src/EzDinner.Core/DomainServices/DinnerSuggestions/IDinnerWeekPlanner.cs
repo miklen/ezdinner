@@ -9,6 +9,7 @@ namespace EzDinner.Core.DomainServices.DinnerSuggestions
         Task<IReadOnlyList<DaySuggestion>> PlanWeekAsync(
             FamilySuggestionContext context,
             LocalDate weekStart,
-            IReadOnlyList<LocalDate> alreadyPlanned);
+            IReadOnlyList<LocalDate> alreadyPlanned,
+            string? userContext = null);
     }
 }
