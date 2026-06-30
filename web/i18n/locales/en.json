@@ -194,6 +194,14 @@
       "Spring": "Spring",
       "Autumn": "Autumn",
       "AllYear": "All year"
+    },
+    "planDish": {
+      "buttonLabel": "Plan dish",
+      "dialogTitle": "Plan \"{dish}\"",
+      "plannedSnackbar": "\"{dish}\" added to {day}",
+      "close": "Close",
+      "addDayAriaLabel": "Add \"{dish}\" to {day}",
+      "removeDayAriaLabel": "Remove \"{dish}\" from {day}"
     }
   },
   "assistant": {

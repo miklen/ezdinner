@@ -14,6 +14,7 @@ const { show: showSnackbar } = useSnackbar()
 const { t } = useI18n()
 
 const addWishDialog = shallowRef(false)
+const planDishDialog = shallowRef(false)
 
 // ── Data ───────────────────────────────────────────────────────────────────────
 
@@ -184,6 +185,15 @@ async function doReactivate() {
         <v-icon size="14" :icon="wishlistStore.wishes.some(w => w.dishId === dish!.id) ? 'mdi-heart' : 'mdi-heart-plus-outline'" />
         {{ wishlistStore.wishes.some(w => w.dishId === dish!.id) ? $t('wishlist.onWishList') : $t('wishlist.addToWishList') }}
       </button>
+
+      <button
+        v-if="!dish.isArchived"
+        class="dish-detail__plan-btn"
+        @click="planDishDialog = true"
+      >
+        <v-icon size="14" icon="mdi-calendar-plus" />
+        {{ $t('dishes.planDish.buttonLabel') }}
+      </button>
     </div>
 
     <!-- Add to wish list dialog -->
@@ -191,6 +201,15 @@ async function doReactivate() {
       v-if="dish"
       v-model="addWishDialog"
       :preselected-dish="dish"
+    />
+
+    <!-- Plan dish dialog -->
+    <DishPlanDishDialog
+      v-if="dish"
+      v-model="planDishDialog"
+      :dish-id="dish.id"
+      :dish-name="dish.name"
+      :family-id="appStore.activeFamilyId"
     />
 
     <!-- Two-column layout: notes on left, ratings + dates on right -->
@@ -417,6 +436,30 @@ async function doReactivate() {
 }
 
 .dish-detail__wish-btn:hover {
+  background-color: rgba(var(--color-primary-rgb), 0.06);
+  border-color: var(--color-primary);
+}
+
+/* Plan dish action button — calendar accent, consistent with Wish List button */
+.dish-detail__plan-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-3);
+  background: none;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.35);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.dish-detail__plan-btn:hover {
   background-color: rgba(var(--color-primary-rgb), 0.06);
   border-color: var(--color-primary);
 }

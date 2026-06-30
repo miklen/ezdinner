@@ -194,6 +194,14 @@
       "Spring": "For\u00e5r",
       "Autumn": "Efter\u00e5r",
       "AllYear": "Hele \u00e5ret"
+    },
+    "planDish": {
+      "buttonLabel": "Planl\u00e6g ret",
+      "dialogTitle": "Planl\u00e6g \"{dish}\"",
+      "plannedSnackbar": "\"{dish}\" tilf\u00f8jet til {day}",
+      "close": "Luk",
+      "addDayAriaLabel": "Tilf\u00f8j \"{dish}\" til {day}",
+      "removeDayAriaLabel": "Fjern \"{dish}\" fra {day}"
     }
   },
   "assistant": {
