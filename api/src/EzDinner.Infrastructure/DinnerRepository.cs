@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace EzDinner.Infrastructure
 {
-    public class DinnerRepository : IDinnerRepository
+    public class DinnerRepository : IDinnerRepository, IConditionalDinnerRepository
     {
         private readonly CosmosClient _client;
         private readonly Container _container;
@@ -111,6 +111,41 @@ namespace EzDinner.Infrastructure
         public Task SaveAsync(Dinner dinner)
         {
             return _container.UpsertItemAsync(dinner);
+        }
+
+        public async Task<(Dinner Dinner, string Revision)?> GetWithRevisionAsync(Guid familyId, LocalDate date, System.Threading.CancellationToken cancellationToken)
+        {
+            var dinner = await GetAsync(familyId, date).WaitAsync(cancellationToken);
+            if (dinner is null) return null;
+            try
+            {
+                var response = await _container.ReadItemAsync<Dinner>(dinner.Id.ToString(), new PartitionKey(dinner.PartitionKey.ToString()), cancellationToken: cancellationToken);
+                if (response.Resource.FamilyId != familyId || response.Resource.Date != date) return null;
+                return (response.Resource, response.ETag);
+            }
+            catch (CosmosException exception) when (exception.StatusCode == System.Net.HttpStatusCode.NotFound) { return null; }
+        }
+
+        public async Task<bool> SaveIfUnchangedAsync(Dinner dinner, string revision, System.Threading.CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(revision)) throw new ArgumentException("DINNER_REVISION_REQUIRED", nameof(revision));
+            try
+            {
+                await _container.ReplaceItemAsync(dinner, dinner.Id.ToString(), new PartitionKey(dinner.PartitionKey.ToString()),
+                    new ItemRequestOptions { IfMatchEtag = revision }, cancellationToken);
+                return true;
+            }
+            catch (CosmosException exception) when (exception.StatusCode is System.Net.HttpStatusCode.PreconditionFailed or System.Net.HttpStatusCode.NotFound) { return false; }
+        }
+
+        public async Task<bool> CreateIfAbsentAsync(Dinner dinner, System.Threading.CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _container.CreateItemAsync(dinner, new PartitionKey(dinner.PartitionKey.ToString()), cancellationToken: cancellationToken);
+                return true;
+            }
+            catch (CosmosException exception) when (exception.StatusCode == System.Net.HttpStatusCode.Conflict) { return false; }
         }
     }
 }

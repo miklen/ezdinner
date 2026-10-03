@@ -4,6 +4,7 @@ using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Infrastructure;
 using EzDinner.Infrastructure.RecipeSnapshots;
+using EzDinner.Infrastructure.DishRecommendations;
 using EzDinner.Query.Core.DishQueries;
 using EzDinner.Query.Core.FamilyQueries;
 using EzDinner.Core.DomainServices.DinnerSuggestions;
@@ -48,6 +49,19 @@ var host = new HostBuilder()
             .RegisterWebPush(context.Configuration)
             .RegisterEnrichment(context.Configuration)
             .RegisterRecipeSnapshots(context.Configuration)
+            .RegisterDishRecommendations(context.Configuration)
+            .AddScoped<EzDinner.Application.Commands.Dinners.UndoDinnerMenuChangeCommand>()
+            .AddScoped<EzDinner.Application.Commands.Dinners.ChangeDinnerMenuCommand>()
+            .AddScoped<EzDinner.Application.Commands.Dinners.ChangeDinnerCommand>()
+            .AddScoped<EzDinner.Functions.ConditionalDinnerMenuChangeHttp>()
+            .AddScoped(provider => new EzDinner.Application.Commands.Dinners.AddDishToDinnerCommand(
+                provider.GetRequiredService<EzDinner.Application.Commands.Dinners.ChangeDinnerCommand>(),
+                provider.GetRequiredService<EzDinner.Core.Aggregates.WishlistAggregate.IWishlistRepository>(),
+                provider.GetRequiredService<EzDinner.Core.Aggregates.WishlistAggregate.IWishStatsRepository>(),
+                provider.GetRequiredService<EzDinner.Core.Aggregates.PushSubscriptionAggregate.IPushSubscriptionRepository>(),
+                provider.GetRequiredService<WebPush.WebPushClient>(),
+                provider.GetRequiredService<ILogger<EzDinner.Application.Commands.Dinners.AddDishToDinnerCommand>>(),
+                provider.GetRequiredService<EzDinner.Application.Commands.Dinners.ChangeDinnerMenuCommand>()))
             .AddScoped<UpdateDishMetadataCommandHandler>()
             .AddScoped<EnrichDishCommandHandler>()
             .AddScoped<MergeNonAutonomousMemberCommand>()

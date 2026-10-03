@@ -83,6 +83,7 @@ namespace EzDinner.Infrastructure
             services.AddScoped<IDishRepository, DishRepository>();
             services.AddScoped<IDishQueryRepository, DishRepository>();
             services.AddScoped<IDinnerRepository, DinnerRepository>();
+            services.AddScoped<IConditionalDinnerRepository, DinnerRepository>();
             services.AddScoped<IFamilyQueryRepository, FamilyRepository>();
             services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
             services.AddScoped<IPushSubscriptionQueryRepository, PushSubscriptionRepository>();

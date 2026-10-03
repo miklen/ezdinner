@@ -16,37 +16,49 @@ namespace EzDinner.Application.Commands.Dinners
 {
     public class AddDishToDinnerCommand
     {
-        private readonly IDinnerService _dinnerService;
-        private readonly IDinnerRepository _dinnerRepository;
+        private readonly ChangeDinnerCommand _dinnerChanges;
         private readonly IWishlistRepository _wishlistRepo;
         private readonly IWishStatsRepository _wishStatsRepo;
         private readonly IPushSubscriptionRepository _pushRepo;
         private readonly WebPushClient _webPushClient;
         private readonly ILogger _logger;
+        private readonly ChangeDinnerMenuCommand _conditionalChanges;
 
         public AddDishToDinnerCommand(
-            IDinnerService dinnerService,
-            IDinnerRepository dinnerRepository,
+            ChangeDinnerCommand dinnerChanges,
             IWishlistRepository wishlistRepo,
             IWishStatsRepository wishStatsRepo,
             IPushSubscriptionRepository pushRepo,
             WebPushClient webPushClient,
-            ILogger logger)
+            ILogger logger,
+            ChangeDinnerMenuCommand conditionalChanges)
         {
-            _dinnerService = dinnerService;
-            _dinnerRepository = dinnerRepository;
+            _dinnerChanges = dinnerChanges;
             _wishlistRepo = wishlistRepo;
             _wishStatsRepo = wishStatsRepo;
             _pushRepo = pushRepo;
             _webPushClient = webPushClient;
             _logger = logger;
+            _conditionalChanges = conditionalChanges;
         }
 
         public async Task HandleAsync(Guid familyId, LocalDate date, Guid dishId, Guid plannerId)
         {
-            var dinner = await _dinnerService.GetAsync(familyId, date);
-            dinner.AddMenuItem(new MenuItem(dishId));
-            await _dinnerRepository.SaveAsync(dinner);
+            await _dinnerChanges.AddAsync(familyId, date, dishId);
+
+            await GrantWishAsync(familyId, dishId, date, plannerId);
+        }
+
+        public async Task<DinnerMenuChangeResult> HandleConditionalAsync(Guid familyId, LocalDate date, Guid dishId,
+            Guid plannerId, DinnerStateValueObject expected, System.Threading.CancellationToken cancellationToken)
+        {
+            var result = await _conditionalChanges.AddAsync(familyId, date, dishId, expected, cancellationToken);
+            if (result is DinnerMenuChangeResult.Changed) await GrantWishAsync(familyId, dishId, date, plannerId);
+            return result;
+        }
+
+        private async Task GrantWishAsync(Guid familyId, Guid dishId, LocalDate date, Guid plannerId)
+        {
 
             // Best-effort wish grant — does not fail the dinner assignment if this throws
             try
@@ -111,4 +123,3 @@ namespace EzDinner.Application.Commands.Dinners
         }
     }
 }
-

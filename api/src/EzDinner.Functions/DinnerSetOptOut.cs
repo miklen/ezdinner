@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using EzDinner.Application.Commands.Dinners;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Functions.Models.Command;
@@ -13,15 +14,13 @@ namespace EzDinner.Functions
     public class DinnerSetOptOut
     {
         private readonly ILogger<DinnerSetOptOut> _logger;
-        private readonly IDinnerService _dinnerService;
-        private readonly IDinnerRepository _dinnerRepository;
+        private readonly ChangeDinnerCommand _dinnerChanges;
         private readonly IAuthzService _authz;
 
-        public DinnerSetOptOut(ILogger<DinnerSetOptOut> logger, IDinnerService dinnerService, IDinnerRepository dinnerRepository, IAuthzService authz)
+        public DinnerSetOptOut(ILogger<DinnerSetOptOut> logger, ChangeDinnerCommand dinnerChanges, IAuthzService authz)
         {
             _logger = logger;
-            _dinnerService = dinnerService;
-            _dinnerRepository = dinnerRepository;
+            _dinnerChanges = dinnerChanges;
             _authz = authz;
         }
 
@@ -35,9 +34,7 @@ namespace EzDinner.Functions
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, model.FamilyId, Resources.Dinner, Actions.Update)) return new UnauthorizedResult();
 
             _logger.LogInformation($"Setting opt-out for date: {model.Date}, reason: {model.Reason}");
-            var dinner = await _dinnerService.GetAsync(model.FamilyId, model.Date);
-            dinner.SetOptOut(model.Reason);
-            await _dinnerRepository.SaveAsync(dinner);
+            await _dinnerChanges.SetOptOutAsync(model.FamilyId, model.Date, model.Reason);
 
             return new OkResult();
         }

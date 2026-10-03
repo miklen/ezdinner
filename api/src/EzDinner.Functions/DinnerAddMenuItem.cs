@@ -19,32 +19,20 @@ namespace EzDinner.Functions
     public class DinnerAddMenuItem
     {
         private readonly ILogger<DinnerAddMenuItem> _logger;
-        private readonly IDinnerService _dinnerService;
-        private readonly IDinnerRepository _dinnerRepository;
-        private readonly IWishlistRepository _wishlistRepository;
-        private readonly IWishStatsRepository _wishStatsRepository;
-        private readonly IPushSubscriptionRepository _pushRepository;
-        private readonly WebPushClient _webPushClient;
+        private readonly AddDishToDinnerCommand _addDish;
         private readonly IAuthzService _authz;
+        private readonly ConditionalDinnerMenuChangeHttp? _conditionalChanges;
 
         public DinnerAddMenuItem(
             ILogger<DinnerAddMenuItem> logger,
-            IDinnerService dinnerService,
-            IDinnerRepository dinnerRepository,
-            IWishlistRepository wishlistRepository,
-            IWishStatsRepository wishStatsRepository,
-            IPushSubscriptionRepository pushRepository,
-            WebPushClient webPushClient,
-            IAuthzService authz)
+            AddDishToDinnerCommand addDish,
+            IAuthzService authz,
+            ConditionalDinnerMenuChangeHttp? conditionalChanges = null)
         {
             _logger = logger;
-            _dinnerService = dinnerService;
-            _dinnerRepository = dinnerRepository;
-            _wishlistRepository = wishlistRepository;
-            _wishStatsRepository = wishStatsRepository;
-            _pushRepository = pushRepository;
-            _webPushClient = webPushClient;
+            _addDish = addDish;
             _authz = authz;
+            _conditionalChanges = conditionalChanges;
         }
 
         [Function(nameof(DinnerAddMenuItem))]
@@ -53,22 +41,15 @@ namespace EzDinner.Functions
             )
         {
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
+            if (ConditionalDinnerMenuChangeHttp.IsRequested(req))
+                return await (_conditionalChanges ?? throw new InvalidOperationException("CONDITIONAL_MENU_CHANGE_NOT_CONFIGURED")).RunAsync(req, true);
             var menuItem = await req.GetBodyAs<DinnerAddRemoveMenuItemCommandModel>();
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, menuItem.FamilyId, Resources.Dinner, Actions.Update)) return new UnauthorizedResult();
 
             _logger.LogInformation($"Adding dish: {menuItem.DishId} to date: {menuItem.Date}");
 
-            var command = new AddDishToDinnerCommand(
-                _dinnerService,
-                _dinnerRepository,
-                _wishlistRepository,
-                _wishStatsRepository,
-                _pushRepository,
-                _webPushClient,
-                _logger);
-
             var plannerId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId()!);
-            await command.HandleAsync(menuItem.FamilyId, menuItem.Date, menuItem.DishId, plannerId);
+            await _addDish.HandleAsync(menuItem.FamilyId, menuItem.Date, menuItem.DishId, plannerId);
 
             return new OkResult();
         }

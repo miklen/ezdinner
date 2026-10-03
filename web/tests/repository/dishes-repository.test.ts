@@ -7,6 +7,12 @@ function makeFetch(returnValue: unknown) {
 }
 
 describe('DishesRepository', () => {
+  it('requests past usage with an exclusive date boundary for planning', async () => {
+    const fetch = makeFetch({})
+    await new DishesRepository(fetch).allUsageStats('family-1', DateTime.fromISO('2026-10-03'))
+    expect(fetch).toHaveBeenCalledWith('/api/dishes/stats/family/family-1?before=2026-10-03')
+  })
+
   describe('getFull', () => {
     it('parses lastUsed string into a Luxon DateTime', async () => {
       const isoDate = '2025-06-15T00:00:00.000Z'

@@ -9,6 +9,7 @@
       :key="item.to"
       :to="item.to"
       class="bottom-nav__btn"
+      :aria-label="item.title"
     >
       <v-icon>{{ currentRoute === item.to ? item.iconActive : item.icon }}</v-icon>
       <span class="bottom-nav__label">{{ item.title }}</span>
@@ -38,6 +39,8 @@ const currentRoute = computed(() => route.path)
   min-height: 64px !important;
   flex-direction: column !important;
   gap: 2px !important;
+  padding-inline: 2px !important;
+  flex: 1 1 0 !important;
 }
 
 .bottom-nav__btn.v-btn--active {
@@ -54,5 +57,7 @@ const currentRoute = computed(() => route.path)
   font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 1;
+  white-space: normal;
+  text-align: center;
 }
 </style>

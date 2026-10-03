@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { DateTime } from 'luxon'
 import type { Dinner } from '~/types'
 
@@ -54,7 +55,7 @@ function handleHeaderClick() {
     ]"
   >
     <!-- Header — always visible -->
-    <div class="dinner-card__header" @click="handleHeaderClick">
+    <div class="dinner-card__header" role="button" tabindex="0" :aria-expanded="selected" @click="handleHeaderClick" @keydown.enter.self.prevent="handleHeaderClick" @keydown.space.self.prevent="handleHeaderClick">
       <div class="dinner-card__day-info">
         <span class="dinner-card__day-name">{{ dayName }}</span>
         <span class="dinner-card__date">{{ dateStr }}</span>
@@ -62,6 +63,7 @@ function handleHeaderClick() {
       </div>
 
       <div class="dinner-card__summary">
+        <slot name="summary">
         <template v-if="dinner.isOptedOut && !selected">
           <div class="dinner-card__opted-out">
             <v-icon size="14" class="dinner-card__opted-out-icon">mdi-calendar-remove-outline</v-icon>
@@ -84,6 +86,7 @@ function handleHeaderClick() {
         <span v-else-if="!dinner.isPlanned && !dinner.isOptedOut && !selected" class="dinner-card__hint dinner-card__hint--cta">
           {{ t('plan.tapToPlan') }}
         </span>
+        </slot>
       </div>
 
       <div class="dinner-card__action">
@@ -103,14 +106,16 @@ function handleHeaderClick() {
     </div>
 
     <!-- Expandable details — grid-row animation (no max-height) -->
-    <div class="dinner-card__details-wrapper" :class="{ 'is-open': selected }">
+    <div class="dinner-card__details-wrapper" :inert="!selected" :class="{ 'is-open': selected }">
       <div class="dinner-card__details-inner">
+        <slot name="details">
         <PlanPlannedDinnerDetails
           :dinner="dinner"
           @dinner:close="emit('dinner:close')"
           @dinner:menuupdated="emit('dinner:menuupdated', $event)"
           @dinner:optoutupdated="emit('dinner:optoutupdated')"
         />
+        </slot>
       </div>
     </div>
   </div>

@@ -59,8 +59,9 @@ export class DishesRepository {
     return this.apiFetch(`/api/dishes/family/${familyId}/id/${dishId}`, { method: 'DELETE' })
   }
 
-  async allUsageStats(familyId: string): Promise<Record<string, DishStats>> {
-    const result = await this.apiFetch<Record<string, DishStats>>(`/api/dishes/stats/family/${familyId}`)
+  async allUsageStats(familyId: string, before?: DateTime): Promise<Record<string, DishStats>> {
+    const boundary = before ? `?before=${before.toISODate()}` : ''
+    const result = await this.apiFetch<Record<string, DishStats>>(`/api/dishes/stats/family/${familyId}${boundary}`)
     for (const key of Object.keys(result)) {
       if (result[key].lastUsed) {
         result[key].lastUsed = DateTime.fromISO(normalizeLocalDate(result[key].lastUsed as unknown as LocalDateLike))

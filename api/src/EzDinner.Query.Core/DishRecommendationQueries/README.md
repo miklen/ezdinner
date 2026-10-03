@@ -1,0 +1,31 @@
+# Dish recommendations
+
+## Additive rollback
+
+Hide the `/plan-your-week` navigation entry and route to stop new use. Remove the recommendation and conditional undo Function registrations, query/provider registrations, and feature frontend files to remove the feature fully. Existing Plan, Dishes, assistant, and day/week endpoints retain their HTTP contracts. No schema migration or backfill is required. Saved dinners are ordinary shared records and remain available to the existing Plan after rollback; do not delete them. Keep conditional mutation/undo support available while clients still expose pending actions. Retain the stable new-dinner identity and shared conditional creation path on rollback: reverting to random IDs or unconditional first-day upserts reintroduces creation races. Deploy all day-creation writers together; older server versions can still create random-ID duplicates during mixed-version rollout.
+
+## Server-confirmed menu mutations
+
+The workspace opts into `PUT /api/dinners/menuitem` and `/api/dinners/menuitem/remove` with `X-EzDinner-Mutation: conditional`. Payload: `familyId`, ISO `date`, `dishId`, and `expectedState` (`dishIds`, nullable `optOutReason`). Authentication and Dinner read/update permissions precede storage. Changed returns 200 with canonical `before`/`after` only after a successful ETag-conditional replace or create-if-absent; NoOp returns 200 without states, Conflict returns 409 without states. Payloads are bounded to 16000 characters and states to 100 dishes/500-character opt-out reasons. The resulting state is validated before persistence. Only Changed creates undo feedback or removes local wish feedback.
+
+Calls without the header retain empty-200 success responses. Legacy add/remove/set-opt-out/remove-opt-out use bounded conditional retries, reloading and reapplying their intent after a concurrent write. All absent-day creators use the same stable family/date identity; loaded historical IDs are retained. Wish granting remains best effort after a successful assignment. Legacy bulk replacement/conversion operates on already persisted dinners and keeps its existing persistence behavior.
+
+Automated checks and the remaining browser acceptance blocker are recorded in `openspec/changes/add-dish-first-week-planning/verification.md`. Controlled repository tests do not prove live Cosmos persistence or alternation with the existing Plan.
+
+## Exploration metadata
+
+The new workspace uses the optional `before=YYYY-MM-DD` parameter on the existing dish statistics endpoint to exclude that date and later assignments from serving history. Calls without this parameter retain the existing full-range behavior. Invalid boundaries return 400. The dish list adds `ratingCount` so the workspace distinguishes unrated dishes from rated dishes; the existing `rating` remains on its five-point scale. Recommendation results retain their documented ten-point rating scale and are converted for card display.
+
+`POST /api/families/{familyId}/dish-recommendations` requires authentication and Dish, Dinner, and Wishlist read permissions for that family. It does not write dinners. Existing day/week planners keep their bindings and contracts.
+
+Request fields: `selectedMonday` (ISO Monday), optional `targetDate` (Monday −2 through +6), `mode` (`automatic`, `request`, `more`), `locale` (`en`, `da`), `turns` (cumulative intent), `constraints` (editable current constraints), `excludedDishIds` (canonical GUIDs), and optional `role` (`Main`, `Side`, or null for all roles). Catalog filters must not be copied into conversational intent. The client explicitly selects recommendation scope independently.
+
+Responses contain `outcome` (`Matches`, `NoMatch`, `Exhausted`, `NeedsClarification`), canonical dishes with factual history signals, historical reason kinds, localized provider explanations (`Fact` or `Inference`) and supplied source references, limitations, active constraints, and context summary. Names come from persisted dishes. More never recycles excluded IDs.
+
+Default `DishRecommendations` configuration: `MaximumTurns=12`, `MaximumConstraints=12`, `MaximumRequestCharacters=4000`, `MaximumExclusions=1000`, `MaximumCandidates=300`, `MaximumEvidenceCharacters=100000`, `MaximumResults=6`, `ProviderTimeoutSeconds=30`. Boundary payloads are limited to 32000 characters. Provider output is limited to 32000 characters/4096 tokens. Evidence includes every active nonexcluded candidate; overflow requests narrowing without history-based truncation. No live recipe retrieval takes place.
+
+Invalid requests return 400; unauthorized access returns 401 before evidence loading. Provider failures/malformed output return 502; timeouts return 504. Cancellation propagates. These errors are distinct from no-match and exhaustion. The existing Anthropic credential is reused by a dedicated adapter, with source text treated as evidence rather than instructions.
+
+Automatic history uses distinct dates strictly before today's UTC calendar date. Leftovers count as separate servings but one recurrence occurrence. At least three occurrences establish median spacing. Ratings are null when absent. Scoring uses bounded rating/wish/recency/rotation/former-frequency contributions and deterministic name/ID ties. Initial weights are defaults, not learned family preferences.
+
+`POST /api/families/{familyId}/dinners/{date}/undo-menu-change` requires Dinner update permission. Payload: `dishId`, `before`, `after`; each state contains `dishIds` and nullable `optOutReason`. The two states must differ by exactly that dish, represent an actual addition or removal, and the post-action state cannot have an opt-out. Ordinary undo requires current membership to match the action and preserves unrelated current dishes. Restoring a cleared opt-out requires the entire current day to match `after`. Duplicate additions are not reversible actions. Cosmos reads the current document ETag and replaces only with `IfMatchEtag`; concurrent storage changes and missing/stale days return HTTP 409 `{outcome:"Conflict"}`. Success returns `{outcome:"Restored"}`. Legacy unconditional save callers are unchanged.

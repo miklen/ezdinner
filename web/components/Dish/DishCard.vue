@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, shallowRef, watch } from 'vue'
 import { DateTime } from 'luxon'
 import type { Dish, DishStats } from '~/types'
 
@@ -8,9 +9,11 @@ const props = withDefaults(defineProps<{
   dish: Dish
   dishStats?: DishStats
   clickable?: boolean
+  showManagement?: boolean
 }>(), {
   dishStats: undefined,
   clickable: true,
+  showManagement: true,
 })
 
 const emit = defineEmits<{
@@ -153,14 +156,17 @@ async function doMove() {
 
       <div class="dish-card__body">
         <!-- Overflow menu: top-right, revealed on card hover -->
-        <div class="dish-card__overflow">
+        <div v-if="showManagement || $slots.overflow" class="dish-card__overflow" @click.stop>
+          <slot name="overflow">
           <DishOverflowMenu
+            v-if="showManagement"
             :dish="dish"
             @edit-name="enableEditNameMode"
             @move="moveDialog = true"
             @delete="confirmDialog = true"
             @archived="emit('archived')"
           />
+          </slot>
         </div>
 
         <!-- Name: display mode -->
@@ -168,7 +174,7 @@ async function doMove() {
           v-if="!editNameMode"
           class="dish-card__name text-card-title"
         >
-          {{ name }}
+          <slot name="name">{{ name }}</slot>
           <span v-if="dish.isArchived" class="dish-card__archived-label">{{ $t('dishes.archivedLabel') }}</span>
         </div>
 
@@ -207,12 +213,14 @@ async function doMove() {
 
         <!-- Rating -->
         <div class="dish-card__rating">
+          <slot name="rating">
           <DishRating :model-value="dish.rating" :size="18" />
+          </slot>
         </div>
 
         <!-- Stat caption -->
         <p class="dish-card__stat text-caption-label">
-          {{ statCaption }}
+          <slot name="stat">{{ statCaption }}</slot>
         </p>
 
         <!-- Metadata tags -->
@@ -223,6 +231,8 @@ async function doMove() {
             class="meta-tag"
           ><v-icon :icon="tag.icon" size="9" />{{ tag.label }}</span>
         </div>
+        <slot name="additional" />
+        <div v-if="$slots.actions" class="dish-card__actions" @click.stop><slot name="actions" /></div>
       </div>
     </v-card>
   </div>
@@ -348,6 +358,10 @@ async function doMove() {
 
 .dish-card__rating {
   margin-bottom: var(--space-2);
+}
+
+.dish-card__actions {
+  margin-top: var(--space-4);
 }
 
 .dish-card__stat {

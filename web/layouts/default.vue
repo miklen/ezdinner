@@ -30,6 +30,7 @@ const links = computed(() => {
     nav.push(
       { icon: 'mdi-silverware-fork-knife', iconActive: 'mdi-silverware-fork-knife', title: t('nav.dishes'), to: '/dishes' },
       { icon: 'mdi-calendar-blank-outline', iconActive: 'mdi-calendar-blank', title: t('nav.plan'), to: '/plan' },
+      { icon: 'mdi-calendar-plus-outline', iconActive: 'mdi-calendar-plus', title: t('weekPlanning.nav'), to: '/plan-your-week' },
     )
   }
   return nav
@@ -73,6 +74,7 @@ watch(() => appStore.activeFamilyId, () => {
         >
           <v-list-item
             :to="item.to"
+            :aria-label="item.title"
             exact
             class="icon-rail__item"
           >

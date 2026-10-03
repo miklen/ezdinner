@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import DishPill from './DishPill.vue'
 import type { DateTime } from 'luxon'
 
 const props = withDefaults(defineProps<{
@@ -9,6 +11,8 @@ const props = withDefaults(defineProps<{
   isAdding?: boolean
   dishName?: string
   loading?: boolean
+  disabled?: boolean
+  note?: string | null
 }>(), {
   date: undefined,
   menu: () => [],
@@ -17,6 +21,8 @@ const props = withDefaults(defineProps<{
   isAdding: false,
   dishName: '',
   loading: false,
+  disabled: false,
+  note: null,
 })
 
 const emit = defineEmits<{
@@ -51,7 +57,7 @@ const ariaLabel = computed(() =>
     v-else
     class="plan-day-row"
     :class="{ 'plan-day-row--weekend': isWeekend, 'plan-day-row--planned': isPlanned }"
-    :disabled="isAdding"
+    :disabled="isAdding || disabled"
     :aria-label="ariaLabel"
     @click="emit('toggle')"
   >
@@ -63,6 +69,7 @@ const ariaLabel = computed(() =>
       <template v-if="menu.length > 0">
         <DishPill v-for="item in menu" :key="item.dishId" :name="item.dishName" size="sm" />
       </template>
+      <span v-else-if="note" class="plan-day-row__note">{{ note }}</span>
       <span v-else class="plan-day-row__free" />
     </div>
     <v-progress-circular v-if="isAdding" size="16" width="2" indeterminate color="primary" class="plan-day-row__spinner" />
@@ -141,6 +148,12 @@ const ariaLabel = computed(() =>
   height: 1px;
   border-top: 1.5px dashed var(--color-border-medium);
   border-radius: 1px;
+}
+
+.plan-day-row__note {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .plan-day-row--planned {

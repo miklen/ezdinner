@@ -11,6 +11,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
 using NodaTime;
+using NodaTime.Text;
 
 namespace EzDinner.Functions
 {
@@ -38,7 +39,15 @@ namespace EzDinner.Functions
 
             _logger.LogInformation("GetDishes called for familyId " + familyId);
             var parsedId = Guid.Parse(familyId);
-            var dishes = await _dishQueryService.GetDishUsageStatsAsync(parsedId, LocalDate.MinIsoValue, LocalDate.MaxIsoValue);
+            var lastDate = LocalDate.MaxIsoValue;
+            if (req.Query.TryGetValue("before", out var before))
+            {
+                var boundary = LocalDatePattern.Iso.Parse(before.ToString());
+                if (!boundary.Success || boundary.Value == LocalDate.MinIsoValue)
+                    return new BadRequestObjectResult("INVALID_HISTORY_BOUNDARY");
+                lastDate = boundary.Value.PlusDays(-1);
+            }
+            var dishes = await _dishQueryService.GetDishUsageStatsAsync(parsedId, LocalDate.MinIsoValue, lastDate);
             return new OkObjectResult(dishes);
         }
     }

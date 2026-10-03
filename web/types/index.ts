@@ -48,6 +48,7 @@ export interface Rating {
 }
 
 export interface Dish {
+  ratingCount?: number
   name: string
   id: string
   url: string

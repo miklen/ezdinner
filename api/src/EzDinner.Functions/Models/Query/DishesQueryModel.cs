@@ -12,6 +12,7 @@ namespace EzDinner.Functions.Models.Query
         public Guid Id { get; set; }
         public string? Name { get; set; }
         public double Rating { get; set; }
+        public int RatingCount { get; set; }
         public bool IsArchived { get; set; }
         public IReadOnlyList<DishRole>? Roles { get; set; }
         public bool RolesConfirmed { get; set; }
@@ -30,6 +31,7 @@ namespace EzDinner.Functions.Models.Query
                 Id = dish.Id,
                 Name = dish.Name,
                 Rating = dish.Rating / 2,
+                RatingCount = System.Linq.Enumerable.Count(dish.Ratings),
                 IsArchived = dish.IsArchived,
                 Roles = dish.Metadata.Roles,
                 RolesConfirmed = dish.Metadata.RolesConfirmed,

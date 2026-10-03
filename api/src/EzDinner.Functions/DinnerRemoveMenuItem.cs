@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using EzDinner.Application.Commands.Dinners;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Functions.Models.Command;
@@ -13,16 +14,16 @@ namespace EzDinner.Functions
     public class DinnerRemoveMenuItem
     {
         private readonly ILogger<DinnerAddMenuItem> _logger;
-        private readonly IDinnerService _dinnerService;
-        private readonly IDinnerRepository _dinnerRepository;
+        private readonly ChangeDinnerCommand _dinnerChanges;
         private readonly IAuthzService _authz;
+        private readonly ConditionalDinnerMenuChangeHttp? _conditionalChanges;
 
-        public DinnerRemoveMenuItem(ILogger<DinnerAddMenuItem> logger, IDinnerService dinnerService, IDinnerRepository dinnerRepository, IAuthzService authz)
+        public DinnerRemoveMenuItem(ILogger<DinnerAddMenuItem> logger, ChangeDinnerCommand dinnerChanges, IAuthzService authz, ConditionalDinnerMenuChangeHttp? conditionalChanges = null)
         {
             _logger = logger;
-            _dinnerService = dinnerService;
-            _dinnerRepository = dinnerRepository;
+            _dinnerChanges = dinnerChanges;
             _authz = authz;
+            _conditionalChanges = conditionalChanges;
         }
         
         [Function(nameof(DinnerRemoveMenuItem))]
@@ -31,14 +32,14 @@ namespace EzDinner.Functions
             )
         {
             if (req.HttpContext.User.Identity?.IsAuthenticated != true) return new UnauthorizedResult();
+            if (ConditionalDinnerMenuChangeHttp.IsRequested(req))
+                return await (_conditionalChanges ?? throw new System.InvalidOperationException("CONDITIONAL_MENU_CHANGE_NOT_CONFIGURED")).RunAsync(req, false);
             var menuItem = await req.GetBodyAs<DinnerAddRemoveMenuItemCommandModel>();
             if (!_authz.Authorize(req.HttpContext.User.GetNameIdentifierId()!, menuItem.FamilyId, Resources.Dinner, Actions.Update)) return new UnauthorizedResult();
 
             _logger.LogInformation($"Adding dish: {menuItem.DishId} to date: {menuItem.Date}");
 
-            var dinner = await _dinnerService.GetAsync(menuItem.FamilyId, menuItem.Date);
-            dinner.RemoveMenuItem(new MenuItem(menuItem.DishId));
-            await _dinnerRepository.SaveAsync(dinner);
+            await _dinnerChanges.RemoveAsync(menuItem.FamilyId, menuItem.Date, menuItem.DishId);
 
             return new OkResult();
         }

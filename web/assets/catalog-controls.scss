@@ -1,0 +1,205 @@
+.catalog__sort {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.catalog__sort::-webkit-scrollbar {
+  display: none;
+}
+
+.sort-chip__dir {
+  margin-left: 2px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* ── Filter panel ──────────────────────────────────────────────────────── */
+
+.catalog__filter-section {
+  margin-bottom: var(--space-4);
+}
+
+.catalog__filter-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.catalog__filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.catalog__filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.filter-chevron {
+  font-size: 16px;
+  color: var(--color-text-muted);
+  line-height: 1;
+  transition: transform var(--duration-fast) var(--ease-out);
+  display: inline-block;
+  transform: rotate(0deg);
+}
+
+.filter-chevron--open {
+  transform: rotate(90deg);
+}
+
+/* Smooth height reveal using grid trick (overflow: hidden on wrapper, not content) */
+.catalog__filter-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows var(--duration-normal) var(--ease-out);
+}
+
+.catalog__filter-body--open {
+  grid-template-rows: 1fr;
+}
+
+.catalog__filter-inner {
+  min-height: 0; /* required: lets the grid track actually collapse to 0fr */
+  overflow: hidden; /* belt-and-suspenders: clip any child paint that exceeds 0 */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.catalog__filter-body--open .catalog__filter-inner {
+  padding-bottom: var(--space-1);
+}
+
+.filter-tag {
+  --dim-color: rgba(0, 0, 0, 0.35);
+  --dim-color-bg: rgba(0, 0, 0, 0.04);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(0, 0, 0, 0.10);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-instant) var(--ease-out);
+  user-select: none;
+}
+
+.filter-tag:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.18);
+  color: var(--color-text-secondary);
+}
+
+.filter-tag:active {
+  transform: scale(0.95);
+}
+
+.filter-tag--active {
+  background: var(--dim-color-bg);
+  border-color: var(--dim-color);
+  color: var(--dim-color);
+}
+
+.filter-tag--active:hover {
+  background: var(--dim-color-bg);
+  color: var(--dim-color);
+}
+
+/* Per-dimension color tokens */
+.filter-tag--role    { --dim-color: #4A6B3E; --dim-color-bg: rgba(74, 107, 62, 0.09); }
+.filter-tag--effort  { --dim-color: #8a6818; --dim-color-bg: rgba(229, 168, 59, 0.11); }
+.filter-tag--season  { --dim-color: #B8511D; --dim-color-bg: rgba(212, 101, 42, 0.09); }
+.filter-tag--cuisine { --dim-color: #3a6434; --dim-color-bg: rgba(74, 124, 63, 0.09); }
+.filter-tag--archive { --dim-color: #5C4A3A; --dim-color-bg: rgba(92, 74, 58, 0.09); }
+
+.filter-tag__pip {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--dim-color);
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.filter-tag--active .filter-tag__pip {
+  opacity: 1;
+}
+
+.filter-clear {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity var(--duration-fast) var(--ease-out);
+  margin-left: var(--space-1);
+}
+
+.filter-clear:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* Touch targets on coarse-pointer devices */
+@media (pointer: coarse) {
+  .sort-btn,
+  .filter-tag {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+}
+
