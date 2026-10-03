@@ -30,7 +30,7 @@ namespace EzDinner.Application.Commands.Dishes
             DishEnrichmentResult result;
             try
             {
-                result = await _enrichmentProvider.EnrichAsync(dish.Name, dish.Notes, ct);
+                result = await _enrichmentProvider.EnrichAsync(dish.Name, dish.Notes, ct, dish.RecipeSnapshot?.Content);
             }
             catch (Exception ex)
             {

@@ -16,6 +16,20 @@
 // Link         → mdi-open-in-new
 // Rating       → mdi-heart / mdi-heart-outline
 
+.recipe-markdown {
+  font-size: var(--text-base);
+  line-height: 1.65;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+  h1, h2, h3, h4 { font-family: var(--font-display); margin: var(--space-4) 0 var(--space-2); }
+  p, ul, ol { margin: 0 0 var(--space-3); }
+  ul, ol { padding-left: var(--space-6); }
+  a { color: var(--color-primary-dark); }
+  a:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: 3px; }
+  pre { overflow-x: auto; max-width: 100%; }
+  table { display: block; overflow-x: auto; max-width: 100%; }
+}
+
 :root {
   // ── Color Tokens ──────────────────────────────────────────────────────────
   --color-primary:          #6FAF7A;

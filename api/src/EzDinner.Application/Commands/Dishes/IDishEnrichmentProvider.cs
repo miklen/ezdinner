@@ -5,6 +5,6 @@ namespace EzDinner.Application.Commands.Dishes
 {
     public interface IDishEnrichmentProvider
     {
-        Task<DishEnrichmentResult> EnrichAsync(string dishName, string? notes, CancellationToken ct);
+        Task<DishEnrichmentResult> EnrichAsync(string dishName, string? notes, CancellationToken ct, string? recipeContent = null);
     }
 }

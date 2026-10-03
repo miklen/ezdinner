@@ -1,246 +1,76 @@
-<script setup lang="ts">
-import { marked } from 'marked'
-import EasyMDE from 'easymde'
-import 'easymde/dist/easymde.min.css'
+﻿<script setup lang="ts">
+import { shallowRef } from 'vue'
+import type { RecipeSnapshot } from '~/types/recipe-snapshot'
+import { recipeImportErrorKey } from '~/formatting/recipe-import-error'
+import DishUserNotesSection from './DishUserNotesSection.vue'
+import DishRecipeSnapshotSection from './DishRecipeSnapshotSection.vue'
+import DishRecipeImportDialog from './DishRecipeImportDialog.vue'
 
 const props = defineProps<{
   dishId: string
+  familyId: string
   initialNotes: string
   initialUrl: string
+  snapshot?: RecipeSnapshot | null
   loading?: boolean
 }>()
-
-const emit = defineEmits<{
-  updated: [{ notes: string; url: string }]
-}>()
-
+const emit = defineEmits<{ updated: [{ notes: string; url: string }]; snapshotUpdated: [] }>()
 const { dishes: dishRepo } = useRepositories()
-const { show: showSnackbar } = useSnackbar()
 const { t } = useI18n()
+const { show: showSnackbar } = useSnackbar()
+const importing = shallowRef(false)
+const removalOpen = shallowRef(false)
+const removing = shallowRef(false)
+const removalError = shallowRef('')
 
-// View state — mirrors incoming props, updated on save
-const url = shallowRef(props.initialUrl)
-const notes = shallowRef(props.initialNotes)
-
-watch(() => props.initialNotes, (val) => { notes.value = val })
-watch(() => props.initialUrl, (val) => { url.value = val })
-
-const notesHtml = computed(() => marked.parse(notes.value || '') as string)
-
-// Edit state
-const editMode = shallowRef(false)
-const editUrl = shallowRef('')
-const editNotes = shallowRef('')
-const mde = ref<EasyMDE | null>(null)
-const textareaRef = ref<HTMLElement | null>(null)
-
-function startEdit() {
-  editUrl.value = url.value
-  editNotes.value = notes.value
-  editMode.value = true
-  nextTick(() => {
-    if (!textareaRef.value) return
-    mde.value = new EasyMDE({
-      element: textareaRef.value,
-      spellChecker: false,
-      initialValue: editNotes.value,
-      toolbar: ['bold', 'italic', 'heading', '|', 'unordered-list', 'ordered-list', '|', 'link', 'preview'],
-    })
-    mde.value.codemirror.on('change', () => {
-      editNotes.value = mde.value?.value() ?? ''
-    })
-  })
+function snapshotSaved() {
+  importing.value = false
+  showSnackbar(t('recipeSnapshot.saved'), { type: 'success' })
+  emit('snapshotUpdated')
 }
 
-function cancelEdit() {
-  mde.value?.toTextArea()
-  mde.value = null
-  editMode.value = false
-}
-
-async function saveEdit() {
+async function removeSnapshot() {
+  if (removing.value) return
+  removing.value = true
+  removalError.value = ''
   try {
-    await dishRepo.updateNotes(props.dishId, editNotes.value, editUrl.value)
-    notes.value = editNotes.value
-    url.value = editUrl.value
-    showSnackbar(t('dishes.notesSaved'), { type: 'success' })
-    emit('updated', { notes: notes.value, url: url.value })
-  } catch {
-    showSnackbar(t('dishes.failedToSaveNotes'), { type: 'error' })
+    await dishRepo.removeRecipe(props.familyId, props.dishId)
+    removalOpen.value = false
+    showSnackbar(t('recipeSnapshot.removed'), { type: 'success' })
+    emit('snapshotUpdated')
   }
-  cancelEdit()
+  catch (error) { removalError.value = recipeImportErrorKey(error) }
+  finally { removing.value = false }
 }
 </script>
 
 <template>
-  <!-- Skeleton -->
-  <v-card v-if="loading" class="notes-card">
-    <v-card-text>
+  <v-card class="notes-card">
+    <v-card-text v-if="loading">
       <v-skeleton-loader type="text" width="120" class="mb-4" />
       <v-skeleton-loader type="paragraph" />
     </v-card-text>
-  </v-card>
-
-  <!-- Loaded -->
-  <v-card v-else class="notes-card">
-    <div class="notes-card__header">
-      <span class="text-card-title">{{ $t('dishes.recipeAndNotes') }}</span>
-      <div v-if="editMode" class="notes-card__edit-actions">
-        <v-btn variant="text" size="small" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
-        <v-btn variant="text" size="small" color="primary" @click="saveEdit">{{ $t('common.save') }}</v-btn>
-      </div>
-      <v-btn
-        v-else
-        icon="mdi-pencil-outline"
-        variant="text"
-        size="small"
-        :aria-label="$t('dishes.editNotes')"
-        @click="startEdit"
-      />
-    </div>
-
-    <div class="notes-card__body">
-      <!-- Recipe URL -->
-      <div v-if="url || editMode" class="notes-card__url-row">
-        <v-icon size="15" color="primary">mdi-open-in-new</v-icon>
-        <v-text-field
-          v-if="editMode"
-          v-model="editUrl"
-          :label="$t('dishes.recipeUrl')"
-          variant="outlined"
-          density="compact"
-          hide-details
-          class="notes-card__url-input"
-        />
-        <a
-          v-else
-          :href="url"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="notes-card__url-chip"
-        >
-          {{ url }}
-        </a>
-      </div>
-
-      <!-- Notes: edit mode -->
-      <div v-if="editMode" class="notes-card__editor">
-        <textarea ref="textareaRef" />
-        <p class="notes-card__hint">{{ $t('dishes.mentionPrepHint') }}</p>
-      </div>
-
-      <!-- Notes: view mode -->
-      <template v-else>
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div v-if="notes" class="notes-card__html" v-html="notesHtml" />
-        <p v-else class="notes-card__empty">{{ $t('dishes.noNotesAdded') }}</p>
-      </template>
-    </div>
+    <template v-else>
+      <DishUserNotesSection :dish-id="dishId" :initial-notes="initialNotes" :initial-url="initialUrl" @updated="emit('updated', $event)" />
+      <DishRecipeSnapshotSection :snapshot="snapshot" :url="initialUrl" :busy="importing || removalOpen" @import="importing = true" @refresh="importing = true" @remove="removalOpen = true" />
+      <DishRecipeImportDialog v-if="importing" :family-id="familyId" :dish-id="dishId" :replacing="!!snapshot" @cancelled="importing = false" @confirmed="snapshotSaved" />
+      <v-dialog v-model="removalOpen" max-width="440" :persistent="removing">
+        <v-card>
+          <v-card-title>{{ t('recipeSnapshot.removeTitle') }}</v-card-title>
+          <v-card-text>
+            <p>{{ t('recipeSnapshot.removeWarning') }}</p>
+            <p v-if="removalError" role="alert">{{ t(removalError) }}</p>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn variant="text" :disabled="removing" @click="removalOpen = false">{{ t('common.cancel') }}</v-btn>
+            <v-btn variant="text" color="error" :loading="removing" :disabled="removing" @click="removeSnapshot">{{ t('recipeSnapshot.remove') }}</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </template>
   </v-card>
 </template>
 
 <style scoped>
-.notes-card {
-  /* Warm tint to distinguish from white surface cards */
-  background-color: var(--color-surface-variant) !important;
-}
-
-.notes-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-3) var(--space-2);
-}
-
-.notes-card__edit-actions {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.notes-card__body {
-  padding: 0 var(--space-3) var(--space-3);
-}
-
-/* URL row */
-.notes-card__url-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-}
-
-.notes-card__url-chip {
-  display: inline-block;
-  padding: 3px var(--space-3);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border-medium);
-  font-size: var(--text-sm);
-  color: var(--color-primary-dark);
-  text-decoration: none;
-  max-width: 420px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition:
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-}
-
-.notes-card__url-chip:hover {
-  background-color: rgba(var(--color-primary-rgb), 0.08);
-  border-color: var(--color-primary);
-}
-
-.notes-card__url-input {
-  flex: 1;
-}
-
-/* Editor */
-.notes-card__editor {
-  margin-top: var(--space-2);
-}
-
-/* Rendered markdown */
-.notes-card__html {
-  font-size: var(--text-base);
-  line-height: 1.6;
-  color: var(--color-text-primary);
-}
-
-.notes-card__html :deep(h1),
-.notes-card__html :deep(h2),
-.notes-card__html :deep(h3) {
-  font-family: var(--font-display);
-  margin: var(--space-4) 0 var(--space-2);
-  color: var(--color-text-primary);
-}
-
-.notes-card__html :deep(a) {
-  color: var(--color-primary-dark);
-}
-
-.notes-card__html :deep(p) {
-  margin: 0 0 var(--space-3);
-}
-
-.notes-card__html :deep(ul),
-.notes-card__html :deep(ol) {
-  padding-left: var(--space-6);
-  margin: 0 0 var(--space-3);
-}
-
-.notes-card__empty {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  font-style: italic;
-  margin: 0;
-}
-
-.notes-card__hint {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  font-style: italic;
-}
+.notes-card { background-color: var(--color-surface-variant) !important; }
 </style>

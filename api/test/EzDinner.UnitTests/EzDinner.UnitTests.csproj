@@ -13,6 +13,7 @@
     <PackageReference Include="MicroElements.AutoFixture.NodaTime" Version="0.3.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NodaTime" Version="3.2.0" />
     <PackageReference Include="NodaTime.Testing" Version="3.2.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -28,6 +29,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\EzDinner.Core\EzDinner.Core.csproj" />
+    <ProjectReference Include="..\..\src\EzDinner.Query.Core\EzDinner.Query.Core.csproj" />
+    <ProjectReference Include="..\..\src\EzDinner.Infrastructure\EzDinner.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\EzDinner.Functions\EzDinner.Functions.csproj" />
   </ItemGroup>
 
 </Project>

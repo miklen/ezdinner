@@ -219,10 +219,13 @@ async function doReactivate() {
       <v-col cols="12" md="7">
         <DishNotesCard
           :dish-id="(route.params.id as string)"
+          :family-id="appStore.activeFamilyId"
+          :snapshot="dish?.recipeSnapshot"
           :initial-notes="dish?.notes ?? ''"
           :initial-url="dish?.url ?? ''"
           :loading="loading"
           @updated="triggerEnrich"
+          @snapshot-updated="loadDish"
         />
       </v-col>
 

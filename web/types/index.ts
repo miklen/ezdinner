@@ -1,4 +1,5 @@
 import type { DateTime } from 'luxon'
+import type { RecipeSnapshot } from './recipe-snapshot'
 
 export type DishRole = 'Main' | 'Side' | 'Dessert' | 'Other'
 export type EffortLevel = 'Quick' | 'Medium' | 'Elaborate'
@@ -51,6 +52,7 @@ export interface Dish {
   id: string
   url: string
   notes: string
+  recipeSnapshot?: RecipeSnapshot | null
   rating: number
   dates: DinnerDate[]
   dishStats: DishStats

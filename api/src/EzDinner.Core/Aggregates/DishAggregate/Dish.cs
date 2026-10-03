@@ -17,6 +17,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         public Uri? Url { get; private set; }
         public IEnumerable<Tag> Tags { get; }
         public string Notes { get; private set; }
+        public RecipeSnapshotValueObject? RecipeSnapshot { get; private set; }
         public DishMetadataValueObject Metadata { get; private set; }
 
         /// <summary>
@@ -27,7 +28,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         /// <summary>
         /// For serialization purpose only. Does not protect invariants and constraints.
         /// </summary>
-        public Dish(Guid id, Guid familyId, string name, Uri? url, IEnumerable<Tag> tags, string notes, bool deleted, IEnumerable<Rating> ratings, bool isArchived = false, DishMetadataValueObject? metadata = null) : base(id)
+        public Dish(Guid id, Guid familyId, string name, Uri? url, IEnumerable<Tag> tags, string notes, bool deleted, IEnumerable<Rating> ratings, bool isArchived = false, DishMetadataValueObject? metadata = null, RecipeSnapshotValueObject? recipeSnapshot = null) : base(id)
         {
             FamilyId = familyId;
             Name = name;
@@ -38,6 +39,7 @@ namespace EzDinner.Core.Aggregates.DishAggregate
             IsArchived = isArchived;
             _ratings = ratings?.ToList() ?? new List<Rating>();
             Metadata = metadata ?? DishMetadataValueObject.Empty;
+            RecipeSnapshot = recipeSnapshot;
         }
 
         public static Dish CreateNew(Guid familyId, string name)
@@ -106,6 +108,19 @@ namespace EzDinner.Core.Aggregates.DishAggregate
             Notes = notes;
         }
 
+        public void SetRecipeSnapshot(RecipeSnapshotValueObject snapshot)
+        {
+            ArgumentNullException.ThrowIfNull(snapshot);
+            if (Url?.OriginalString != snapshot.SourceUrl)
+                throw new InvalidOperationException("RECIPE_SOURCE_CHANGED");
+            RecipeSnapshot = snapshot;
+        }
+
+        public void RemoveRecipeSnapshot()
+        {
+            RecipeSnapshot = null;
+        }
+
         public void UpdateMetadata(DishMetadataValueObject incoming)
         {
             Metadata = Metadata.MergeWith(incoming);
@@ -126,4 +141,3 @@ namespace EzDinner.Core.Aggregates.DishAggregate
         }
     }
 }
- 

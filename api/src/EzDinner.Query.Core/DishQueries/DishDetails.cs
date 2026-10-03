@@ -31,6 +31,7 @@ namespace EzDinner.Query.Core.DishQueries
         /// Recipe URL
         /// </summary>
         public string? Url { get; set; }
+        public RecipeSnapshotValueObject? RecipeSnapshot { get; set; }
 
         public IEnumerable<DinnerDateQueryModel>? Dates { get; set; }
 
@@ -58,8 +59,9 @@ namespace EzDinner.Query.Core.DishQueries
                 Name = dish.Name,
                 Rating = dish.Rating / 2d,
                 Ratings = dish.Ratings.Select(s => new RatingQueryModel(s.RaterId, s.RatingValue)),
-                Url = dish.Url?.ToString() ?? "",
+                Url = dish.Url?.OriginalString ?? "",
                 Notes = dish.Notes ?? "",
+                RecipeSnapshot = dish.RecipeSnapshot,
                 DishStats = new DishStats(dish.Id, dinners),
                 Dates = CreateDinnersWithDaysBetween(dinners),
                 IsArchived = dish.IsArchived,

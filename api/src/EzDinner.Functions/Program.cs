@@ -3,6 +3,7 @@ using EzDinner.Application.Commands.FamilyMembers;
 using EzDinner.Authorization.Core;
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Infrastructure;
+using EzDinner.Infrastructure.RecipeSnapshots;
 using EzDinner.Query.Core.DishQueries;
 using EzDinner.Query.Core.FamilyQueries;
 using EzDinner.Core.DomainServices.DinnerSuggestions;
@@ -46,6 +47,7 @@ var host = new HostBuilder()
             .RegisterRepositories()
             .RegisterWebPush(context.Configuration)
             .RegisterEnrichment(context.Configuration)
+            .RegisterRecipeSnapshots(context.Configuration)
             .AddScoped<UpdateDishMetadataCommandHandler>()
             .AddScoped<EnrichDishCommandHandler>()
             .AddScoped<MergeNonAutonomousMemberCommand>()

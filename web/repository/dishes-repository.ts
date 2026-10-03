@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
 import type { Dish, DishMetadata, DishStats } from '~/types'
+import { recipePreviewSchema, recipeSnapshotSchema, type RecipeCandidate } from '~/types/recipe-snapshot'
 
 type ApiFetch = <T>(path: string, options?: Parameters<typeof $fetch>[1]) => Promise<T>
 type LocalDateLike = string | { year: number; month: number; day: number }
@@ -29,6 +30,7 @@ export class DishesRepository {
 
   async getFull(dishId: string, familyId: string) {
     const result = await this.apiFetch<Dish>(`/api/dishes/${dishId}/full/family/${familyId}`)
+    if (result.recipeSnapshot) result.recipeSnapshot = recipeSnapshotSchema.parse(result.recipeSnapshot)
     if (result.dishStats?.lastUsed) {
       result.dishStats.lastUsed = DateTime.fromISO(normalizeLocalDate(result.dishStats.lastUsed as unknown as LocalDateLike))
     }
@@ -77,6 +79,21 @@ export class DishesRepository {
 
   updateNotes(dishId: string, notes: string, url: string) {
     return this.apiFetch(`/api/dishes/${dishId}/notes`, { method: 'PUT', body: { notes, url } })
+  }
+
+  async previewRecipe(familyId: string, dishId: string, signal?: AbortSignal) {
+    const result = await this.apiFetch<unknown>(`/api/dishes/${dishId}/recipe/preview/family/${familyId}`, { method: 'POST', signal })
+    return recipePreviewSchema.parse(result)
+  }
+
+  confirmRecipe(familyId: string, dishId: string, candidate: RecipeCandidate) {
+    return this.apiFetch<unknown>(`/api/dishes/${dishId}/recipe/family/${familyId}`, {
+      method: 'PUT', body: recipeSnapshotSchema.parse(candidate),
+    })
+  }
+
+  removeRecipe(familyId: string, dishId: string) {
+    return this.apiFetch<unknown>(`/api/dishes/${dishId}/recipe/family/${familyId}`, { method: 'DELETE' })
   }
 
   archive(familyId: string, dishId: string) {
