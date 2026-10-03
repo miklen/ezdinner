@@ -1,0 +1,173 @@
+# EzDinner — Project Instructions
+
+## Required Skills by Context
+- **All code work**: load `tactical-ddd` and `software-design-principles` skills before making changes
+- **Frontend work** (`/web`): additionally load `vue-best-practices`, `vue-options-api-best-practices`, `vue-pinia-best-practices`, `vue-testing-best-practices`, and `frontend-design` skills
+- **Vue routing work**: additionally load `vue-router-best-practices` skill
+- **Vue debugging**: load `vue-debug-guides` skill
+- **Debugging errors**: load `technical-investigator` skill before diagnosing any issue
+
+## Project Overview
+EzDinner is a family dinner planning app. Users belong to families and plan weekly dinners from a dish catalog. Multi-tenant by family, with per-family RBAC authorization. The app is used on both desktop and mobile. Main driver on desktop is planning while main for mobile is viewing the plan. Always ensure that any frontend changes works equally well on mobile and desktop layout. All text must always be localized to available languages!
+
+## Frontend Consistency (Required)
+
+New features must look and behave like the existing app. Functional correctness alone is not completion. Preserve the established visual language and interactions unless the user explicitly requests a change; a spec adding functionality does not authorize a redesign of existing concepts.
+
+- **Before implementing UI**, inspect the analogous existing pages, components, and their styles in `/web`. When browser access is available, compare the rendered app as well. Identify which existing components and interactions the feature will reuse before editing.
+- **Reuse components first.** Extend existing components with focused props or slots when necessary rather than creating separate presentations of the same concept. Share styles when extracting a pattern; avoid independent copies that can drift.
+- **Use the existing design system** in `web/assets/global.scss`: typography utilities, colors, spacing, radii, shadows, and motion. Follow the current app even when a design skill suggests a new aesthetic. Do not invent a new visual direction for a feature.
+- **Match controls to their context.** Catalog search uses compact, outlined, rounded fields with a search icon and placeholder. Catalog sorting uses chips; metadata filters use the collapsible tag controls and shared `web/assets/catalog-controls.scss`. Do not introduce default filled Vuetify fields or a wall of selects for these existing concepts. Match other forms to their nearest existing equivalent.
+- **Reuse dish presentations:** `web/components/Dish/DishCard.vue`, `DishRating.vue` (heart ratings), and `DishPill.vue`. Keep established titles, rating accents, metadata tags, and action styling.
+- **Reuse planning presentations:** `web/components/Plan/WeekNav.vue`, `PlannedDinner.vue`, and `web/components/Dish/PlanDayRow.vue`. Preserve weekend tinting, today badges, planned/empty/opted-out states, and established day-selection patterns. Use `Dish/PlanDishDialog.vue` as the reference for assignment dialogs and mobile sheets.
+- **Preserve navigation.** Clicking a dish opens `/dishes/:id` through the existing detail-page workflow. Do not substitute a recipe preview popup or another new interaction. Keep assignment/removal actions separate from navigation and preserve browsing context when returning.
+- **Before declaring UI work complete**, compare the new feature against its existing equivalents in the browser on desktop and mobile when available. Check typography, controls, cards, spacing, empty/loading states, navigation, and action behavior. Run relevant tests and lint/build checks, but do not treat passing tests as proof of visual consistency. State any visual verification limitation explicitly.
+
+## Structure
+A CQRS architecture
+```
+/               # Legacy Nuxt 2 frontend (not actively developed)
+/web            # Active Nuxt 3 frontend (TypeScript, Pinia, Vuetify 3)
+/api            # .NET 10 Azure Functions backend (Clean Architecture + CQRS)
+  /src
+    EzDinner.Functions          # HTTP-triggered Azure Functions (entry points)
+    EzDinner.Application        # Use cases / commands
+    EzDinner.Core               # Domain layer: Aggregates/ and DomainServices/
+    EzDinner.Infrastructure     # CosmosDB repos, Casbin adapter, EF Core
+    EzDinner.Authorization.Core # Casbin RBAC engine wrapper
+    EzDinner.Query.Core         # Read-only query interfaces
+  /test
+    EzDinner.UnitTests          # Unit tests — no CosmosDB required
+  /tests
+    EzDinner.IntegrationTests   # Integration tests (require live CosmosDB emulator)
+```
+
+## Running Locally
+
+**Backend** (from `api/src/EzDinner.Functions/`):
+```bash
+func start
+```
+Runs at http://localhost:7071. Requires Azurite and `local.settings.json` with CosmosDB + B2C config.
+
+**Frontend** (from `web/`):
+```bash
+npm run dev
+```
+Runs at http://localhost:3000.
+
+## Key Commands
+```bash
+# Backend build only
+cd api/src/EzDinner.Functions && dotnet build
+
+# Run unit tests (no emulator required)
+cd api/test/EzDinner.UnitTests && dotnet test
+
+# Run integration tests (requires CosmosDB emulator)
+cd api && dotnet test
+
+# Frontend tests
+cd web && npm test
+
+# Frontend lint
+cd web && npm run lint
+```
+
+## Backend Architecture
+
+### Layer responsibilities — what goes where
+- **`EzDinner.Core`** — pure domain logic only; no I/O, no repos, no infrastructure imports
+- **`EzDinner.Query.Core`** — query orchestration: load from repos → invoke domain → return shaped result; also holds query result models (`DaySuggestion` etc.)
+- **`EzDinner.Application`** — command orchestration: load → mutate via domain → save
+- **`EzDinner.Functions`** — thin HTTP layer only: parse request → call query/command → map to DTO; no business logic
+- **`EzDinner.Infrastructure`** — repo implementations, CosmosDB, EF Core, Casbin
+- `EzDinner.Query.Core` already references `EzDinner.Core` (transitive through `EzDinner.Infrastructure` into `EzDinner.Functions`)
+
+### EzDinner.Core internal structure
+```
+Aggregates/XxxAggregate/     # one folder per aggregate; root class is Xxx (no postfix on class, only on folder)
+DomainServices/XxxYyy/       # one folder per domain service capability
+```
+
+### DDD naming conventions (enforced)
+- Aggregate root class: `Dish`, `Dinner`, `Family` — no class postfix; the folder carries `Aggregate`
+- Value objects: postfix `ValueObject` — e.g., `DishCandidateValueObject`
+- Domain services: postfix `Service` — e.g., `DinnerSuggestionService`; use `EngineService` when plain `Service` would clash with a same-named query-layer class
+- Factories: postfix `Factory`; make `static` if pure computation — no DI registration needed
+- Business/scoring rules (Strategy pattern): postfix `Rule` — recognised type alongside the five DDD types
+
+**If a new domain concept doesn't clearly fit Aggregate, Entity, ValueObject, Factory, Service, or Rule — stop and ask before placing it.**
+
+### Testing placement
+- Domain unit tests → `api/test/EzDinner.UnitTests/XxxTests/` — construct types directly, no mocks, no I/O
+- Integration tests → `api/tests/EzDinner.IntegrationTests/` — require live CosmosDB emulator
+
+## Tech Stack
+- **Frontend**: Nuxt 3, Vue 3, Pinia, Vuetify 3, TypeScript, MSAL Browser 3
+- **Backend**: .NET 10, Azure Functions v4 (isolated worker), EF Core 9, Cosmos DB
+- **Auth**: Azure AD B2C (MSAL on frontend, Microsoft.Identity.Web on backend)
+- **Authorization**: Casbin.NET 2.19.1 with RBAC-with-domains model, EFCore adapter 2.4.0
+- **Database**: Azure Cosmos DB; local dev uses Azurite emulator
+- **Date/Time**: NodaTime `LocalDate` (no time zones — dinners are calendar dates)
+
+## Authorization Architecture
+- Casbin RBAC-with-domains: families are domains, users get roles (Owner, FamilyMember) per family
+- Policies stored in `CasbinRulesV2` CosmosDB container (partition key: `/id`)
+- `CasbinCosmosAdapter` overrides `AddPolicyAsync` to bypass a broken EF Core 9 LINQ existence check that generates invalid CosmosDB SQL (`Identifier 'root' could not be resolved`). Uses direct insert + conflict catch instead.
+- `AddPolicyAsync` handles both `p`-type (permissions) and `g`-type (role assignments) rules — `EFCoreAdapter` 2.4.0 has no separate `AddGroupingPolicyAsync` override.
+- EF Core maps Casbin fields to shadow properties named `"Type"` and `"Value1"`–`"Value6"` (NOT `"PType"` / `"V0"`–`"V5"`)
+- `PUT /api/migrate` seeds authorization policies for existing families — must be called after initial setup or schema changes
+- Casbin `Enforcer` is a singleton that loads from DB at startup into an in-memory model. New rules added via `AddPolicyAsync` update both DB and the current instance's in-memory model, but other running instances remain stale until restarted. Any function that writes Casbin policies must call `await _authz.ReloadPoliciesAsync()` afterwards to keep the local instance consistent. If a user has the correct rule in DB but still gets 401, restart the function app.
+- Azure Functions `TimerTrigger` on Consumption plan keeps instances alive and fires on every instance independently — avoid for low-traffic apps where scale-to-zero is desired, as it generates continuous CosmosDB reads and prevents cost savings.
+
+## B2C IEF Custom Policies
+- Custom policies in `b2c/` are NOT deployed by any CI/CD pipeline. After editing, upload manually via Azure Portal → B2C tenant → Identity Experience Framework → Upload custom policy. Upload order matters: Base → Localization → Extensions → SignUpOrSignin/PasswordReset/ProfileEdit.
+- B2C local accounts (created via IEF) have no `mail` attribute in Graph API — email lives in the `identities` collection as `signInType=emailAddress`. `UserRepository.GetUser(string)` first tries `mail eq`, then falls back to `identities/any(i:i/issuerAssignedId eq '{email}' and i/issuer eq '{tenantDomain}')` with `ConsistencyLevel: eventual` + `$count=true` (both required by Graph API for this filter).
+- In `AAD-UserWriteUsingLogonEmail` (and any AAD write TP), never add `<PersistedClaim PartnerClaimType="email" />`. The `email` PartnerClaimType maps to the Azure AD `mail` attribute, which is **read-only** for B2C local accounts (auto-derived from `signInNames.emailAddress`). Writing it causes the AAD write to fail silently as `AADB2C90278 "Unable to validate the information provided"`. Use `PartnerClaimType="otherMails"` if you need the alternate email collection.
+- `JourneyInsights` telemetry only works in `RelyingParty/UserJourneyBehaviors`, not in the `UserJourney` element directly.
+
+## i18n (Internationalisation)
+- All user-visible text added to the frontend must use `$t()` / `t()` with keys in both `web/i18n/locales/en.json` and `web/i18n/locales/da.json`. Never hardcode English strings in templates or scripts.
+- @nuxtjs/i18n v10 resolves `langDir` relative to `{rootDir}/i18n/` (not `{rootDir}`). Use `langDir: 'locales'` with locale files at `web/i18n/locales/en.json` etc.
+- @nuxtjs/i18n built-in `detectBrowserLanguage` localStorage persistence is unreliable in SPA mode. Use `detectBrowserLanguage: false` and a `plugins/locale.client.ts` that reads/writes localStorage via `nuxtApp.$i18n` (not `useI18n()` — that composable cannot be called in plugins).
+- `useI18n()` cannot be called in Nuxt plugins. Use `nuxtApp.$i18n` (cast as needed) to access `locale` and `setLocale()` in plugin context.
+- Luxon `toFormat()` uses the system locale, not the Vue i18n locale. Call `.setLocale(locale.value)` before `.toFormat()` for locale-aware day/month names (e.g. `date.setLocale(locale.value).toFormat('EEEE')`).
+- Translated option arrays (e.g. `effortOptions`, `seasonOptions`) must be `computed()` not `const` — plain arrays referencing `t()` are evaluated once and don't re-render when locale changes.
+
+## Non-Obvious Gotchas
+- Global CSS token sheet is at `web/assets/global.scss`. Primary color opacity variants use `--color-primary-rgb: 212, 101, 42` — write `rgba(var(--color-primary-rgb), 0.08)` not the raw value.
+- `useSnackbar` (`web/composables/useSnackbar.ts`) is an intentional module-level singleton — refs are declared outside the function to share state across callers. It is client-only and should not be migrated to Pinia unless SSR is enabled for authenticated routes.
+- Azure Functions v4 isolated worker uses System.Text.Json — Newtonsoft `[JsonConverter]` attributes on model classes are silently ignored. Map NodaTime types to strings in AutoMapper using e.g. `LocalDatePattern.Iso.Format(s.Date)`.
+- CosmosDB triggers in Azure Functions v4 isolated worker use STJ to deserialize the change feed payload. Domain classes with parameterized constructors and private-backed properties (like `Family`) cannot be bound by STJ. Use `IReadOnlyList<JsonElement>` as the trigger parameter type, then call `.GetRawText()` on each element to get the raw JSON string and deserialize with Newtonsoft. **`IReadOnlyList<string>` does NOT work** — STJ cannot convert a JSON object element to a `string` type (throws `InvalidOperationException: Cannot get the value of a token type 'StartObject' as a string`).
+- `IAsyncEnumerable<T>` returned via `OkObjectResult` serializes as `{}` with System.Text.Json — always `.ToListAsync()` before returning.
+- Nuxt 3 auto-import prefixes components by folder, with deduplication: the folder prefix is prepended unless the filename already starts with it. `Plan/TopDishes.vue` → `<PlanTopDishes>`. `Dish/DatesVisualization.vue` → `<DishDatesVisualization>`. `Dish/DishPill.vue` → `<DishPill>` (NOT `<DishDishPill>` — "Dish" prefix deduplicated). Using the wrong name silently renders nothing.
+- Vuetify 3 `v-timeline` with `density="compact"` + `side="end"` shrinks to content width (uses `auto` column, not `1fr`). Use a custom CSS timeline (`position: relative`, `::before` for vertical line) instead.
+- EF Core 9 + CosmosDB: avoid LINQ queries with `.Any()` / existence checks — they generate invalid SQL. Use direct insert with conflict handling.
+- `HasNoDiscriminator()` is required on `CasbinEntityConfiguration` for Cosmos — without it EF adds a discriminator field that breaks queries.
+- `HasPartitionKey(p => p.Id)` must match the container's actual partition key path (`/id`) or CosmosDB rejects writes.
+- Casbin.NET.Adapter.EFCore 2.4.0 requires Casbin.NET >= 2.19.1 (older 2.x versions cause NU1605 downgrade warning and runtime failures).
+- `EFCoreAdapter.RemovePolicyAsync` throws `EntryPointNotFoundException` at `ICollection<T>.get_Count()` in .NET 10 — same class of bug as `AddPolicyAsync`. `CasbinCosmosAdapter` overrides both to use direct EF operations (lookup by deterministic ID, then delete/insert).
+- Vuetify 3 `v-tooltip` `:text` prop renders empty on light themes — use the default slot for tooltip content instead. Also add `theme="dark"` to ensure visible contrast.
+- When checking if the current user is an owner in a family with multiple owners, use `familyMembers.some(m => m.isOwner && m.id === userId)` not `familyMembers.find(m => m.isOwner)?.id === userId` — `find` only checks the first owner in the array.
+- Integration tests are in `api/tests/EzDinner.IntegrationTests` and hit a real CosmosDB — no mocking.
+- The legacy Nuxt 2 app in the repo root is not the active frontend. Use `/web`.
+- MSAL Browser v3 does not populate `idTokenClaims` on accounts returned by `getAllAccounts()` after a page reload. Call `acquireTokenSilent()` first to get a token response with fresh claims. See `web/plugins/msal.client.ts`.
+- Vuetify 3 `v-rating` inter-icon spacing cannot be controlled via `:deep()` scoped CSS. Apply `style="gap: Npx"` directly on the `<v-rating>` element instead (it renders as `inline-flex`).
+- Vuetify 3 `v-rating` `size` prop only controls the icon size, not the button wrapper. The wrapper `v-btn` retains its default `min-width` (36–64px), which causes rating rows to consume excessive width in flex layouts. Override with `:deep(.v-btn) { min-width: unset !important; width: auto !important; padding: 0 !important; }` in the parent component.
+- `func-ezdinner-prod-02` requires all `AzureAdB2C:*` settings manually (Instance, TenantId, ClientId, Domain, SignUpSignInPolicyId, ClientSecret) — portal "Advanced edit" export from prod-01 may omit them. Refer to `api/src/EzDinner.Functions/local.settings.json` for the full list of required keys.
+- Don't use `NuxtLink` (or `v-card :to`) as the outer container when the element also contains removable/clickable children. The entire `<a>` becomes a navigation trigger; `@click.stop` on children is unreliable. Instead wrap only the navigable text in `NuxtLink` and keep the outer element a plain `<span>` or `<div>`.
+- `overflow-x: hidden` on `body` breaks Vuetify `position: fixed` overlays (tooltips, menus, dialogs) in some browsers. Use `overflow-x: clip` instead — prevents horizontal scroll without affecting fixed-position descendants.
+- `v-tooltip` does not work reliably inside `v-navigation-drawer` in rail mode (Vuetify 3.7.x) — neither activator slot pattern nor `activator="parent"` shows a tooltip. Workaround: track `mouseenter`/`mouseleave` on a wrapper div, capture Y from `getBoundingClientRect()`, render a custom `position: fixed` tooltip outside the drawer.
+- `@vueuse/core` is NOT a transitive dependency of Nuxt in this project — must `npm install @vueuse/core` explicitly before importing `useSwipe`, `useIntersectionObserver`, etc.
+- Luxon `DateTime.toISODate()` returns `string | null` — use `.toFormat('yyyy-MM-dd')` when a guaranteed non-null string is required (e.g., `:key` bindings, URL params).
+- `grid-template-rows: 0fr → 1fr` expand animation (smooth height reveal) belongs on the *wrapper* component, not the content component. The content component renders normally; the wrapper applies `overflow: hidden` + the transition.
+
+## CI/CD
+- `ci.yml` — lint + test `web/` on PR/push to main
+- `azure-static-web-apps-*.yml` — deploys `web/` to Azure Static Web Apps
+- `func-ezdinner-prod-02.yml` — deploys backend to `func-ezdinner-prod-02`
+- SWA automatically creates preview environments for PRs targeting `main` (free tier limit: 3 concurrent staging envs)
+- CI uses npm 11 (`npm install -g npm@11` step) — lockfile was generated with npm 11 and `npm ci` fails on Node 22's bundled npm 10
+- `npx nuxt prepare` must run before `npm test` in CI to generate `.nuxt/tsconfig.json`
+- `Azure/functions-action` latest is `v1` — `v2` does not exist
