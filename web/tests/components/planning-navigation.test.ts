@@ -9,12 +9,12 @@ const Block = defineComponent({ setup: (_, { slots }) => () => h('div', slots.de
 const Link = defineComponent({ props: { to: String }, setup: (props, { slots }) => () => h('a', { href: props.to }, [slots.prepend?.(), slots.default?.()]) })
 
 describe('additive planning navigation', () => {
-  it.each([false, true])('retains all routes and exposes the new entry with mobile=%s', async (mobile) => {
+  it.each([[false, '/home'], [true, '/home'], [false, '/plan-your-week'], [true, '/plan-your-week']])('retains all routes and shows the planning icon with mobile=%s on %s', async (mobile, path) => {
     vi.stubGlobal('useDisplay', () => ({ smAndDown: shallowRef(mobile), md: shallowRef(false) }))
     vi.stubGlobal('useAppStore', () => ({ activeFamilyId: 'family' }))
     vi.stubGlobal('useFamiliesStore', () => ({ getFamilySelectors: async () => {}, getActiveFamily: async () => {} }))
     vi.stubGlobal('useSnackbar', () => ({ visible: shallowRef(false), color: shallowRef(''), timeout: shallowRef(0), message: shallowRef(''), dismiss: () => {} }))
-    vi.stubGlobal('useRoute', () => ({ path: '/plan-your-week' }))
+    vi.stubGlobal('useRoute', () => ({ path }))
     vi.stubGlobal('useI18n', () => ({ t: (key: string) => key }))
     vi.stubGlobal('computed', computed)
     vi.stubGlobal('reactive', reactive)
@@ -29,5 +29,7 @@ describe('additive planning navigation', () => {
     await flushPromises()
     expect(wrapper.findAll('a').map(link => link.attributes('href'))).toEqual(['/home', '/families', '/dishes', '/plan', '/plan-your-week'])
     expect(wrapper.find('a[href="/plan-your-week"]').attributes('aria-label')).toBe('weekPlanning.nav')
+    expect(wrapper.find('a[href="/plan-your-week"]').text()).toContain('mdi-calendar-plus')
+    expect(wrapper.find('a[href="/plan-your-week"]').text()).not.toContain('mdi-calendar-plus-outline')
   })
 })

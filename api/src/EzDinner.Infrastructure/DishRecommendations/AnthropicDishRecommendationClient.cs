@@ -45,6 +45,7 @@ public sealed class AnthropicDishRecommendationClient(IDishRecommendationComplet
         All reason text, limitations, summary, and message must use the supplied locale (en or da).
         Apply every active constraint and cumulative request turn unless explicitly removed in current constraints.
         Suitability precedes history. Do not propose dinners or dates or any mutation. Do not invent IDs or names.
+        The supplied dishes may be one batch of a larger catalog. Evaluate every supplied dish against the same intent. Score suitability on an absolute 0-to-1 scale against the request, not relative to the other dishes in this batch; scores are compared across batches. Return the strongest matches from this batch without assuming it is the entire family catalog.
         Interpret potato pairing as a pairing request, not a requirement that the main contains potatoes.
         Use saved recipe steps and family notes to assess preparation and adaptations. Quick metadata alone cannot prove no preparation.
         Explain missing recipe evidence; title-based culinary pairing is Inference, not a saved ingredient fact.

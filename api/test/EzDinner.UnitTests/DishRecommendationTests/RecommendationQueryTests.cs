@@ -72,12 +72,60 @@ public class RecommendationQueryTests
     }
 
     [Fact]
-    public async Task EvidenceOverflowRequestsNarrowingBeforeProviderAccess()
+    public async Task SingleDishEvidenceIsNotDiscardedWhenItExceedsBatchBudget()
     {
-        SetCatalog(Dish.CreateNew(family, "Soup"));
+        var dish = Dish.CreateNew(family, "Soup");
+        dish.SetNotes(new string('x', 2_000));
+        SetCatalog(dish);
+        provider.Setup(client => client.RecommendAsync(It.IsAny<DishRecommendationRequest>(), It.IsAny<DishRecommendationContext>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RecommendationProviderResult(RecommendationOutcome.Matches, [Match(dish, 1)], "Soup", null));
         var result = await Query(new() { MaximumEvidenceCharacters = 1 }).RecommendAsync(family, Request(), default);
-        Assert.Equal(RecommendationOutcome.NeedsClarification, result.Outcome);
-        provider.Verify(client => client.RecommendAsync(It.IsAny<DishRecommendationRequest>(), It.IsAny<DishRecommendationContext>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Equal(dish.Id, Assert.Single(result.Dishes).DishId);
+        provider.Verify(client => client.RecommendAsync(It.IsAny<DishRecommendationRequest>(),
+            It.Is<DishRecommendationContext>(context => context.Dishes[0].Sources.Any(source => source.Text.Length == 2_000)), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(500, 100_000)]
+    [InlineData(12, 3_000)]
+    public async Task SemanticSearchEvaluatesEntireCatalogAndRanksMatchesAcrossBatches(int count, int evidenceBudget)
+    {
+        var catalog = Enumerable.Range(0, count).Select(index => Dish.CreateNew(family, $"Dish {index}")).ToArray();
+        SetCatalog(catalog);
+        var evaluated = new HashSet<Guid>();
+        provider.Setup(client => client.RecommendAsync(It.IsAny<DishRecommendationRequest>(), It.IsAny<DishRecommendationContext>(), It.IsAny<CancellationToken>()))
+            .Returns((DishRecommendationRequest intent, DishRecommendationContext context, CancellationToken _) => {
+                Assert.Equal(["Works with potatoes"], intent.Turns);
+                Assert.InRange(context.Dishes.Count, 1, 300);
+                Assert.InRange(DishRecommendationEvidenceFactory.Serialize(intent, context).Length, 1, evidenceBudget);
+                foreach (var dish in context.Dishes) evaluated.Add(dish.DishId);
+                var matches = context.Dishes.Where(dish => dish.DishId == catalog[0].Id || dish.DishId == catalog[^1].Id)
+                    .Select(dish => Match(dish.DishId == catalog[0].Id ? catalog[0] : catalog[^1], dish.DishId == catalog[0].Id ? 0.6 : 1)).ToArray();
+                return Task.FromResult(new RecommendationProviderResult(matches.Length > 0 ? RecommendationOutcome.Matches : RecommendationOutcome.NoMatch, matches, "Potato pairing", null));
+            });
+        var result = await Query(new() { MaximumEvidenceCharacters = evidenceBudget }).RecommendAsync(family, Request(), default);
+        Assert.Equal(count, evaluated.Count);
+        Assert.Equal([catalog[^1].Id, catalog[0].Id], result.Dishes.Select(dish => dish.DishId));
+    }
+
+    [Fact]
+    public async Task FinalistsFromDifferentBatchesAreComparedTogetherBeforeFinalRanking()
+    {
+        var catalog = Enumerable.Range(0, 5).Select(index => Dish.CreateNew(family, $"Dish {index}")).ToArray();
+        SetCatalog(catalog);
+        provider.Setup(client => client.RecommendAsync(It.IsAny<DishRecommendationRequest>(), It.IsAny<DishRecommendationContext>(), It.IsAny<CancellationToken>()))
+            .Returns((DishRecommendationRequest _, DishRecommendationContext context, CancellationToken _) => {
+                var first = context.Dishes.Any(dish => dish.DishId == catalog[0].Id);
+                var last = context.Dishes.Any(dish => dish.DishId == catalog[^1].Id);
+                if (first && last)
+                    return Task.FromResult(new RecommendationProviderResult(RecommendationOutcome.Matches,
+                        [Match(catalog[0], 0.7), Match(catalog[^1], 1)], "Best pairing across catalog", null));
+                return Task.FromResult(new RecommendationProviderResult(RecommendationOutcome.Matches,
+                    [first ? Match(catalog[0], 1) : Match(catalog[^1], 0.8)], "Batch pairing", null));
+            });
+        var result = await Query(new() { MaximumCandidates = 3 }).RecommendAsync(family, Request(), default);
+        Assert.Equal([catalog[^1].Id, catalog[0].Id], result.Dishes.Select(dish => dish.DishId));
+        Assert.Equal("Best pairing across catalog", result.ContextSummary);
     }
 
     [Fact]
@@ -92,6 +140,43 @@ public class RecommendationQueryTests
         Assert.Equal(side.Id, Assert.Single(result.Dishes).DishId);
         provider.Verify(client => client.RecommendAsync(It.IsAny<DishRecommendationRequest>(),
             It.Is<DishRecommendationContext>(context => context.Dishes.Count == 1), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task BatchProviderFailureCannotReturnPartialCatalogRecommendations()
+    {
+        var first = Dish.CreateNew(family, "Soup");
+        var second = Dish.CreateNew(family, "Roast");
+        SetCatalog(first, second);
+        provider.Setup(client => client.RecommendAsync(It.IsAny<DishRecommendationRequest>(), It.IsAny<DishRecommendationContext>(), It.IsAny<CancellationToken>()))
+            .Returns((DishRecommendationRequest _, DishRecommendationContext context, CancellationToken _) =>
+                context.Dishes.Any(dish => dish.DishId == second.Id)
+                    ? Task.FromException<RecommendationProviderResult>(new DishRecommendationProviderException("PROVIDER_UNAVAILABLE"))
+                    : Task.FromResult(new RecommendationProviderResult(RecommendationOutcome.Matches, [Match(first, 1)], "Soup", null)));
+        var exception = await Assert.ThrowsAsync<DishRecommendationProviderException>(() =>
+            Query(new() { MaximumCandidates = 1 }).RecommendAsync(family, Request(), default));
+        Assert.Equal("PROVIDER_UNAVAILABLE", exception.Message);
+    }
+
+    [Fact]
+    public async Task MoreEvaluatesAllRemainingBatchesWithoutRecyclingExcludedDishes()
+    {
+        var excluded = Dish.CreateNew(family, "Already shown");
+        var noMatch = Dish.CreateNew(family, "Unknown");
+        var fitting = Dish.CreateNew(family, "Roast");
+        SetCatalog(excluded, noMatch, fitting);
+        provider.Setup(client => client.RecommendAsync(It.IsAny<DishRecommendationRequest>(), It.IsAny<DishRecommendationContext>(), It.IsAny<CancellationToken>()))
+            .Returns((DishRecommendationRequest intent, DishRecommendationContext context, CancellationToken _) => {
+                Assert.DoesNotContain(context.Dishes, dish => dish.DishId == excluded.Id);
+                Assert.Equal(["No fish"], intent.Constraints);
+                return Task.FromResult(context.Dishes.Any(dish => dish.DishId == fitting.Id)
+                    ? new RecommendationProviderResult(RecommendationOutcome.Matches, [Match(fitting, 1)], "No fish", null)
+                    : new RecommendationProviderResult(RecommendationOutcome.NoMatch, [], "No fish", null));
+            });
+        var result = await Query(new() { MaximumCandidates = 1 }).RecommendAsync(family,
+            Request() with { Mode = RecommendationMode.More, Constraints = ["No fish"], ExcludedDishIds = new HashSet<Guid> { excluded.Id } }, default);
+        Assert.Equal(fitting.Id, Assert.Single(result.Dishes).DishId);
+        Assert.Equal(RecommendationOutcome.Matches, result.Outcome);
     }
 
     [Fact]

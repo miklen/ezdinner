@@ -27,17 +27,7 @@ public sealed class DishRecommendationQuery(DishRecommendationContextAssembler a
         }
         if (available.Length == 0) return new(EmptyOutcome(request), [], constraints, string.Join("; ", constraints), null);
         var semanticContext = context with { Dishes = available };
-        var serialized = DishRecommendationEvidenceFactory.Serialize(request, semanticContext);
-        if (available.Length > limits.MaximumCandidates || serialized.Length > limits.MaximumEvidenceCharacters)
-            return new(RecommendationOutcome.NeedsClarification, [], constraints, string.Join("; ", constraints),
-                request.Locale == "da" ? "Kataloget er for stort til én forespørgsel. Vælg en retstype eller filtrér på rettens navn for at søge i færre retter." : "The catalog is too large for one request. Select a dish role or filter by dish name to search fewer dishes.");
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(limits.ProviderTimeoutSeconds));
-        RecommendationProviderResult response;
-        try { response = await provider.RecommendAsync(request, semanticContext, timeout.Token).WaitAsync(timeout.Token); }
-        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
-        { throw new DishRecommendationProviderException("PROVIDER_TIMEOUT", exception); }
-        ValidateResponse(response, semanticContext, request);
+        var response = await RecommendCatalogAsync(request, semanticContext, cancellationToken);
         var canonical = available.ToDictionary(dish => dish.DishId);
         var results = response.Matches.OrderByDescending(match => match.Suitability)
             .ThenByDescending(match => resurfacing.Score(canonical[match.DishId].Candidate, planningDate).Score)
@@ -45,6 +35,41 @@ public sealed class DishRecommendationQuery(DishRecommendationContextAssembler a
             .Select(match => BuildMatch(match, canonical[match.DishId], planningDate)).ToArray();
         var outcome = response.Outcome == RecommendationOutcome.NoMatch ? EmptyOutcome(request) : response.Outcome;
         return new(outcome, results, constraints, response.ContextSummary, response.Message);
+    }
+
+    private async Task<RecommendationProviderResult> RecommendCatalogAsync(DishRecommendationRequest request,
+        DishRecommendationContext context, CancellationToken cancellationToken)
+    {
+        var batches = DishRecommendationEvidenceFactory.Batch(request, context, limits).ToArray();
+        using var concurrency = new SemaphoreSlim(3);
+        var responses = await Task.WhenAll(batches.Select(async batch =>
+        {
+            await concurrency.WaitAsync(cancellationToken);
+            try { return await RecommendBatchAsync(request, batch, cancellationToken); }
+            finally { concurrency.Release(); }
+        }));
+        if (responses.Length == 1) return responses[0];
+        var matches = responses.SelectMany(response => response.Matches).ToArray();
+        if (matches.Length == 0)
+            return responses.FirstOrDefault(response => response.Outcome == RecommendationOutcome.NeedsClarification) ?? responses[0];
+        var finalists = matches.Select(match => match.DishId).ToHashSet();
+        var finalistContext = context with { Dishes = context.Dishes.Where(dish => finalists.Contains(dish.DishId)).ToArray() };
+        if (DishRecommendationEvidenceFactory.Batch(request, finalistContext, limits).Take(2).Count() == 1)
+            return await RecommendBatchAsync(request, finalistContext, cancellationToken);
+        return new(RecommendationOutcome.Matches, matches, string.Join("; ", request.Constraints.Concat(request.Turns)), null);
+    }
+
+    private async Task<RecommendationProviderResult> RecommendBatchAsync(DishRecommendationRequest request,
+        DishRecommendationContext context, CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(limits.ProviderTimeoutSeconds));
+        RecommendationProviderResult response;
+        try { response = await provider.RecommendAsync(request, context, timeout.Token).WaitAsync(timeout.Token); }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        { throw new DishRecommendationProviderException("PROVIDER_TIMEOUT", exception); }
+        ValidateResponse(response, context, request);
+        return response;
     }
 
     private RecommendedDish BuildMatch(RecommendationProviderMatch match, DishRecommendationEvidence evidence, NodaTime.LocalDate planningDate)

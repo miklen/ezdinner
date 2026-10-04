@@ -30,7 +30,7 @@ const links = computed(() => {
     nav.push(
       { icon: 'mdi-silverware-fork-knife', iconActive: 'mdi-silverware-fork-knife', title: t('nav.dishes'), to: '/dishes' },
       { icon: 'mdi-calendar-blank-outline', iconActive: 'mdi-calendar-blank', title: t('nav.plan'), to: '/plan' },
-      { icon: 'mdi-calendar-plus-outline', iconActive: 'mdi-calendar-plus', title: t('weekPlanning.nav'), to: '/plan-your-week' },
+      { icon: 'mdi-calendar-plus', iconActive: 'mdi-calendar-plus', title: t('weekPlanning.nav'), to: '/plan-your-week' },
     )
   }
   return nav
