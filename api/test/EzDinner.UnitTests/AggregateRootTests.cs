@@ -1,6 +1,7 @@
 using EzDinner.Core.Aggregates;
 using System;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace EzDinner.UnitTests
@@ -33,7 +34,12 @@ namespace EzDinner.UnitTests
 
     public class AggregateInstance : AggregateRoot<Guid>
     {
-        public AggregateInstance() : base(Guid.NewGuid())
+        public AggregateInstance() : this(Guid.NewGuid())
+        {
+        }
+
+        [JsonConstructor]
+        public AggregateInstance(Guid id) : base(id)
         {
         }
     }

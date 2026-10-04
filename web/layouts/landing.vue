@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { consumeRatingReminderReturn } from '~/utils/rating-reminder-navigation'
 const { $msal } = useNuxtApp()
 
 const featuresRef = ref<HTMLElement | null>(null)
 const featuresVisible = ref(false)
 
 onMounted(() => {
-  if ($msal.isAuthenticated.value) navigateTo('/home')
+  if ($msal.isAuthenticated.value) navigateTo(consumeRatingReminderReturn())
 
   const observer = new IntersectionObserver(
     ([entry]) => {
@@ -20,7 +21,7 @@ onMounted(() => {
 })
 
 watch($msal.isAuthenticated, (val) => {
-  if (val) navigateTo('/home')
+  if (val) navigateTo(consumeRatingReminderReturn())
 })
 
 const features = [

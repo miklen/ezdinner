@@ -3,8 +3,12 @@
 // If SSR is ever enabled for authenticated routes, migrate to a Pinia store.
 const isSubscribed = ref(false)
 let _initPromise: Promise<void> | null = null
+let subscriptionOwner = ''
+let subscriptionGeneration = 0
 
 export function usePushNotifications() {
+  const { $msal } = useNuxtApp()
+  const account = computed(() => $msal.getObjectId() ?? '')
   const { apiFetch, apiFetchRaw } = useApiFetch()
   const config = useRuntimeConfig()
   const baseUrl = config.public.apiBaseUrl as string
@@ -25,27 +29,36 @@ export function usePushNotifications() {
   })
 
   function init(): Promise<void> {
+    if (subscriptionOwner !== account.value) {
+      subscriptionOwner = account.value
+      subscriptionGeneration++
+      isSubscribed.value = false
+      _initPromise = null
+    }
     if (_initPromise) return _initPromise
-    if (!isSupported.value) return Promise.resolve()
+    if (!isSupported.value || !account.value) return Promise.resolve()
+    const identity = subscriptionGeneration
 
     _initPromise = apiFetch<{ isSubscribed: boolean }>('/api/push/subscriptions/me')
       .then(({ isSubscribed: serverState }) => {
-        isSubscribed.value = serverState
+        if (identity === subscriptionGeneration) isSubscribed.value = serverState
       })
       .catch(() => {
-        isSubscribed.value = false
+        if (identity === subscriptionGeneration) isSubscribed.value = false
       })
 
     return _initPromise
   }
 
   async function subscribe(): Promise<'ok' | 'denied' | 'error'> {
+    const identity = subscriptionGeneration
     if (!isSupported.value) return 'error'
 
     const appStore = useAppStore()
     if (!appStore.activeFamilyId) return 'error'
 
     const permission = await Notification.requestPermission()
+    if (identity !== subscriptionGeneration) return 'error'
     if (permission !== 'granted') {
       isSubscribed.value = false
       return 'denied'
@@ -60,6 +73,7 @@ export function usePushNotifications() {
       })
 
       const json = pushSubscription.toJSON()
+      if (identity !== subscriptionGeneration) return 'error'
       await apiFetch('/api/push/subscriptions', {
         method: 'POST',
         body: JSON.stringify({
@@ -71,15 +85,17 @@ export function usePushNotifications() {
         }),
       })
 
+      if (identity !== subscriptionGeneration) return 'error'
       isSubscribed.value = true
       return 'ok'
     } catch {
-      isSubscribed.value = false
+      if (identity === subscriptionGeneration) isSubscribed.value = false
       return 'error'
     }
   }
 
   async function unsubscribe(): Promise<'ok' | 'error'> {
+    const identity = subscriptionGeneration
     try {
       const registration = await swReady()
       const pushSubscription = await registration.pushManager.getSubscription()
@@ -87,7 +103,10 @@ export function usePushNotifications() {
         await pushSubscription.unsubscribe()
       }
 
+      if (identity !== subscriptionGeneration) return 'error'
+
       await apiFetchRaw('/api/push/subscriptions', { method: 'DELETE' })
+      if (identity !== subscriptionGeneration) return 'error'
       isSubscribed.value = false
       return 'ok'
     } catch {
@@ -96,6 +115,7 @@ export function usePushNotifications() {
     }
   }
 
+  watch(account, () => { void init() }, { immediate: true, flush: 'sync' })
   return { isSupported, isIosSafariWithoutPwa, isSubscribed, init, subscribe, unsubscribe }
 }
 

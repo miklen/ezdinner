@@ -79,6 +79,7 @@ namespace EzDinner.Infrastructure
 
         public static IServiceCollection RegisterRepositories(this IServiceCollection services)
         {
+            services.AddScoped<EzDinner.Core.Aggregates.RatingRemindersAggregate.IRatingRemindersRepository, EzDinner.Infrastructure.RatingReminders.RatingRemindersRepository>();
             services.AddScoped<IFamilyRepository, FamilyRepository>();
             services.AddScoped<IDishRepository, DishRepository>();
             services.AddScoped<IDishQueryRepository, DishRepository>();

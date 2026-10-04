@@ -448,5 +448,31 @@
       "FormerRegular": "Tidligere et regelmæssigt valg: {value} separate gange",
       "RecentlyServed": "Serveret {value} dage før denne planlægningsdato"
     }
+  },
+  "ratingReminders": {
+      "loading": "Indlæser påmindelser om vurderinger",
+      "rated":  "Vurdering gemt",
+      "dismissFailed":  "Kunne ikke afvise påmindelsen. Prøv igen.",
+      "unavailable":  "Retten eller familien er ikke længere tilgængelig.",
+      "retry":  "Prøv igen",
+      "subscriptionRequired":  "Slå notifikationer til ovenfor for at få påmindelser om vurderinger.",
+      "rateFailed":  "Kunne ikke gemme din vurdering. Prøv igen.",
+      "yesterday":  "På din menu i går",
+      "heading":  "Hvordan var retten?",
+      "menuDate":  "På din menu {date}",
+      "pending":  "Gemmer…",
+      "memberRating":  "{name}s vurdering",
+      "loadFailed":  "Kunne ikke opdatere påmindelser om vurderinger.",
+      "yourRating":  "Din vurdering",
+      "dismissed":  "Påmindelse afvist",
+      "average":  "{value} i gennemsnit",
+      "preferenceHint":  "En lejlighedsvis påmindelse om at vurdere en ret fra din seneste menu.",
+      "preferenceLoadFailed":  "Kunne ikke hente dit valg af påmindelser.",
+      "preferenceFailed":  "Kunne ikke gemme dit valg af påmindelser.",
+      "notNow":  "Ikke nu",
+      "home":  "Tilbage til forsiden",
+      "preference":  "Påmindelser om vurderinger",
+      "heartLabel":  "{0} af {1} hjerter",
+      "nextDish":  "Næste ret: {name}"
   }
 }

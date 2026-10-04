@@ -10,6 +10,7 @@ export default defineConfig({
     },
   },
   test: {
+    server: { deps: { inline: ['vuetify'] } },
     environment: 'node',
     environmentMatchGlobs: [['tests/components/**', 'jsdom'], ['tests/formatting/**', 'jsdom']],
     include: ['tests/**/*.test.ts'],

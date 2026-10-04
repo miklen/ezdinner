@@ -82,6 +82,7 @@ watch(() => appStore.activeFamilyId, init, { immediate: true })
     <template v-else>
       <div class="home-main">
         <HomeDinnerHeroCard :dinner="tonight" :loading="loading" :first-name="firstName" />
+        <HomeRatingReminder />
 
         <!-- Tomorrow preview -->
         <v-skeleton-loader v-if="loading" type="text" height="56" rounded="lg" />

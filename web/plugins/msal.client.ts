@@ -1,5 +1,6 @@
 import * as msal from '@azure/msal-browser'
 import { ref } from 'vue'
+import { clearRatingReminderReturn } from '~/utils/rating-reminder-navigation'
 
 const SCOPES = [
   'openid',
@@ -14,6 +15,7 @@ export class MsalService {
   private cachedClaims: Record<string, unknown> | null = null
 
   readonly isAuthenticated = ref(false)
+  readonly accountId = ref('')
   private initPromise!: Promise<void>
 
   async init(config: {
@@ -47,6 +49,12 @@ export class MsalService {
     }
 
     this.instance = new msal.PublicClientApplication(msalConfig)
+    this.instance.enableAccountStorageEvents()
+    this.instance.addEventCallback(() => {
+      const nextAccount = this.instance.getActiveAccount()?.localAccountId ?? ''
+      if (this.accountId.value && this.accountId.value !== nextAccount) clearRatingReminderReturn()
+      this.accountId.value = nextAccount
+    })
     this.initPromise = this.instance.initialize().then(() => this.handleRedirect())
     await this.initPromise
   }
@@ -72,6 +80,7 @@ export class MsalService {
         }
       }
     }
+    this.accountId.value = this.instance.getActiveAccount()?.localAccountId ?? ''
   }
 
   async signIn() {
@@ -96,6 +105,10 @@ export class MsalService {
 
   async signOut() {
     await this.initPromise
+    clearRatingReminderReturn()
+    this.accountId.value = ''
+    this.cachedClaims = null
+    this.isAuthenticated.value = false
     await this.instance.logoutRedirect()
     this.isAuthenticated.value = false
   }
@@ -127,7 +140,7 @@ export class MsalService {
   }
 
   getObjectId(): string | undefined {
-    return this.instance.getActiveAccount()?.localAccountId
+    return this.accountId.value || undefined
   }
 }
 

@@ -41,6 +41,17 @@ var host = new HostBuilder()
         var plannerKey = context.Configuration["Suggestions:Planner"];
 
         services
+            .AddSingleton<NodaTime.IClock>(NodaTime.SystemClock.Instance)
+            .AddScoped<EzDinner.Core.DomainServices.RatingReminders.RatingReminderSelectionService>()
+            .AddScoped<EzDinner.Query.Core.RatingReminderQueries.GetRatingRemindersQuery>()
+            .AddScoped<EzDinner.Query.Core.RatingReminderQueries.GetRatingReminderPreferenceQuery>()
+            .AddScoped<EzDinner.Application.Commands.RatingReminders.RatingReminderWrites>()
+            .AddScoped<EzDinner.Application.Commands.RatingReminders.DismissRatingReminderCommand>()
+            .AddScoped<EzDinner.Application.Commands.RatingReminders.SetRatingReminderPreferenceCommand>()
+            .AddScoped<EzDinner.Functions.RatingReminderAccess>()
+            .AddScoped<EzDinner.Application.Commands.RatingReminders.RatingReminderRecipientAccess>()
+            .AddScoped<EzDinner.Application.Commands.RatingReminders.SendRatingRemindersCommand>()
+            .AddScoped<EzDinner.Application.Commands.RatingReminders.IRatingReminderTransport, EzDinner.Infrastructure.RatingReminders.WebPushRatingReminderTransport>()
             .AddAutoMapper(typeof(Program))
             .RegisterMsGraph(context.Configuration.GetSection("AzureAdB2C"))
             .RegisterCosmosDb(context.Configuration.GetSection("CosmosDb"))

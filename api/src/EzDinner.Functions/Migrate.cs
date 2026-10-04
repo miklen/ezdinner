@@ -98,6 +98,7 @@ namespace EzDinner.Functions
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(PushSubscriptionRepository.CONTAINER, $"/{nameof(PushSubscription.FamilyId).ToCamelCase()}"));
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(WishlistRepository.CONTAINER, "/familyId"));
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(WishStatsRepository.CONTAINER, "/familyId"));
+            await db.CreateContainerIfNotExistsAsync(new ContainerProperties(EzDinner.Infrastructure.RatingReminders.RatingRemindersRepository.ContainerName, "/id"));
             return db;
         }
 

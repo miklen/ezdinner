@@ -448,5 +448,31 @@
       "FormerRegular": "Previously a regular choice: {value} separate occasions",
       "RecentlyServed": "Served {value} days before this planning date"
     }
+  },
+  "ratingReminders": {
+      "loading": "Loading rating reminders",
+      "rated":  "Rating saved",
+      "dismissFailed":  "Could not dismiss this reminder. Try again.",
+      "unavailable":  "This dish or family is no longer available.",
+      "retry":  "Try again",
+      "subscriptionRequired":  "Enable notifications above to receive rating reminders.",
+      "rateFailed":  "Could not save your rating. Try again.",
+      "yesterday":  "On your menu yesterday",
+      "heading":  "How was this dish?",
+      "menuDate":  "On your menu {date}",
+      "pending":  "Saving…",
+      "memberRating":  "{name}’s rating",
+      "loadFailed":  "Could not refresh rating reminders.",
+      "yourRating":  "Your rating",
+      "dismissed":  "Reminder dismissed",
+      "average":  "{value} average",
+      "preferenceHint":  "An occasional reminder to rate a dish from your recent menu.",
+      "preferenceLoadFailed":  "Could not load your reminder preference.",
+      "preferenceFailed":  "Could not save your reminder preference.",
+      "notNow":  "Not now",
+      "home":  "Back to Home",
+      "preference":  "Rating reminders",
+      "heartLabel":  "{0} of {1} hearts",
+      "nextDish":  "Next dish: {name}"
   }
 }

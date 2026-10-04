@@ -4,6 +4,7 @@ import { FamilyRepository } from '~/repository/family-repository'
 import { SuggestionsRepository } from '~/repository/suggestions-repository'
 import { WishlistRepository } from '~/repository/wishlist-repository'
 import { DishRecommendationsRepository } from '~/repository/dish-recommendations-repository'
+import { RatingRemindersRepository } from '~/repository/rating-reminders-repository'
 
 /**
  * Provides typed repository instances pre-wired with auth.
@@ -21,5 +22,6 @@ export function useRepositories() {
     suggestions: new SuggestionsRepository(apiFetch),
     wishlist: new WishlistRepository(apiFetch, apiFetchRaw),
     dishRecommendations: new DishRecommendationsRepository(apiFetch),
+    ratingReminders: new RatingRemindersRepository(apiFetch),
   }
 }

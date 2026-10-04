@@ -1,0 +1,17 @@
+# Rating reminder delivery operations
+
+Provision `RatingReminders` via the existing migration endpoint before deploying the Home/profile controls. Missing state means push off, including existing subscribers. Push subscription registration never enables rating reminders automatically. Removing/replacing a subscription preserves the separate preference, dismissals and delivery budget.
+
+Configure a separate external daily scheduler (for example an Azure Logic App recurrence) at **15:00 Europe/Copenhagen**, with the scheduler's Copenhagen time-zone setting so both CET and CEST follow local afternoon time. POST to `/api/push/send-rating-reminders` with the existing configured `WebPush:SendTonightSecret` in `X-Push-Secret`. Keep the secret in the scheduler's secured configuration; disable sensitive input/output logging. Missing, wrong or unconfigured secrets return 401 before recipient state is accessed. A valid run returns 200 after independently processing recipients.
+
+No new TimerTrigger is added, and the existing tonight endpoint/timer/scheduler is unchanged. This document describes configuration; implementation does not enable a production scheduler.
+
+Eligibility reuses the Home policy. Attempt reservation is a conditional per-user write before transport; competing runs reload state. One attempt per Copenhagen day across all families and once per occurrence survives resubscription and restarts. A crash, uncertain send or eligibility change after reservation consumes the budget. Automatic scheduler retries may run, but never resend a reserved occurrence. This is at-most-once transport attempt, not guaranteed browser delivery. Home remains available.
+
+Immediately before dispatch, the command reloads plan/catalog/state/subscription and rechecks current membership, authorization, preference and personal suppression. Expired transport subscriptions use existing 400/410 cleanup. Recipient failures are isolated; logs contain user/dish/date and outcome/type, never subscription endpoints, keys or secrets. Transport TTL ends at Copenhagen midnight on dinner date plus eight days, the end of its last eligible day.
+
+Payload: `{"type":"rating_reminder","dishName":"Lasagne","dinnerDate":"2026-10-11","lang":"da","destination":"/dishes/<dishGuid>?familyId=<familyGuid>&ratingReminderDate=2026-10-11#my-rating"}`. English/Danish worker copy refers to the past menu and never asserts the meal was eaten. The worker accepts only this recognized relative destination; legacy destinationless dinner/wish behavior remains intact. Sign-in retains and consumes the validated destination; normal login goes Home. The app resolves accessible family membership before detail loading, then focuses the existing current-user rating row. Resolved/expired links still open the normal accessible dish without writing or recreating reminders; inaccessible targets offer localized Home navigation.
+
+Release readiness: unit orchestration and worker/navigation tests cover duplicate runs, reservations, final-check races, safe links and failure isolation. Live Cosmos persistence and actual authenticated notification tap checks must be completed in an available test environment before enabling the scheduler.
+
+Rollback: disable this scheduler first; then revert the new frontend controls and/or endpoint deployment. Preserve reminder documents for future rollout. No dish, dinner, rating or existing notification schema/schedule requires rollback.

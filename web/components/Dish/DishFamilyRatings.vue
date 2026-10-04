@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import type { Dish, FamilyMember } from '~/types'
+import { nextTick, onScopeDispose, shallowRef, watch } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
 
 const props = defineProps<{
   dish?: Dish
   familyMembers: FamilyMember[]
   userId: string
   loading?: boolean
+  focusKey?: string
 }>()
 
 const emit = defineEmits<{
@@ -14,13 +17,33 @@ const emit = defineEmits<{
 
 const { dishes: dishRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
+const { t } = useI18n()
+const pending = shallowRef(false)
+const ownRow = shallowRef<HTMLElement | null>(null)
+const highlighted = shallowRef(false)
+let focusedKey = ''
+let highlightTimer: ReturnType<typeof setTimeout> | undefined
+function setOwnRow(element: Element | ComponentPublicInstance | null) { ownRow.value = element instanceof HTMLElement ? element : null }
+watch([() => props.focusKey, () => props.dish?.id, () => props.userId, () => props.loading, ownRow], async () => {
+  if (!props.focusKey || props.loading || !props.dish || !ownRow.value || focusedKey === props.focusKey) return
+  const key = props.focusKey
+  await nextTick()
+  if (key !== props.focusKey || !ownRow.value) return
+  focusedKey = key
+  ownRow.value.scrollIntoView({ block: 'center', behavior: 'instant' })
+  ownRow.value.focus({ preventScroll: true })
+  highlighted.value = true
+  clearTimeout(highlightTimer)
+  highlightTimer = setTimeout(() => { highlighted.value = false }, 2500)
+}, { flush: 'post' })
+onScopeDispose(() => { clearTimeout(highlightTimer) })
 
 const ratings = computed<Record<string, number>>(() =>
-  Object.fromEntries(props.dish.ratings?.map((r) => [r.familyMemberId, r.rating]) ?? []),
+  Object.fromEntries(props.dish?.ratings?.map((r) => [r.familyMemberId, r.rating]) ?? []),
 )
 
 const averageRating = computed(() => {
-  const all = props.dish.ratings?.map((r) => r.rating) ?? []
+  const all = props.dish?.ratings?.map((r) => r.rating) ?? []
   if (!all.length) return null
   return all.reduce((sum, r) => sum + r, 0) / all.length
 })
@@ -33,12 +56,18 @@ function getInitials(name: string): string {
 }
 
 async function updateRating(val: number, familyMemberId: string) {
+  if (pending.value || !props.dish) return
+  const member = props.familyMembers.find(candidate => candidate.id === familyMemberId)
+  if (!member || (member.hasAutonomy && member.id !== props.userId)) return
+  pending.value = true
   try {
     await dishRepo.updateRating(props.dish.id, val, familyMemberId)
-    showSnackbar('Rating updated', { type: 'success' })
+    showSnackbar(t('ratingReminders.rated'), { type: 'success' })
     emit('updated')
   } catch {
-    showSnackbar('Failed to update rating', { type: 'error' })
+    showSnackbar(t('ratingReminders.rateFailed'), { type: 'error' })
+  } finally {
+    pending.value = false
   }
 }
 </script>
@@ -63,16 +92,19 @@ async function updateRating(val: number, familyMemberId: string) {
         <span class="text-card-title">{{ $t('dishes.familyRatings') }}</span>
         <div v-if="averageRating !== null" class="ratings-card__avg">
           <v-icon size="13" :color="'#C05040'">mdi-heart</v-icon>
-          <span class="ratings-card__avg-value">{{ averageRating.toFixed(1) }} avg</span>
+          <span class="ratings-card__avg-value">{{ t('ratingReminders.average', { value: averageRating.toFixed(1) }) }}</span>
         </div>
       </div>
 
       <div class="ratings-card__rows">
         <div
           v-for="member in familyMembers"
+          :id="member.id === userId ? 'my-rating' : undefined"
           :key="member.id"
+          :ref="member.id === userId ? setOwnRow : undefined"
+          :tabindex="member.id === userId ? -1 : undefined"
           class="ratings-card__row"
-          :class="{ 'ratings-card__row--current': member.id === userId }"
+          :class="{ 'ratings-card__row--current': member.id === userId, 'ratings-card__row--highlighted': member.id === userId && highlighted }"
         >
           <!-- Avatar -->
           <v-avatar
@@ -96,17 +128,12 @@ async function updateRating(val: number, familyMemberId: string) {
 
           <!-- Rating hearts -->
           <div class="ratings-card__stars">
-            <v-rating
-              color="#C05040"
-              half-increments
-              empty-icon="mdi-heart-outline"
-              full-icon="mdi-heart"
-              half-icon="mdi-heart-half-full"
-              length="5"
-              size="18"
-              style="gap: 2px"
+            <DishRating
+              :gap="2"
               :model-value="ratings[member.id] ?? 0"
-              :readonly="member.hasAutonomy && member.id !== userId"
+              :editable="!member.hasAutonomy || member.id === userId"
+              :disabled="pending"
+              :label="t('ratingReminders.memberRating', { name: member.name })"
               @update:model-value="(val) => updateRating(val, member.id)"
             />
           </div>
@@ -156,6 +183,7 @@ async function updateRating(val: number, familyMemberId: string) {
 .ratings-card__row--current {
   background-color: var(--color-surface-variant);
 }
+.ratings-card__row--highlighted { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 .ratings-card__avatar {
   flex-shrink: 0;

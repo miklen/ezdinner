@@ -58,6 +58,7 @@ async function toggleNotifications(value: boolean | null) {
       <v-icon size="14">mdi-information-outline</v-icon>
       {{ t('notifications.iosInstallRequired') }}
     </div>
+    <RatingReminderPreference :subscribed="isSubscribed && !loading" />
   </template>
 </template>
 

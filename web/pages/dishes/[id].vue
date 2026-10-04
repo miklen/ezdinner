@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { Dish } from '~/types'
+import { useReminderDishEntry } from '~/composables/useReminderDishEntry'
 
 useHead({ title: 'Dish' })
 
 const route = useRoute()
 const appStore = useAppStore()
-const familiesStore = useFamiliesStore()
 const dishesStore = useDishesStore()
 const wishlistStore = useWishlistStore()
 const { dishes: dishRepo, dinners: dinnerRepo } = useRepositories()
@@ -18,22 +18,16 @@ const planDishDialog = shallowRef(false)
 
 // ── Data ───────────────────────────────────────────────────────────────────────
 
-const dish = ref<Dish | null>(null)
-const loading = shallowRef(true)
 const enriching = shallowRef(false)
 
-const userId = computed(() => $msal.getObjectId())
-const familyMembers = computed(() => familiesStore.activeFamily?.familyMembers ?? [])
-
-async function loadDish() {
-  loading.value = true
-  try {
-    dish.value = await dishRepo.getFull(route.params.id as string, appStore.activeFamilyId)
-    useHead({ title: dish.value.name })
-  } finally {
-    loading.value = false
-  }
-}
+const userId = computed(() => $msal.getObjectId() ?? '')
+const { families: familyRepo } = useRepositories()
+const { dish, loading, familyMembers, unavailable, focusKey, load: loadDish } = useReminderDishEntry({
+  route: () => ({ id: typeof route.params.id === 'string' ? route.params.id : '', fullPath: route.fullPath }),
+  account: () => $msal.getObjectId() ?? '', family: () => appStore.activeFamilyId,
+  selectFamily: appStore.setActiveFamilyId, dishes: dishRepo, families: familyRepo, catalog: () => { void navigateTo('/dishes') },
+})
+watch(() => dish.value?.name, name => { if (name) useHead({ title: name }) })
 
 // Enriching on name/notes change: the dish name and notes are the primary inputs
 // to AI enrichment, so any change to them should re-run analysis.
@@ -52,11 +46,9 @@ async function triggerEnrich() {
 }
 
 onMounted(() => {
-  loadDish()
   wishlistStore.fetchWishes()
 })
 onUnmounted(() => { enriching.value = false })
-watch(() => appStore.activeFamilyId, () => navigateTo('/dishes'))
 
 // ── Move occurrences dialog ────────────────────────────────────────────────────
 
@@ -141,6 +133,10 @@ async function doReactivate() {
 
 <template>
   <div class="dish-detail">
+    <div v-if="unavailable" role="alert">
+      {{ t('ratingReminders.unavailable') }}
+      <NuxtLink to="/home">{{ t('ratingReminders.home') }}</NuxtLink>
+    </div>
     <!-- Archived status banner -->
     <div v-if="dish?.isArchived" class="dish-detail__archived-banner">
       <v-icon size="14" icon="mdi-archive-outline" class="dish-detail__archived-icon" />
@@ -238,6 +234,7 @@ async function doReactivate() {
             :dish="dish ?? undefined"
             :family-members="familyMembers"
             :user-id="userId"
+            :focus-key="focusKey"
             :loading="loading"
             @updated="loadDish"
           />
