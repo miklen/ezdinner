@@ -2,10 +2,11 @@ import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import type { Ref } from 'vue'
 import type { DishRole } from '~/types'
 import type { DishRecommendationsRepository } from '~/repository/dish-recommendations-repository'
-import type { RecommendationRequest, RecommendationState } from '~/types/dish-recommendations'
+import type { RecommendedDish, RecommendationRequest, RecommendationState } from '~/types/dish-recommendations'
 
 export function useDishRecommendations(options: { family: Ref<string>; account: Ref<string>; monday: Ref<string>; target: Ref<string | null>; locale: Ref<string>; repository: DishRecommendationsRepository }) {
   const state = shallowRef<RecommendationState>({ status: 'idle', result: null })
+  const accumulatedDishes = shallowRef<RecommendedDish[]>([])
   const constraints = shallowRef<string[]>([])
   const exclusions = shallowRef<string[]>([])
   const role = shallowRef<DishRole | null>(null)
@@ -15,16 +16,19 @@ export function useDishRecommendations(options: { family: Ref<string>; account: 
   const resultMonday = shallowRef<string | null>(null)
   const scopeDecisionRequired = computed(() => scoped.value && scopedDay.value !== options.target.value)
   const staleContext = computed(() => resultMonday.value !== null && resultMonday.value !== options.monday.value)
-  const visible = computed(() => (state.value.result?.dishes ?? []).filter(dish => !dismissed.value.includes(dish.dishId)))
+  const visible = computed(() => accumulatedDishes.value.filter(dish => !dismissed.value.includes(dish.dishId)))
   const dismissed = shallowRef<string[]>([])
   let generation = 0
   let controller: AbortController | null = null
   let retryIntent: RecommendationRequest | null = null
+  let resultQuery: string | null = null
 
   function cancel() { generation++; controller?.abort(); controller = null; if (state.value.status === 'loading') state.value = { status: 'idle', result: state.value.result } }
   function reset() {
     cancel()
     state.value = { status: 'idle', result: null }
+    accumulatedDishes.value = []
+    resultQuery = null
     constraints.value = []
     exclusions.value = []
     dismissed.value = []
@@ -56,6 +60,11 @@ export function useDishRecommendations(options: { family: Ref<string>; account: 
   }
   async function perform(intent: RecommendationRequest) {
     cancel()
+    const { mode, excludedDishIds, ...query } = intent
+    const queryKey = JSON.stringify({ ...query, selectedRole: role.value })
+    const append = mode === 'more' && resultQuery === queryKey
+    if (!append) { exclusions.value = []; dismissed.value = [] }
+    intent = { ...intent, excludedDishIds: append ? [...new Set([...excludedDishIds, ...accumulatedDishes.value.map(dish => dish.dishId)])] : [] }
     const token = generation
     const family = options.family.value
     const previous = state.value.result
@@ -65,6 +74,10 @@ export function useDishRecommendations(options: { family: Ref<string>; account: 
     try {
       const result = await options.repository.recommend(family, intent, controller.signal)
       if (token !== generation) return
+      const retained = append ? accumulatedDishes.value : []
+      const retainedIds = new Set(retained.map(dish => dish.dishId))
+      accumulatedDishes.value = [...retained, ...result.dishes.filter(dish => !retainedIds.has(dish.dishId))]
+      resultQuery = queryKey
       state.value = { status: 'ready', result }
       resultMonday.value = intent.selectedMonday
       exclusions.value = [...new Set([...exclusions.value, ...result.dishes.map(dish => dish.dishId)])]
@@ -87,6 +100,8 @@ export function useDishRecommendations(options: { family: Ref<string>; account: 
   watch(options.locale, () => {
     cancel()
     state.value = { status: 'idle', result: null }
+    accumulatedDishes.value = []
+    resultQuery = null
     resultMonday.value = null
   })
   watch(options.target, cancel)

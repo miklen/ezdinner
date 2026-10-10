@@ -501,6 +501,74 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
     expect(wrapper.find('.dish-grid .planning-card [aria-label="Rating 5/5"]').exists()).toBe(true)
   })
 
+  it.each(['en', 'da'])('appends more ideas without duplicates and retains them when exhausted in %s', async language => {
+    locale.value = language
+    const wrapper = await workspace()
+    const names = () => wrapper.findAll('.recommendation-grid .planning-card__name').map(card => card.text())
+    recommend.mockResolvedValueOnce({ outcome: 'Matches', dishes: [match(favouriteId), match(unknownId)], activeConstraints: [], contextSummary: '', message: null })
+    await button(wrapper, translate('weekPlanning.moreIdeas')).trigger('click')
+    await flushPromises()
+    expect(names()).toEqual(['Forgotten favourite', 'Unclassified soup'])
+    expect(recommend.mock.calls[1][1].excludedDishIds).toContain(favouriteId)
+    await button(wrapper, translate('weekPlanning.moreIdeas')).trigger('click')
+    await flushPromises()
+    expect(names()).toEqual(['Forgotten favourite', 'Unclassified soup'])
+    expect(wrapper.text()).toContain(translate('weekPlanning.outcomes.Exhausted'))
+    expect(recommend.mock.calls[2][1].excludedDishIds).toEqual([favouriteId, unknownId])
+  })
+
+  it('replaces ideas and clears exclusions after changing the name filter', async () => {
+    const wrapper = await workspace()
+    await button(wrapper, 'Dismiss Forgotten favourite').trigger('click')
+    await wrapper.find(`input[aria-label="${translate('weekPlanning.recommendationNameFilter')}"]`).setValue('Forgotten')
+    await button(wrapper, 'More ideas').trigger('click')
+    await flushPromises()
+    expect(recommend.mock.calls[1][1].excludedDishIds).toEqual([])
+    expect(wrapper.findAll('.recommendation-grid .planning-card__name').map(card => card.text())).toEqual(['Forgotten favourite'])
+  })
+
+  it('replaces accumulated ideas after editing a preference', async () => {
+    const wrapper = await workspace()
+    await wrapper.find('input[aria-label="What would you like?"]').setValue('No fish')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    recommend.mockResolvedValueOnce({ outcome: 'Matches', dishes: [match(unknownId)], activeConstraints: ['No fish'], contextSummary: '', message: null })
+    await button(wrapper, 'More ideas').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.recommendation-grid .planning-card__name')).toHaveLength(2)
+    await wrapper.find('input[aria-label="Edit preference"]').setValue('Potato side dishes')
+    await wrapper.find('input[aria-label="Edit preference"]').trigger('change')
+    await button(wrapper, 'More ideas').trigger('click')
+    await flushPromises()
+    expect(recommend.mock.calls[3][1].excludedDishIds).toEqual([])
+    expect(wrapper.findAll('.recommendation-grid .planning-card__name').map(card => card.text())).toEqual(['Potato side'])
+  })
+
+  it.each(['role', 'week'])('starts fresh after changing the %s', async change => {
+    const wrapper = await workspace()
+    if (change === 'role') await wrapper.find(`select[aria-label="${translate('weekPlanning.requestRole')}"]`).setValue('Side')
+    if (change === 'week') await button(wrapper, translate('plan.nextWeekAriaLabel')).trigger('click')
+    await flushPromises()
+    await button(wrapper, 'More ideas').trigger('click')
+    await flushPromises()
+    expect(recommend.mock.calls[1][1].excludedDishIds).toEqual([])
+    expect(wrapper.findAll('.recommendation-grid .planning-card__name').map(card => card.text())).toEqual([change === 'role' ? 'Potato side' : 'Forgotten favourite'])
+  })
+
+  it('retains accumulated ideas through failure and appends the retry once', async () => {
+    const wrapper = await workspace()
+    providerFailure = true
+    await button(wrapper, 'More ideas').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.recommendation-grid').text()).toContain('Forgotten favourite')
+    providerFailure = false
+    recommend.mockResolvedValueOnce({ outcome: 'Matches', dishes: [match(unknownId)], activeConstraints: [], contextSummary: '', message: null })
+    await button(wrapper, translate('weekPlanning.retry')).trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.recommendation-grid .planning-card__name').map(card => card.text())).toEqual(['Forgotten favourite', 'Unclassified soup'])
+    expect(recommend.mock.calls[2][1].excludedDishIds).toEqual([favouriteId])
+  })
+
   it('dismisses a suggestion, excludes it from more ideas and resets the request', async () => {
     const wrapper = await workspace()
     await button(wrapper, 'Dismiss Forgotten favourite').trigger('click')
