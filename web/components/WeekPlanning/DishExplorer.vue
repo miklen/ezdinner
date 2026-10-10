@@ -13,6 +13,10 @@ const effortOptions = computed(() => (['All', 'Quick', 'Medium', 'Elaborate'] as
 const seasonOptions = computed(() => (['All', 'Spring', 'Summer', 'Autumn', 'Winter', 'AllYear'] as const).map(value => ({ value, title: t(`weekPlanning.seasons.${value}`) })))
 const sortOptions = computed(() => (['name', 'rating', 'usage', 'lastUsed'] as const).map(value => ({ value, title: t(`weekPlanning.sorts.${value}`) })))
 function update<Key extends keyof ExplorationPreferences>(key: Key, value: ExplorationPreferences[Key]) { emit('update', { ...props.preferences, [key]: value }) }
+function selectSort(sort: ExplorationPreferences['sort']) {
+  const sortDir = props.preferences.sort === sort ? (props.preferences.sortDir === 'asc' ? 'desc' : 'asc') : sort === 'name' ? 'asc' : 'desc'
+  emit('update', { ...props.preferences, sort, sortDir })
+}
 </script>
 
 <template>
@@ -20,7 +24,10 @@ function update<Key extends keyof ExplorationPreferences>(key: Key, value: Explo
     <h2 class="text-section-title catalog-heading">{{ t('weekPlanning.catalog') }}</h2>
     <v-text-field variant="outlined" rounded="lg" density="compact" prepend-inner-icon="mdi-magnify" clearable :placeholder="t('weekPlanning.search')" :aria-label="t('weekPlanning.search')" :model-value="preferences.search" hide-details class="catalog-search" @update:model-value="update('search', $event ?? '')" />
     <div class="catalog__sort" role="group" :aria-label="t('weekPlanning.sort')">
-      <v-chip v-for="option in sortOptions" :key="option.value" :color="preferences.sort === option.value ? 'primary' : undefined" :variant="preferences.sort === option.value ? 'tonal' : 'outlined'" size="small" @click="update('sort', option.value)">{{ option.title }}</v-chip>
+      <v-chip v-for="option in sortOptions" :key="option.value" :color="preferences.sort === option.value ? 'primary' : undefined" :variant="preferences.sort === option.value ? 'tonal' : 'outlined'" size="small" class="sort-chip" @click="selectSort(option.value)">
+        {{ option.title }}
+        <span v-if="preferences.sort === option.value" class="sort-chip__dir" aria-hidden="true">{{ preferences.sortDir === 'asc' ? '↑' : '↓' }}</span>
+      </v-chip>
     </div>
     <div class="catalog__filter-section">
       <div class="catalog__filter-header">

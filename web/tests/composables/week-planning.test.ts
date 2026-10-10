@@ -277,7 +277,7 @@ describe('dish exploration', () => {
       { dish: { ...dish('Soup A', ['Main']), rating: 9 }, stats: { dishId: 'Soup A', timesUsed: 2, lastUsed: undefined } },
     ])
     const exploration = useDishExploration(entries, shallowRef('en'))
-    exploration.update({ ...exploration.preferences.value, sort: 'rating' })
+    exploration.update({ ...exploration.preferences.value, sort: 'rating', sortDir: 'desc' })
     expect(exploration.visible.value.map(entry => entry.dish.id)).toEqual(['Soup A', 'Soup B', 'Soup C'])
     exploration.update({ ...exploration.preferences.value, sort: 'usage' })
     expect(exploration.visible.value.map(entry => entry.dish.id)).toEqual(['Soup C', 'Soup A', 'Soup B'])

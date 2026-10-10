@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { DateTime } from 'luxon'
 import type { Dish, DishStats } from '~/types'
+import { useDishCatalogPreferences } from '~/composables/useDishCatalogPreferences'
+import type { CatalogSortKey as SortKey } from '~/utils/dish-catalog-preferences'
 
 useHead({ title: 'Dishes' })
 
@@ -62,12 +64,19 @@ onMounted(() => {
 // Re-load when the panel navigates to a different week
 watch(panelWeekStart, loadPanelData)
 
-const searchDish = shallowRef('')
+const { $msal } = useNuxtApp()
+const account = computed(() => $msal.isAuthenticated.value ? ($msal.getObjectId() ?? '') : '')
+const catalogPreferences = useDishCatalogPreferences(account, computed(() => appStore.activeFamilyId))
+const preferences = catalogPreferences.preferences
+const searchDish = computed({
+  get: () => preferences.value.search,
+  set: (value: string | null) => catalogPreferences.update({ search: value ?? '' }),
+})
 const stats = ref<Record<string, DishStats>>({})
 const newDishName = shallowRef('')
 const newDishDialog = shallowRef(false)
 const loading = shallowRef(true)
-const showArchived = shallowRef(false)
+const showArchived = computed(() => preferences.value.showArchived)
 // Local list for catalog display — allows toggling archived visibility independently.
 // Does NOT sync with dishesStore.dishes, which always holds active dishes only.
 // Other pages (plan, dish picker) rely on the store being a clean active-dish list.
@@ -75,12 +84,10 @@ const allDishes = ref<Dish[]>([])
 
 // ── Filter state ──────────────────────────────────────────────────────────────
 
-const filterRoles = ref<Set<string>>(new Set())
-const filterEffort = ref<Set<string>>(new Set())
-const filterSeason = ref<Set<string>>(new Set())
-const filterCuisine = ref<Set<string>>(new Set())
-
-type FilterDimension = 'roles' | 'effort' | 'season' | 'cuisine'
+const filterRoles = computed(() => new Set(preferences.value.roles))
+const filterEffort = computed(() => new Set(preferences.value.effort))
+const filterSeason = computed(() => new Set(preferences.value.season))
+const filterCuisine = computed(() => new Set(preferences.value.cuisine))
 
 const filtersExpanded = shallowRef(false)
 
@@ -90,48 +97,9 @@ const activeFilterCount = computed(() =>
 
 const hasActiveFilters = computed(() => activeFilterCount.value > 0)
 
-// Refs accessed inside script context — never auto-unwrapped by template proxy
-function toggleFilter(dimension: FilterDimension, value: string) {
-  const refMap = { roles: filterRoles, effort: filterEffort, season: filterSeason, cuisine: filterCuisine }
-  const set = refMap[dimension]
-  const next = new Set(set.value)
-  if (next.has(value)) next.delete(value)
-  else next.add(value)
-  set.value = next
-}
-
-async function clearFilters() {
-  filterRoles.value = new Set()
-  filterEffort.value = new Set()
-  filterSeason.value = new Set()
-  filterCuisine.value = new Set()
-  if (showArchived.value) await toggleArchived()
-}
-
-// ── Sort state ────────────────────────────────────────────────────────────────
-
-type SortKey = 'name' | 'rating' | 'timesUsed' | 'lastUsed'
-type SortDir = 'asc' | 'desc'
-
-const sortKey = shallowRef<SortKey>('name')
-const sortDir = shallowRef<SortDir>('asc')
-
-// Default direction when a chip is first selected
-const defaultDir: Record<SortKey, SortDir> = {
-  name: 'asc',
-  rating: 'desc',
-  timesUsed: 'desc',
-  lastUsed: 'desc',
-}
-
-function selectSort(key: SortKey) {
-  if (sortKey.value === key) {
-    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortKey.value = key
-    sortDir.value = defaultDir[key]
-  }
-}
+const { toggleFilter, clearFilters, selectSort } = catalogPreferences
+const sortKey = computed(() => preferences.value.sortKey)
+const sortDir = computed(() => preferences.value.sortDir)
 
 const sortChips = computed(() => [
   { key: 'name' as SortKey, label: t('dishes.sortName') },
@@ -215,29 +183,47 @@ const hasNoSearchResults = computed(() => !loading.value && dishes.value.length 
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 
-async function loadStats() {
-  stats.value = await dishRepo.allUsageStats(appStore.activeFamilyId)
-}
+let loadGeneration = 0
+onScopeDispose(() => { loadGeneration++ })
 
-async function loadDishes() {
-  allDishes.value = await dishRepo.all(appStore.activeFamilyId, showArchived.value)
+async function loadStats() {
+  const generation = loadGeneration
+  const usage = await dishRepo.allUsageStats(appStore.activeFamilyId)
+  if (generation === loadGeneration) stats.value = usage
 }
 
 async function init() {
+  const family = appStore.activeFamilyId
+  const scope = catalogPreferences.scope.value
+  const archived = showArchived.value
+  const generation = ++loadGeneration
+  allDishes.value = []
+  stats.value = {}
+  if (!family || !scope) { loading.value = false; return }
   loading.value = true
-  // populateStats() maps over dishes.value — must run after populateDishes() resolves,
-  // otherwise it operates on an empty array and stats are never applied.
-  await Promise.all([loadDishes(), dishesStore.populateDishes(), loadStats()])
-  await dishesStore.populateStats()
-  loading.value = false
+  try {
+    const [catalog, usage] = await Promise.all([
+      dishRepo.all(family, archived),
+      dishRepo.allUsageStats(family),
+      dishesStore.populateDishes(),
+    ])
+    if (generation !== loadGeneration || scope !== catalogPreferences.scope.value || archived !== showArchived.value) return
+    allDishes.value = catalog
+    stats.value = usage
+    // Reconcile only after fresh data arrives, never against the initial empty list.
+    catalogPreferences.reconcile({
+      roles: availableRoles.value,
+      effort: availableEffort.value,
+      season: availableSeason.value,
+      cuisine: availableCuisine.value.map(([key]) => key),
+    })
+    await dishesStore.populateStats()
+  }
+  finally { if (generation === loadGeneration) loading.value = false }
 }
 
-async function toggleArchived() {
-  if (loading.value) return
-  showArchived.value = !showArchived.value
-  loading.value = true
-  await loadDishes()
-  loading.value = false
+function toggleArchived() {
+  if (!loading.value) catalogPreferences.update({ showArchived: !showArchived.value })
 }
 
 async function createDish() {
@@ -252,16 +238,7 @@ async function createDish() {
   await init()
 }
 
-watch(
-  () => appStore.activeFamilyId,
-  (val) => {
-    if (val) {
-      stats.value = {}
-      init()
-    }
-  },
-  { immediate: true },
-)
+watch([catalogPreferences.scope, showArchived], init, { immediate: true })
 </script>
 
 <template>
@@ -506,7 +483,8 @@ watch(
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+@use "~/assets/catalog-controls.scss";
 .catalog {
   padding: var(--space-6) var(--space-4);
   max-width: 1200px;
@@ -537,211 +515,6 @@ watch(
 }
 
 /* ── Sort row ──────────────────────────────────────────────────────────── */
-
-.catalog__sort {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-}
-
-.catalog__sort::-webkit-scrollbar {
-  display: none;
-}
-
-.sort-chip__dir {
-  margin-left: 2px;
-  font-size: 11px;
-  line-height: 1;
-}
-
-/* ── Filter panel ──────────────────────────────────────────────────────── */
-
-.catalog__filter-section {
-  margin-bottom: var(--space-4);
-}
-
-.catalog__filter-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
-}
-
-.catalog__filter-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-family: var(--font-body);
-}
-
-.catalog__filter-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.filter-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.filter-chevron {
-  font-size: 16px;
-  color: var(--color-text-muted);
-  line-height: 1;
-  transition: transform var(--duration-fast) var(--ease-out);
-  display: inline-block;
-  transform: rotate(0deg);
-}
-
-.filter-chevron--open {
-  transform: rotate(90deg);
-}
-
-/* Smooth height reveal using grid trick (overflow: hidden on wrapper, not content) */
-.catalog__filter-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  overflow: hidden;
-  transition: grid-template-rows var(--duration-normal) var(--ease-out);
-}
-
-.catalog__filter-body--open {
-  grid-template-rows: 1fr;
-}
-
-.catalog__filter-inner {
-  min-height: 0; /* required: lets the grid track actually collapse to 0fr */
-  overflow: hidden; /* belt-and-suspenders: clip any child paint that exceeds 0 */
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.catalog__filter-body--open .catalog__filter-inner {
-  padding-bottom: var(--space-1);
-}
-
-.filter-tag {
-  --dim-color: rgba(0, 0, 0, 0.35);
-  --dim-color-bg: rgba(0, 0, 0, 0.04);
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  border: 1.5px solid rgba(0, 0, 0, 0.10);
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition:
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out),
-    transform var(--duration-instant) var(--ease-out);
-  user-select: none;
-}
-
-.filter-tag:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.18);
-  color: var(--color-text-secondary);
-}
-
-.filter-tag:active {
-  transform: scale(0.95);
-}
-
-.filter-tag--active {
-  background: var(--dim-color-bg);
-  border-color: var(--dim-color);
-  color: var(--dim-color);
-}
-
-.filter-tag--active:hover {
-  background: var(--dim-color-bg);
-  color: var(--dim-color);
-}
-
-/* Per-dimension color tokens */
-.filter-tag--role    { --dim-color: #4A6B3E; --dim-color-bg: rgba(74, 107, 62, 0.09); }
-.filter-tag--effort  { --dim-color: #8a6818; --dim-color-bg: rgba(229, 168, 59, 0.11); }
-.filter-tag--season  { --dim-color: #B8511D; --dim-color-bg: rgba(212, 101, 42, 0.09); }
-.filter-tag--cuisine { --dim-color: #3a6434; --dim-color-bg: rgba(74, 124, 63, 0.09); }
-.filter-tag--archive { --dim-color: #5C4A3A; --dim-color-bg: rgba(92, 74, 58, 0.09); }
-
-.filter-tag__pip {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 1px;
-  background: var(--dim-color);
-  flex-shrink: 0;
-  opacity: 0.7;
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-
-.filter-tag--active .filter-tag__pip {
-  opacity: 1;
-}
-
-.filter-clear {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
-  border: none;
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  opacity: 0.65;
-  transition: opacity var(--duration-fast) var(--ease-out);
-  margin-left: var(--space-1);
-}
-
-.filter-clear:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-/* Touch targets on coarse-pointer devices */
-@media (pointer: coarse) {
-  .sort-btn,
-  .filter-tag {
-    padding-top: 10px;
-    padding-bottom: 10px;
-  }
-}
 
 /* CSS grid gives equal horizontal and vertical gaps */
 .dish-grid {

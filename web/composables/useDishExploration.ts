@@ -13,11 +13,13 @@ export function useDishExploration(dishes: Ref<PlanningDish[]>, locale: Ref<stri
       (choice.season === 'All' || dish.seasonAffinity === choice.season) &&
       (!choice.cuisine || dish.cuisine === choice.cuisine) &&
       (!choice.wishesOnly || wishVotes !== undefined))
+    const direction = choice.sortDir === 'asc' ? 1 : -1
     return matching.sort((first, second) => {
-      if (choice.sort === 'rating') return second.dish.rating - first.dish.rating || first.dish.name.localeCompare(second.dish.name, locale.value)
-      if (choice.sort === 'usage') return (second.stats?.timesUsed ?? 0) - (first.stats?.timesUsed ?? 0) || first.dish.name.localeCompare(second.dish.name, locale.value)
-      if (choice.sort === 'lastUsed') return (first.stats?.lastUsed?.toMillis() ?? -Infinity) - (second.stats?.lastUsed?.toMillis() ?? -Infinity) || first.dish.name.localeCompare(second.dish.name, locale.value)
-      return first.dish.name.localeCompare(second.dish.name, locale.value)
+      const alphabetical = first.dish.name.localeCompare(second.dish.name, locale.value)
+      if (choice.sort === 'rating') return direction * (first.dish.rating - second.dish.rating) || alphabetical
+      if (choice.sort === 'usage') return direction * ((first.stats?.timesUsed ?? 0) - (second.stats?.timesUsed ?? 0)) || alphabetical
+      if (choice.sort === 'lastUsed') return direction * ((first.stats?.lastUsed?.toMillis() ?? -Infinity) - (second.stats?.lastUsed?.toMillis() ?? -Infinity)) || alphabetical
+      return direction * alphabetical
     })
   })
   function update(next: ExplorationPreferences) { preferences.value = next }

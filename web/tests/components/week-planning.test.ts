@@ -114,7 +114,7 @@ beforeEach(() => {
   vi.stubGlobal('onScopeDispose', onScopeDispose)
   vi.stubGlobal('useNuxtApp', () => ({ $msal: { isAuthenticated: shallowRef(true), getObjectId: () => account.value } }))
   vi.stubGlobal('useRepositories', () => ({
-    dishes: { all: async () => catalog, allUsageStats: async () => ({}), getFull: async (id: string) => catalog.find(dish => dish.id === id) },
+    dishes: { all: async () => catalog, allUsageStats: async () => Object.fromEntries(catalog.map(dish => [dish.id, dish.dishStats])), getFull: async (id: string) => catalog.find(dish => dish.id === id) },
     wishlist: { getWishlist: async () => wishes },
     dinners: { getRange: readDinners, addDishToMenu: add, removeDishFromMenu: remove },
     dishRecommendations: { recommend, undo, changeMenu },
@@ -124,7 +124,7 @@ beforeEach(() => {
 })
 
 function button(wrapper: VueWrapper, name: string) {
-  const found = wrapper.findAll('button').find(button => button.text() === name || button.attributes('aria-label') === name)
+  const found = wrapper.findAll('button').find(button => button.text().replace(/[↑↓]/g, '').trim() === name || button.attributes('aria-label') === name)
   if (!found) throw new Error(`Missing button: ${name}`)
   return found
 }
@@ -441,6 +441,52 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
     await flushPromises()
     expect(returned.find<HTMLInputElement>('input[aria-label="Search dishes"]').element.value).toBe('Forgotten')
     expect(button(returned, translate('weekPlanning.efforts.Quick')).attributes('aria-pressed')).toBe('true')
+  })
+
+  it.each(['en', 'da'])('toggles every catalog sort direction and restores it after remounting in %s', async language => {
+    locale.value = language
+    catalog = [
+      { ...dish(favouriteId, 'Soup A', ['Main']), rating: 9, dishStats: { dishId: favouriteId, timesUsed: 2, lastUsed: DateTime.fromISO('2026-01-01') } },
+      { ...dish(unknownId, 'Soup B', ['Main']), rating: 4, dishStats: { dishId: unknownId, timesUsed: 8, lastUsed: DateTime.fromISO('2026-09-01') } },
+    ]
+    const wrapper = await workspace()
+    const names = () => wrapper.findAll('.dish-grid .planning-card__name').map(card => card.text())
+    const select = (sort: string) => button(wrapper, translate(`weekPlanning.sorts.${sort}`))
+    const search = `input[aria-label="${translate('weekPlanning.search')}"]`
+    await wrapper.find(search).setValue('Soup')
+    expect(select('name').text()).toContain('↑')
+    expect(names()).toEqual(['Soup A', 'Soup B'])
+    for (const sort of ['name', 'rating', 'usage', 'lastUsed']) {
+      if (sort !== 'name') await select(sort).trigger('click')
+      const descending = sort === 'rating' ? ['Soup A', 'Soup B'] : ['Soup B', 'Soup A']
+      if (sort === 'name') {
+        await select(sort).trigger('click')
+        expect(select(sort).text()).toContain('↓')
+        expect(names()).toEqual(descending)
+        await select(sort).trigger('click')
+        expect(select(sort).text()).toContain('↑')
+        expect(names()).toEqual([...descending].reverse())
+      }
+      else {
+        expect(select(sort).text()).toContain('↓')
+        expect(names()).toEqual(descending)
+        await select(sort).trigger('click')
+        expect(select(sort).text()).toContain('↑')
+        expect(names()).toEqual([...descending].reverse())
+        await select(sort).trigger('click')
+        expect(select(sort).text()).toContain('↓')
+        expect(names()).toEqual(descending)
+      }
+      expect(wrapper.findAll('.catalog__sort .sort-chip__dir')).toHaveLength(1)
+      expect(wrapper.find<HTMLInputElement>(search).element.value).toBe('Soup')
+    }
+    wrapper.unmount()
+    const returned = await workspace()
+    expect(button(returned, translate('weekPlanning.sorts.lastUsed')).text()).toContain('↓')
+    expect(returned.findAll('.dish-grid .planning-card__name').map(card => card.text())).toEqual(['Soup B', 'Soup A'])
+    await button(returned, translate('weekPlanning.sorts.name')).trigger('click')
+    expect(button(returned, translate('weekPlanning.sorts.name')).text()).toContain('↑')
+    expect(returned.findAll('.dish-grid .planning-card__name').map(card => card.text())).toEqual(['Soup A', 'Soup B'])
   })
 
   it('changes catalog roles without changing recommendation scope', async () => {
