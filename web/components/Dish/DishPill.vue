@@ -3,6 +3,7 @@ const props = withDefaults(defineProps<{
   name: string
   size?: 'sm' | 'md'
   removable?: boolean
+  disabled?: boolean
   to?: string
 }>(), {
   size: 'md',
@@ -24,7 +25,8 @@ const emit = defineEmits<{
     <button
       v-if="removable"
       class="dish-pill__remove"
-      :aria-label="`Remove ${name}`"
+      :aria-label="$t('weekPlanning.removeDish', { name })"
+      :disabled="disabled"
       @click="emit('remove')"
     >
       <v-icon size="14">mdi-close</v-icon>
@@ -114,5 +116,10 @@ const emit = defineEmits<{
 .dish-pill__remove:hover {
   background-color: var(--color-surface-variant);
   color: var(--color-error);
+}
+
+.dish-pill__remove:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 </style>

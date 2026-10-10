@@ -27,6 +27,7 @@ export function useWeekPlanning(options: { family: Ref<string>; account: Ref<str
   const error = shallowRef<string | null>(null)
   const feedback = shallowRef<UndoFeedback | null>(null)
   const notice = shallowRef<'duplicate' | 'unchanged' | 'conflict' | 'restored' | null>(null)
+  const optOutReasons = shallowRef<string[]>([])
   let generation = 0
   let readGeneration = 0
   const dates = computed(() => planningWindow(monday.value))
@@ -107,6 +108,39 @@ export function useWeekPlanning(options: { family: Ref<string>; account: Ref<str
     finally { if (token === generation) busy.value = false }
   }
 
+  async function loadOptOutReasons() {
+    const token = generation
+    try {
+      const reasons = await options.dinners.getOptOutReasons(options.family.value)
+      if (token === generation) optOutReasons.value = reasons
+    }
+    catch { if (token === generation) optOutReasons.value = [] }
+  }
+
+  async function updateOptOut(date: string, reason: string | null) {
+    if (!canMutate.value || !dates.value.includes(date)) return
+    const trimmedReason = reason?.trim() ?? null
+    if (trimmedReason === '') return
+    const family = options.family.value
+    const token = generation
+    busy.value = true
+    feedback.value = null
+    notice.value = null
+    error.value = null
+    try {
+      const dinnerDate = DateTime.fromISO(date)
+      if (trimmedReason === null) await options.dinners.removeOptOut(family, dinnerDate)
+      else await options.dinners.setOptOut(family, dinnerDate, trimmedReason)
+      if (token !== generation) return
+      if (trimmedReason && !optOutReasons.value.includes(trimmedReason)) optOutReasons.value = [...optOutReasons.value, trimmedReason]
+      await refresh()
+    }
+    catch {
+      if (token === generation) { await refresh(); if (token === generation) error.value = 'saveFailed' }
+    }
+    finally { if (token === generation) busy.value = false }
+  }
+
   watch([options.family, options.account], () => {
     generation++
     readGeneration++
@@ -115,12 +149,14 @@ export function useWeekPlanning(options: { family: Ref<string>; account: Ref<str
     selectedDate.value = null
     feedback.value = null
     notice.value = null
+    optOutReasons.value = []
     error.value = null
     busy.value = false
     loading.value = false
     void refresh()
+    if (options.family.value) void loadOptOutReasons()
   }, { immediate: true })
   watch(monday, () => { readGeneration++; saved.value = []; void refresh() })
   onScopeDispose(() => { generation++; readGeneration++ })
-  return { monday, dates, days, selectedDate, loading, busy, canMutate, error, feedback, notice, navigate, refresh, mutate, undo }
+  return { monday, dates, days, selectedDate, loading, busy, canMutate, error, feedback, notice, optOutReasons, navigate, refresh, mutate, undo, updateOptOut }
 }

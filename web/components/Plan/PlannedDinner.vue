@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { DateTime } from 'luxon'
 import type { Dinner } from '~/types'
+import DishPill from '~/components/Dish/DishPill.vue'
 
 const props = defineProps<{
   dinner: Dinner
@@ -71,11 +72,12 @@ function handleHeaderClick() {
           </div>
         </template>
         <template v-else-if="dinner.isPlanned && !selected">
-          <div class="dinner-card__pills">
+          <div class="dinner-card__pills" @click.stop @keydown.stop>
             <DishPill
               v-for="item in dinner.menu"
               :key="item.dishId"
               :name="item.dishName"
+              :to="`/dishes/${item.dishId}`"
               size="sm"
             />
           </div>

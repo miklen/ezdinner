@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
-import { defineComponent, h, KeepAlive, onScopeDispose, reactive, shallowRef, watch } from 'vue'
+import { computed, defineComponent, h, KeepAlive, nextTick, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue'
 import { DateTime } from 'luxon'
 import { createPinia, setActivePinia } from 'pinia'
 import { z } from 'zod'
 import Workspace from '~/components/WeekPlanning/Workspace.vue'
-import type { Dish, WishlistItem } from '~/types'
+import PlannedDinnerDetails from '~/components/Plan/PlannedDinnerDetails.vue'
+import type { Dinner, Dish, WishlistItem } from '~/types'
 import type { PlanningDinner } from '~/types/week-planning'
 import type { MenuChangeRequest } from '~/types/dish-recommendations'
 import english from '~/i18n/locales/en.json'
@@ -29,6 +30,15 @@ let undoConflict = false
 let catalog: Dish[] = []
 let wishes: WishlistItem[] = []
 const readDinners = vi.fn(async () => structuredClone(saved))
+const setOptOut = vi.fn(async (_family: string, target: DateTime, reason: string) => {
+  const chosenDate = target.toFormat('yyyy-MM-dd')
+  saved = saved.filter(day => day.date !== chosenDate)
+  saved.push({ date: chosenDate, menu: [], optOutReason: reason })
+})
+const removeOptOut = vi.fn(async (_family: string, target: DateTime) => {
+  const day = saved.find(day => day.date === target.toFormat('yyyy-MM-dd'))
+  if (day) day.optOutReason = null
+})
 
 function dish(id: string, name: string, roles: Dish['roles']): Dish {
   return { id, name, roles, notes: '## Family notes\nUse frozen vegetables. <img src=x onerror=alert(1)>', url: '', rating: 8, ratings: [{ familyMemberId: 'member', rating: 4 }], dates: [], dishStats: { dishId: id, timesUsed: 5, lastUsed: undefined }, isArchived: false, effortLevel: id === favouriteId ? 'Quick' : null }
@@ -82,7 +92,7 @@ const Select = defineComponent({ props: { modelValue: String, label: String, ite
 const Checkbox = defineComponent({ props: { modelValue: Boolean, label: String }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { type: 'checkbox', checked: props.modelValue, 'aria-label': props.label, onChange: (event: Event) => { if (event.target instanceof HTMLInputElement) emit('update:modelValue', event.target.checked) } }) })
 const Dialog = defineComponent({ props: { modelValue: Boolean }, emits: ['afterLeave'], setup: (props, { emit, slots }) => { watch(() => props.modelValue, open => { if (!open) emit('afterLeave') }); return () => props.modelValue ? h('div', { role: 'dialog' }, slots.default?.()) : null } })
 const Link = defineComponent({ props: { to: String }, setup: (props, { slots }) => () => h('a', { href: props.to, onClick: (event: Event) => event.preventDefault() }, slots.default?.()) })
-const global = { mocks: { $t: translate }, stubs: { NuxtLink: Link, DishOverflowMenu: Block, DishRating: Block, DishPill: false, VIcon: Block, PlanPlannedDinnerDetails: Block, VChip: Button, VRating: Block, VProgressCircular: Block, VCardTitle: Block, VSpacer: Block, VAutocomplete: Block, VBtn: Button, VSelect: Select, VTextField: Field, VTextarea: Field, VCheckbox: Checkbox, VDialog: Dialog, VCard: Block, VCardText: Block, VCardActions: Block, VAlert: Block, VProgressLinear: Block } }
+const global = { mocks: { $t: translate }, stubs: { NuxtLink: Link, DishOverflowMenu: Block, DishRating: Block, DishPill: false, VIcon: Block, VSkeletonLoader: Block, PlanPlannedDinnerDetails: Block, VChip: Button, VRating: Block, VProgressCircular: Block, VCardTitle: Block, VSpacer: Block, VAutocomplete: Block, VBtn: Button, VSelect: Select, VTextField: Field, VTextarea: Field, VCheckbox: Checkbox, VDialog: Dialog, VCard: Block, VCardText: Block, VCardActions: Block, VAlert: Block, VProgressLinear: Block } }
 
 function translate(key: string, parameters: Record<string, unknown> = {}): string {
   let value: unknown = locale.value === 'da' ? danish : english
@@ -116,7 +126,7 @@ beforeEach(() => {
   vi.stubGlobal('useRepositories', () => ({
     dishes: { all: async () => catalog, allUsageStats: async () => Object.fromEntries(catalog.map(dish => [dish.id, dish.dishStats])), getFull: async (id: string) => catalog.find(dish => dish.id === id) },
     wishlist: { getWishlist: async () => wishes },
-    dinners: { getRange: readDinners, addDishToMenu: add, removeDishFromMenu: remove },
+    dinners: { getRange: readDinners, addDishToMenu: add, removeDishFromMenu: remove, setOptOut, removeOptOut, getOptOutReasons: async () => ['Family gathering'] },
     dishRecommendations: { recommend, undo, changeMenu },
   }))
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
@@ -132,8 +142,94 @@ async function workspace() { const wrapper = mount(Workspace, { global, attachTo
 
 afterEach(() => { vi.useRealTimers() })
 
+describe('existing plan day controls', () => {
+  it.each(['en', 'da'])('still saves and removes an opt-out through the shared controls in %s', async language => {
+    locale.value = language
+    vi.stubGlobal('computed', computed)
+    vi.stubGlobal('ref', ref)
+    vi.stubGlobal('watch', watch)
+    vi.stubGlobal('nextTick', nextTick)
+    vi.stubGlobal('useDinnersStore', () => ({ previousOptOutReasons: [], addOptOutReason: () => {} }))
+    vi.stubGlobal('useWishlistStore', () => ({ wishes: [] }))
+    vi.stubGlobal('useSnackbar', () => ({ show: () => {} }))
+    const dinner: Dinner = { date: DateTime.fromISO('2026-10-14'), description: '', menu: [], isPlanned: false, isOptedOut: false, isResolved: false, optOutReason: null }
+    const wrapper = mount(PlannedDinnerDetails, { props: { dinner }, global: { ...global, components: { PlanDishRow: Block }, stubs: { ...global.stubs, PlanPlannedDinnerDetails: false, VBottomSheet: Block, VListItem: Block, VList: Block, VDivider: Block } } })
+    await wrapper.find('.dinner-details__optout-toggle').trigger('click')
+    await button(wrapper, translate('plan.optOut.eatingOut')).trigger('click')
+    await flushPromises()
+    const reason = translate('plan.optOut.eatingOut')
+    expect(saved.find(day => day.date === '2026-10-14')?.optOutReason).toBe(reason)
+    expect(wrapper.emitted('dinner:optoutupdated')).toHaveLength(1)
+    await wrapper.setProps({ dinner: { ...dinner, isOptedOut: true, isResolved: true, optOutReason: reason } })
+    expect(wrapper.find('.dinner-details__optout-label').text()).toBe(reason)
+    await button(wrapper, translate('common.remove')).trigger('click')
+    await flushPromises()
+    expect(saved.find(day => day.date === '2026-10-14')?.optOutReason).toBeNull()
+    expect(wrapper.emitted('dinner:optoutupdated')).toHaveLength(2)
+  })
+})
+
 describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interactions on %s', today => {
   beforeEach(() => { vi.setSystemTime(DateTime.fromISO(today).toJSDate()) })
+  it('skips a selected day with a previous reason and removes its opt-out', async () => {
+    const wrapper = await workspace()
+    await wrapper.findAll('.dinner-card__header')[4].trigger('click')
+    await wrapper.find('.dinner-card--expanded .dinner-details__optout-toggle').trigger('click')
+    await button(wrapper, 'Family gathering').trigger('click')
+    await flushPromises()
+    expect(saved.find(day => day.date === '2026-10-14')?.optOutReason).toBe('Family gathering')
+    expect(wrapper.find('.dinner-card--expanded .dinner-details__optout-label').text()).toBe('Family gathering')
+    await button(wrapper, translate('common.remove')).trigger('click')
+    await flushPromises()
+    expect(saved.find(day => day.date === '2026-10-14')?.optOutReason).toBeNull()
+    expect(wrapper.findAll('.dinner-card__header')[4].text()).not.toContain('Family gathering')
+  })
+
+  it('saves a trimmed custom skip reason without changing another day', async () => {
+    const wrapper = await workspace()
+    await wrapper.findAll('.dinner-card__header')[4].trigger('click')
+    await wrapper.find('.dinner-card--expanded .dinner-details__optout-toggle').trigger('click')
+    await wrapper.find('.dinner-card--expanded input.dinner-details__optout-input').setValue('  School event  ')
+    await wrapper.find('.dinner-card--expanded input.dinner-details__optout-input').trigger('keyup.enter')
+    await flushPromises()
+    expect(saved.find(day => day.date === '2026-10-14')?.optOutReason).toBe('School event')
+    expect(saved.find(day => day.date === '2026-10-13')?.optOutReason).toBe('Eating out')
+  })
+
+  it('retains a custom skip reason when saving fails and lets the user retry', async () => {
+    const wrapper = await workspace()
+    await wrapper.findAll('.dinner-card__header')[4].trigger('click')
+    await wrapper.find('.dinner-card--expanded .dinner-details__optout-toggle').trigger('click')
+    await wrapper.find('.dinner-card--expanded input.dinner-details__optout-input').setValue('School event')
+    setOptOut.mockRejectedValueOnce(new Error('Unavailable'))
+    await wrapper.find('.dinner-card--expanded input.dinner-details__optout-input').trigger('keyup.enter')
+    await flushPromises()
+    expect(wrapper.text()).toContain(translate('weekPlanning.saveFailed'))
+    expect(wrapper.find<HTMLInputElement>('.dinner-card--expanded input.dinner-details__optout-input').element.value).toBe('School event')
+    expect(saved.find(day => day.date === '2026-10-14')).toBeUndefined()
+    await wrapper.find('.dinner-card--expanded input.dinner-details__optout-input').trigger('keyup.enter')
+    await flushPromises()
+    expect(wrapper.find('.dinner-card--expanded .dinner-details__optout-label').text()).toBe('School event')
+  })
+
+  it('blocks skip-day changes and navigation until an opt-out save finishes', async () => {
+    const wrapper = await workspace()
+    await wrapper.findAll('.dinner-card__header')[2].trigger('click')
+    await wrapper.find('.dinner-card--expanded .dinner-details__optout-toggle').trigger('click')
+    let finishSave: () => void = () => { throw new Error('No pending save') }
+    const pending = new Promise<void>(resolve => { finishSave = resolve })
+    const implementation = setOptOut.getMockImplementation()
+    if (!implementation) throw new Error('Missing opt-out implementation')
+    setOptOut.mockImplementationOnce(async (...args) => { await pending; return implementation(...args) })
+    await button(wrapper, 'Family gathering').trigger('click')
+    for (const control of wrapper.findAll('.week-nav button')) expect(control.attributes('disabled')).toBeDefined()
+    expect(wrapper.find('.dinner-card--expanded .dish-pill__remove').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('.dinner-card--expanded input.dinner-details__optout-input').attributes('disabled')).toBeDefined()
+    finishSave()
+    await flushPromises()
+    expect(wrapper.find('.dinner-card--expanded .dinner-details__optout-label').text()).toBe('Family gathering')
+    for (const control of wrapper.findAll('.week-nav button')) expect(control.attributes('disabled')).toBeUndefined()
+  })
   it('keeps the same dish open and synchronizes targets through previous, next and current week', async () => {
     const wrapper = await workspace()
     await button(wrapper, 'Plan dish').trigger('click')
@@ -528,6 +624,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
     expect(saved.find(day => day.date === date(2))?.menu.map(item => item.dishId)).toEqual([favouriteId])
     await button(wrapper, 'Close').trigger('click')
     await flushPromises()
+    await wrapper.findAll('.dinner-card__header')[2].trigger('click')
     await button(wrapper, 'Remove Forgotten favourite').trigger('click')
     await flushPromises()
     await button(wrapper, 'Undo').trigger('click')
@@ -587,11 +684,11 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
     expect(wrapper.findAll('.week-day')[2].text()).toContain('Potato side')
     expect(wrapper.findAll('.week-day')[2].text()).toContain('Forgotten favourite')
     expect(wrapper.findAll('.week-day')[3].text()).toContain('Eating out')
-    expect(wrapper.findAll('.week-day')[4].text()).toContain('No dinner planned')
+    expect(wrapper.findAll('.week-day')[4].text()).toContain(translate('plan.tapToPlan'))
     locale.value = 'da'
     await flushPromises()
     expect(wrapper.text()).toContain('Planlæg din uge')
-    expect(wrapper.findAll('.week-day')[4].text()).toContain('Ingen aftensmad planlagt')
+    expect(wrapper.findAll('.week-day')[4].text()).toContain(translate('plan.tapToPlan'))
   })
 
   it('names archived saved dishes without offering them in exploration', async () => {

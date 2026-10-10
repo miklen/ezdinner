@@ -33,7 +33,8 @@ function dinnerWorkspace(fetch = vi.fn().mockResolvedValue([]), writes = vi.fn()
   const family = shallowRef('family')
   const account = shallowRef('account')
   const recommendations = new DishRecommendationsRepository(writes)
-  const planning = scoped(() => useWeekPlanning({ family, account, dishes: shallowRef([]), unavailableDishLabel: shallowRef('Dish unavailable'), dinners: new DinnerRepository(fetch), recommendations, initialMonday: '2026-10-12' }))
+  const dinnerFetch = vi.fn((path: string, options?: Parameters<typeof $fetch>[1]) => path.endsWith('/optout/reasons') ? Promise.resolve([]) : fetch(path, options))
+  const planning = scoped(() => useWeekPlanning({ family, account, dishes: shallowRef([]), unavailableDishLabel: shallowRef('Dish unavailable'), dinners: new DinnerRepository(dinnerFetch), recommendations, initialMonday: '2026-10-12' }))
   return { planning, family, account, fetch, writes }
 }
 
@@ -113,6 +114,34 @@ describe('locally owned planning window', () => {
 
   it('covers exactly both weekends around Monday', () => {
     expect(planningWindow('2026-10-12')).toEqual(['2026-10-10', '2026-10-11', '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18'])
+  })
+
+  it('ignores opt-out edits before loading and outside the selected window', async () => {
+    const fetch = vi.fn().mockResolvedValue([])
+    const { planning } = dinnerWorkspace(fetch)
+    await planning.updateOptOut('2026-10-14', 'School event')
+    await flushPromises()
+    await planning.updateOptOut('2026-11-14', 'School event')
+    await planning.updateOptOut('2026-10-14', '  ')
+    expect(fetch.mock.calls.every(([path]) => path.includes('/dates/'))).toBe(true)
+    expect(planning.days.value.every(day => day.optOutReason === null)).toBe(true)
+  })
+
+  it('discards opt-out history received after changing families', async () => {
+    let resolveOld: (reasons: string[]) => void = () => { throw new Error('No pending history') }
+    const pending = new Promise<string[]>(resolve => { resolveOld = resolve })
+    const fetch = vi.fn().mockImplementation((path: string) => {
+      if (path.endsWith('/family/family/optout/reasons')) return pending
+      if (path.endsWith('/optout/reasons')) return Promise.resolve(['New family gathering'])
+      return Promise.resolve([])
+    })
+    const family = shallowRef('family')
+    const planning = scoped(() => useWeekPlanning({ family, account: shallowRef('account'), dishes: shallowRef([]), unavailableDishLabel: shallowRef('Unavailable'), dinners: new DinnerRepository(fetch), recommendations: new DishRecommendationsRepository(vi.fn()), initialMonday: '2026-10-12' }))
+    family.value = 'another-family'
+    await flushPromises()
+    resolveOld(['Private old family reason'])
+    await flushPromises()
+    expect(planning.optOutReasons.value).toEqual(['New family gathering'])
   })
 
   it('navigates historical windows and clears only out-of-window targets', async () => {

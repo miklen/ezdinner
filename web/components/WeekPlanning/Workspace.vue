@@ -131,7 +131,7 @@ onScopeDispose(() => { catalogGeneration++ })
       <aside class="workspace-week" :class="{ 'workspace-week--open': mobileOverview }">
         <v-progress-linear v-if="planning.loading.value" indeterminate :aria-label="t('weekPlanning.loading')" />
         <v-alert v-if="planning.error.value" type="error" role="alert">{{ t(`weekPlanning.${planning.error.value}`) }} <v-btn @click="planning.refresh">{{ t('weekPlanning.refreshWeek') }}</v-btn></v-alert>
-        <PlanningWeekOverview :monday="planning.monday.value" :days="planning.days.value" :selected-date="planning.selectedDate.value" :busy="!planning.canMutate.value" :navigation-disabled="planning.busy.value" @navigate="planning.navigate" @select="planning.selectedDate.value = $event" @remove="(id, date) => planning.mutate('removed', id, date)" />
+        <PlanningWeekOverview :monday="planning.monday.value" :days="planning.days.value" :selected-date="planning.selectedDate.value" :busy="!planning.canMutate.value" :navigation-disabled="planning.busy.value" :reasons="planning.optOutReasons.value" @navigate="planning.navigate" @select="planning.selectedDate.value = $event" @remove="(id, date) => planning.mutate('removed', id, date)" @opt-out="planning.updateOptOut" />
       </aside>
     </div>
     <div v-if="planning.feedback.value || planning.notice.value" class="workspace-feedback" role="status">
