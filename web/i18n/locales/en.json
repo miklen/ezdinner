@@ -364,6 +364,7 @@
     "assignTitle": "Plan {name}",
     "add": "Add",
     "alreadyAssigned": "Already planned",
+    "alreadyAssignedDay": "\"{dish}\" is already planned for {day}",
     "close": "Close",
     "refreshIdeas": "Refresh ideas",
     "previousContext": "These ideas use the previous week. Refresh when you want ideas for this week.",

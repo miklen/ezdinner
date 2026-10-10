@@ -12,11 +12,13 @@ import type { MenuChangeRequest } from '~/types/dish-recommendations'
 import english from '~/i18n/locales/en.json'
 import danish from '~/i18n/locales/da.json'
 
+vi.mock('vuetify', () => ({ useDisplay: () => ({ smAndDown: shallowRef(false), height: shallowRef(800) }) }))
+
 enableAutoUnmount(afterEach)
 const favouriteId = '00000000-0000-4000-8000-000000000001'
 const sideId = '00000000-0000-4000-8000-000000000002'
 const unknownId = '00000000-0000-4000-8000-000000000003'
-const monday = DateTime.local().startOf('week')
+const monday = DateTime.fromISO('2026-10-12')
 const date = (offset: number) => monday.plus({ days: offset }).toFormat('yyyy-MM-dd')
 const locale = shallowRef('en')
 const account = shallowRef('account')
@@ -57,14 +59,15 @@ const remove = vi.fn(async (_family: string, target: DateTime, id: string) => {
   const day = saved.find(day => day.date === target.toFormat('yyyy-MM-dd'))
   if (day) day.menu = day.menu.filter(item => item.dishId !== id)
 })
-const changeMenu = vi.fn(async (family: string, target: string, kind: 'added' | 'removed', request: MenuChangeRequest) => {
+async function persistMenu(family: string, target: string, kind: 'added' | 'removed', request: MenuChangeRequest) {
   const original = saved.find(day => day.date === target)
   const before = { dishIds: original?.menu.map(item => item.dishId) ?? [], optOutReason: original?.optOutReason ?? null }
   if (before.dishIds.includes(request.dishId) === (kind === 'added')) return { outcome: 'NoOp' }
   await (kind === 'added' ? add : remove)(family, DateTime.fromISO(target), request.dishId)
   const changed = saved.find(day => day.date === target)
   return { outcome: 'Changed', before, after: { dishIds: changed?.menu.map(item => item.dishId) ?? [], optOutReason: changed?.optOutReason ?? null } }
-})
+}
+const changeMenu = vi.fn(persistMenu)
 const undo = vi.fn(async (_family: string, target: string, intent: { before: { dishIds: string[]; optOutReason: string | null } }) => {
   if (undoConflict) return { outcome: 'Conflict' }
   saved = saved.filter(day => day.date !== target)
@@ -92,7 +95,10 @@ function translate(key: string, parameters: Record<string, unknown> = {}): strin
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
   vi.clearAllMocks()
+  changeMenu.mockReset().mockImplementation(persistMenu)
+  readDinners.mockReset().mockImplementation(async () => structuredClone(saved))
   setActivePinia(createPinia())
   locale.value = 'en'
   app.activeFamilyId = 'family'
@@ -124,7 +130,175 @@ function button(wrapper: VueWrapper, name: string) {
 }
 async function workspace() { const wrapper = mount(Workspace, { global, attachTo: document.body }); await flushPromises(); return wrapper }
 
-describe('planning workspace public interactions', () => {
+afterEach(() => { vi.useRealTimers() })
+
+describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interactions on %s', today => {
+  beforeEach(() => { vi.setSystemTime(DateTime.fromISO(today).toJSDate()) })
+  it('keeps the same dish open and synchronizes targets through previous, next and current week', async () => {
+    const wrapper = await workspace()
+    await button(wrapper, 'Plan dish').trigger('click')
+    const nextWeek = () => wrapper.findAll('.plan-picker .week-nav__arrow')[1]
+    await nextWeek().trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.plan-picker__title').text()).toContain('Forgotten favourite')
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')[2].text()).toContain('19 Oct')
+    expect(wrapper.findAll('.dinner-card__header')[2].text()).toContain('Oct 19')
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[0].trigger('click')
+    await flushPromises()
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[0].trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')[0].text()).toContain('3 Oct')
+    await wrapper.find('.plan-picker .week-nav__center').trigger('click')
+    await flushPromises()
+    const currentMonday = DateTime.fromISO(today).startOf('week')
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')[2].text()).toContain(currentMonday.setLocale('en').toFormat('d MMM'))
+    expect(wrapper.findAll('.dinner-card__header')[2].text()).toContain(currentMonday.setLocale('en').toFormat('MMM d'))
+    expect(wrapper.find('.plan-picker__title').text()).toContain('Forgotten favourite')
+    await wrapper.findAll('.plan-picker button.plan-day-row')[2].trigger('click')
+    await flushPromises()
+    expect(changeMenu.mock.calls[0][1]).toBe(currentMonday.toFormat('yyyy-MM-dd'))
+  })
+
+  it('keeps navigation available during reads, discards late reads and retries the selected week', async () => {
+    const wrapper = await workspace()
+    await button(wrapper, 'Plan dish').trigger('click')
+    let resolveOld: (value: PlanningDinner[]) => void = () => { throw new Error('No pending read') }
+    readDinners.mockReturnValueOnce(new Promise(resolve => { resolveOld = resolve }))
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.plan-picker .plan-day-row--skeleton')).toHaveLength(9)
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')).toHaveLength(0)
+    expect(wrapper.findAll('.plan-picker .week-nav__arrow')[1].attributes('disabled')).toBeUndefined()
+    readDinners.mockRejectedValueOnce(new Error('Unavailable'))
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.plan-picker [role="alert"]').text()).toContain(translate('weekPlanning.readFailed'))
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')).toHaveLength(0)
+    resolveOld([{ date: '2026-10-26', menu: [{ dishId: favouriteId }], optOutReason: null }])
+    await flushPromises()
+    expect(wrapper.find('.plan-picker [role="alert"]').exists()).toBe(true)
+    await button(wrapper, translate('weekPlanning.retry')).trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.plan-picker [role="alert"]').exists()).toBe(false)
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')[2].text()).toContain('26 Oct')
+    await wrapper.findAll('.plan-picker button.plan-day-row')[2].trigger('click')
+    await flushPromises()
+    expect(changeMenu.mock.calls[0][1]).toBe('2026-10-26')
+  })
+
+  it('blocks both week navigations throughout a save and enables them after refresh', async () => {
+    const wrapper = await workspace()
+    await button(wrapper, 'Plan dish').trigger('click')
+    let finishSave: () => void = () => { throw new Error('No pending save') }
+    const save = new Promise<void>(resolve => { finishSave = resolve })
+    const implementation = changeMenu.getMockImplementation()
+    if (!implementation) throw new Error('Missing save implementation')
+    changeMenu.mockImplementationOnce(async (...args) => { await save; return implementation(...args) })
+    await wrapper.findAll('.plan-picker button.plan-day-row')[2].trigger('click')
+    for (const control of wrapper.findAll('.week-nav button')) expect(control.attributes('disabled')).toBeDefined()
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')[2].text()).toContain('12 Oct')
+    finishSave()
+    await flushPromises()
+    for (const control of wrapper.findAll('.week-nav button')) expect(control.attributes('disabled')).toBeUndefined()
+  })
+
+  it('clears obsolete opt-out confirmation on navigation while retaining the dish', async () => {
+    const wrapper = await workspace()
+    await button(wrapper, 'Plan dish').trigger('click')
+    await wrapper.findAll('.assignment-day')[3].find('button').trigger('click')
+    expect(wrapper.findAll('[role="dialog"]')).toHaveLength(2)
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('[role="dialog"]')).toHaveLength(1)
+    expect(wrapper.find('.plan-picker__title').text()).toContain('Forgotten favourite')
+    expect(changeMenu).not.toHaveBeenCalled()
+  })
+
+  it.each(['family', 'account'])('closes the picker and clears its pending confirmation on %s change', async scope => {
+    const wrapper = await workspace()
+    await button(wrapper, 'Plan dish').trigger('click')
+    await wrapper.findAll('.assignment-day')[3].find('button').trigger('click')
+    if (scope === 'family') app.activeFamilyId = 'another-family'
+    if (scope === 'account') account.value = 'another-account'
+    await flushPromises()
+    expect(wrapper.find('.plan-picker').exists()).toBe(false)
+    expect(wrapper.findAll('[role="dialog"]')).toHaveLength(0)
+    expect(changeMenu).not.toHaveBeenCalled()
+  })
+
+  it('retains explorer preferences, scroll position and conversation through picker navigation and reopening', async () => {
+    const wrapper = await workspace()
+    await wrapper.find('input[aria-label="Search dishes"]').setValue('Forgotten')
+    await wrapper.find('.catalog__filter-toggle').trigger('click')
+    await button(wrapper, translate('weekPlanning.efforts.Quick')).trigger('click')
+    await button(wrapper, translate('weekPlanning.sorts.rating')).trigger('click')
+    await wrapper.find('input[aria-label="What would you like?"]').setValue('With potatoes')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    Object.defineProperty(window, 'scrollY', { value: 420, configurable: true })
+    await button(wrapper, 'Plan dish').trigger('click')
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
+    await flushPromises()
+    expect(wrapper.find<HTMLInputElement>('input[aria-label="Search dishes"]').element.value).toBe('Forgotten')
+    expect(button(wrapper, translate('weekPlanning.efforts.Quick')).attributes('aria-pressed')).toBe('true')
+    expect(button(wrapper, translate('weekPlanning.sorts.rating')).attributes('color')).toBe('primary')
+    expect(wrapper.find('input[aria-label="Edit preference"]').element).toHaveProperty('value', 'With potatoes')
+    expect(wrapper.find('.recommendation-grid').text()).toContain('Forgotten favourite')
+    expect(window.scrollY).toBe(420)
+    expect(recommend).toHaveBeenCalledTimes(2)
+    await button(wrapper, 'Close').trigger('click')
+    await button(wrapper, 'Plan dish').trigger('click')
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')[2].text()).toContain('19 Oct')
+  })
+
+  it('retains overlapping selected days and clears only targets outside the new window', async () => {
+    const wrapper = await workspace()
+    await wrapper.findAll('.dinner-card__header')[7].trigger('click')
+    await button(wrapper, translate('plan.nextWeekAriaLabel')).trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.dinner-card__header')[0].attributes('aria-expanded')).toBe('true')
+    await button(wrapper, translate('plan.nextWeekAriaLabel')).trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.dinner-card__header').every(row => row.attributes('aria-expanded') === 'false')).toBe(true)
+  })
+
+  it('retains the chosen week when returning to the cached workspace and reopening the picker', async () => {
+    const visible = shallowRef(true)
+    const Host = defineComponent({ setup: () => () => h(KeepAlive, null, { default: () => visible.value ? h(Workspace) : h('div') }) })
+    const wrapper = mount(Host, { global, attachTo: document.body })
+    await flushPromises()
+    await button(wrapper, 'Plan dish').trigger('click')
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
+    await flushPromises()
+    await button(wrapper, 'Close').trigger('click')
+    visible.value = false
+    await flushPromises()
+    visible.value = true
+    await flushPromises()
+    await button(wrapper, 'Plan dish').trigger('click')
+    expect(wrapper.findAll('.plan-picker button.plan-day-row')[2].text()).toContain('19 Oct')
+    expect(wrapper.findAll('.dinner-card__header')[2].text()).toContain('Oct 19')
+    expect(recommend).toHaveBeenCalledTimes(1)
+  })
+
+  it('safely undoes the additive assignment in its original date after picker navigation', async () => {
+    const wrapper = await workspace()
+    await button(wrapper, 'Plan dish').trigger('click')
+    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.assignment-day')[2].find('button').attributes('disabled')).toBeDefined()
+    expect(saved[0].menu.map(item => item.dishId)).toEqual([sideId, favouriteId])
+    await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
+    await flushPromises()
+    await button(wrapper, 'Close').trigger('click')
+    await button(wrapper, 'Undo').trigger('click')
+    await flushPromises()
+    expect(undo.mock.calls[0][1]).toBe(date(0))
+    expect(saved.find(day => day.date === date(0))?.menu.map(item => item.dishId)).toEqual([sideId])
+    expect(wrapper.findAll('.dinner-card__header')[2].text()).toContain('Oct 19')
+  })
+
   it('clears an unsubmitted request when the family changes', async () => {
     const wrapper = await workspace()
     await wrapper.find('input[aria-label="What would you like?"]').setValue('Private family request')

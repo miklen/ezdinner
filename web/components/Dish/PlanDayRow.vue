@@ -7,6 +7,7 @@ const props = withDefaults(defineProps<{
   date?: DateTime
   menu?: Array<{ dishId: string; dishName: string }>
   isPlanned?: boolean
+  alreadyAssigned?: boolean
   isWeekend?: boolean
   isAdding?: boolean
   dishName?: string
@@ -17,6 +18,7 @@ const props = withDefaults(defineProps<{
   date: undefined,
   menu: () => [],
   isPlanned: false,
+  alreadyAssigned: false,
   isWeekend: false,
   isAdding: false,
   dishName: '',
@@ -42,7 +44,9 @@ const fullDateLabel = computed(() =>
 )
 
 const ariaLabel = computed(() =>
-  props.isPlanned
+  props.alreadyAssigned
+    ? t('weekPlanning.alreadyAssignedDay', { dish: props.dishName, day: fullDateLabel.value })
+    : props.isPlanned
     ? t('dishes.planDish.removeDayAriaLabel', { dish: props.dishName, day: fullDateLabel.value })
     : t('dishes.planDish.addDayAriaLabel', { dish: props.dishName, day: fullDateLabel.value })
 )
@@ -57,7 +61,7 @@ const ariaLabel = computed(() =>
     v-else
     class="plan-day-row"
     :class="{ 'plan-day-row--weekend': isWeekend, 'plan-day-row--planned': isPlanned }"
-    :disabled="isAdding || disabled"
+    :disabled="isAdding || disabled || alreadyAssigned"
     :aria-label="ariaLabel"
     @click="emit('toggle')"
   >
@@ -73,6 +77,7 @@ const ariaLabel = computed(() =>
       <span v-else class="plan-day-row__free" />
     </div>
     <v-progress-circular v-if="isAdding" size="16" width="2" indeterminate color="primary" class="plan-day-row__spinner" />
+    <v-icon v-else-if="alreadyAssigned" size="16" class="plan-day-row__assigned-icon">mdi-check-circle</v-icon>
     <v-icon v-else-if="isPlanned" size="16" class="plan-day-row__remove-icon">mdi-close-circle</v-icon>
     <v-icon v-else size="16" class="plan-day-row__add-icon">mdi-calendar-plus</v-icon>
   </button>
@@ -142,6 +147,8 @@ const ariaLabel = computed(() =>
   min-height: 36px;
 }
 
+.plan-day-row__menu :deep(.dish-pill) { max-width: min(200px, 100%); }
+
 .plan-day-row__free {
   display: block;
   width: 48px;
@@ -191,6 +198,9 @@ const ariaLabel = computed(() =>
 .plan-day-row__spinner {
   flex-shrink: 0;
 }
+
+.plan-day-row__assigned-icon { color: var(--color-primary-dark); flex-shrink: 0; }
+.plan-day-row:focus-visible { outline: 2px solid var(--color-primary-dark); outline-offset: -2px; }
 
 /* ── Skeleton ────────────────────────────────────────────────────────────────── */
 .plan-day-row--skeleton {

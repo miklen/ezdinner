@@ -5,6 +5,7 @@ import { useSwipe } from '@vueuse/core'
 
 const props = defineProps<{
   modelValue: DateTime
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -49,14 +50,17 @@ const isCurrentWeek = computed(() =>
 )
 
 function prev() {
+  if (props.disabled) return
   emit('update:modelValue', props.modelValue.minus({ weeks: 1 }))
 }
 
 function next() {
+  if (props.disabled) return
   emit('update:modelValue', props.modelValue.plus({ weeks: 1 }))
 }
 
 function goToThisWeek() {
+  if (props.disabled) return
   if (!isCurrentWeek.value) {
     emit('update:modelValue', DateTime.now().startOf('week'))
   }
@@ -72,17 +76,17 @@ useSwipe(navEl, {
 
 <template>
   <div ref="navEl" class="week-nav">
-    <button class="week-nav__arrow" :aria-label="$t('plan.previousWeekAriaLabel')" @click="prev">
+    <button class="week-nav__arrow" :disabled="disabled" :aria-label="$t('plan.previousWeekAriaLabel')" @click="prev">
       <v-icon size="20">mdi-chevron-left</v-icon>
     </button>
 
-    <button class="week-nav__center" @click="goToThisWeek">
+    <button class="week-nav__center" :disabled="disabled" @click="goToThisWeek">
       <span class="week-nav__label">{{ weekLabel }}</span>
       <span class="week-nav__range">{{ weekRangeDetail }}</span>
       <span v-if="!isCurrentWeek" class="week-nav__today-hint">{{ $t('plan.tapToReturnToThisWeek') }}</span>
     </button>
 
-    <button class="week-nav__arrow" :aria-label="$t('plan.nextWeekAriaLabel')" @click="next">
+    <button class="week-nav__arrow" :disabled="disabled" :aria-label="$t('plan.nextWeekAriaLabel')" @click="next">
       <v-icon size="20">mdi-chevron-right</v-icon>
     </button>
   </div>
@@ -119,7 +123,7 @@ useSwipe(navEl, {
     color var(--duration-fast) var(--ease-standard);
 }
 
-.week-nav__arrow:hover {
+.week-nav__arrow:hover:not(:disabled) {
   background: rgba(var(--v-theme-primary), 0.08);
   color: rgb(var(--v-theme-primary));
 }
@@ -130,6 +134,7 @@ useSwipe(navEl, {
 }
 
 .week-nav__center {
+  min-width: 0;
   flex: 1;
   text-align: center;
   cursor: pointer;
@@ -140,7 +145,7 @@ useSwipe(navEl, {
   transition: background var(--duration-fast) var(--ease-standard);
 }
 
-.week-nav__center:hover {
+.week-nav__center:hover:not(:disabled) {
   background: var(--color-surface-variant);
 }
 
@@ -170,4 +175,6 @@ useSwipe(navEl, {
   color: var(--color-primary);
   margin-top: 3px;
 }
+
+.week-nav button:disabled { cursor: default; opacity: 0.5; }
 </style>

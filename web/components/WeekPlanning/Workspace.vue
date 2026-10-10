@@ -106,7 +106,7 @@ watch([family, account], () => {
   mobileOverview.value = false
   void loadCatalog()
 }, { immediate: true })
-watch(planning.monday, () => { pickerDish.value = null; optOutConfirmation.value = null })
+watch(planning.monday, () => { optOutConfirmation.value = null })
 onActivated(async () => {
   if (!activated) { activated = true; return }
   await Promise.all([planning.refresh(), loadCatalog(false)])
@@ -131,14 +131,14 @@ onScopeDispose(() => { catalogGeneration++ })
       <aside class="workspace-week" :class="{ 'workspace-week--open': mobileOverview }">
         <v-progress-linear v-if="planning.loading.value" indeterminate :aria-label="t('weekPlanning.loading')" />
         <v-alert v-if="planning.error.value" type="error" role="alert">{{ t(`weekPlanning.${planning.error.value}`) }} <v-btn @click="planning.refresh">{{ t('weekPlanning.refreshWeek') }}</v-btn></v-alert>
-        <PlanningWeekOverview :monday="planning.monday.value" :days="planning.days.value" :selected-date="planning.selectedDate.value" :busy="!planning.canMutate.value" @navigate="planning.navigate" @select="planning.selectedDate.value = $event" @remove="(id, date) => planning.mutate('removed', id, date)" />
+        <PlanningWeekOverview :monday="planning.monday.value" :days="planning.days.value" :selected-date="planning.selectedDate.value" :busy="!planning.canMutate.value" :navigation-disabled="planning.busy.value" @navigate="planning.navigate" @select="planning.selectedDate.value = $event" @remove="(id, date) => planning.mutate('removed', id, date)" />
       </aside>
     </div>
     <div v-if="planning.feedback.value || planning.notice.value" class="workspace-feedback" role="status">
       <template v-if="planning.feedback.value">{{ t(`weekPlanning.${planning.feedback.value.kind}`, { name: dishes.find(dish => dish.id === planning.feedback.value?.dishId)?.name, date: DateTime.fromISO(planning.feedback.value.date).setLocale(locale).toFormat('ccc d/M') }) }} <v-btn :disabled="planning.busy.value" variant="text" @click="planning.undo">{{ t('weekPlanning.undo') }}</v-btn></template>
       <template v-else-if="planning.notice.value">{{ t(`weekPlanning.${planning.notice.value}`) }}</template>
     </div>
-    <PlanningAssignmentPicker :open="!!pickerDish" :dish-id="pickerDish?.id ?? ''" :dish-name="pickerDish?.name ?? ''" :days="planning.days.value" :busy="!planning.canMutate.value" :error="planning.error.value" @close="pickerDish = null" @assign="pickerDish && assign(pickerDish.id, $event)" />
+    <PlanningAssignmentPicker :open="!!pickerDish" :monday="planning.monday.value" :dish-id="pickerDish?.id ?? ''" :dish-name="pickerDish?.name ?? ''" :days="planning.days.value" :busy="planning.busy.value" :loading="planning.loading.value" :can-mutate="planning.canMutate.value" :error="planning.error.value" @close="pickerDish = null" @assign="pickerDish && assign(pickerDish.id, $event)" @navigate="planning.navigate" @retry="planning.refresh" />
     <v-dialog :model-value="!!optOutConfirmation" max-width="460" @update:model-value="!$event && (optOutConfirmation = null)">
       <v-card :title="t('weekPlanning.clearOptOutTitle')"><v-card-text>{{ t('weekPlanning.clearOptOutWarning', { reason: optOutConfirmation?.reason }) }}</v-card-text><v-card-actions><v-btn @click="optOutConfirmation = null">{{ t('weekPlanning.cancel') }}</v-btn><v-btn color="primary" @click="confirmOptOut">{{ t('weekPlanning.confirmAdd') }}</v-btn></v-card-actions></v-card>
     </v-dialog>

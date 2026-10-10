@@ -6,7 +6,7 @@ import type { PlanningDay } from '~/types/week-planning'
 import WeekNav from '~/components/Plan/WeekNav.vue'
 import PlannedDinner from '~/components/Plan/PlannedDinner.vue'
 import DishPill from '~/components/Dish/DishPill.vue'
-const props = defineProps<{ monday: string; days: PlanningDay[]; selectedDate: string | null; busy: boolean }>()
+const props = defineProps<{ monday: string; days: PlanningDay[]; selectedDate: string | null; busy: boolean; navigationDisabled?: boolean }>()
 const emit = defineEmits<{ navigate: [offset: number]; select: [date: string | null]; remove: [dishId: string, date: string] }>()
 const { t } = useI18n()
 const weekStart = computed(() => DateTime.fromISO(props.monday))
@@ -23,7 +23,7 @@ function navigate(date: DateTime) {
 
 <template>
   <section class="week-overview" :aria-label="t('weekPlanning.overview')">
-    <WeekNav :model-value="weekStart" @update:model-value="navigate" />
+    <WeekNav :model-value="weekStart" :disabled="navigationDisabled" @update:model-value="navigate" />
     <v-btn v-if="selectedDate" variant="text" size="small" class="week-overview__clear" @click="emit('select', null)">{{ t('weekPlanning.clearTarget') }}</v-btn>
     <div class="text-caption-label week-overview__section">{{ previousWeekendLabel }}</div>
     <template v-for="(dinner, index) in dinners" :key="days[index].date">

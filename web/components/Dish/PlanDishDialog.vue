@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
-import { useDisplay } from 'vuetify'
+import PickerShell from '~/components/Plan/PickerShell.vue'
 import type { Dinner } from '~/types'
 
 const props = defineProps<{
@@ -15,7 +15,7 @@ const emit = defineEmits<{
   planned: [date: DateTime]
 }>()
 
-const { smAndDown, height: displayHeight } = useDisplay()
+
 const { dinners: dinnerRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
 const { t, locale } = useI18n()
@@ -142,10 +142,6 @@ watch(weekStart, () => {
   if (props.modelValue) fetchDinners()
 })
 
-function close() {
-  emit('update:modelValue', false)
-}
-
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function isWeekend(date: DateTime) {
@@ -156,223 +152,17 @@ function dateKey(date: DateTime) {
   return date.toFormat('yyyy-MM-dd')
 }
 
-const sheetMaxHeight = computed(() =>
-  displayHeight.value < 600 ? '90dvh' : '80dvh'
-)
 </script>
 
 <template>
-  <!-- Desktop: centered dialog -->
-  <v-dialog
-    v-if="!smAndDown"
-    :model-value="modelValue"
-    width="440"
-    @update:model-value="close"
-  >
-    <v-card class="plan-dialog">
-      <div class="plan-dialog__header">
-        <span class="plan-dialog__title">{{ $t('dishes.planDish.dialogTitle', { dish: dishName }) }}</span>
-        <button class="plan-dialog__close" :aria-label="$t('dishes.planDish.close')" @click="close">
-          <v-icon size="18">mdi-close</v-icon>
-        </button>
-      </div>
-
-      <!-- Week nav — same component as plan page -->
-      <div class="plan-dialog__weeknav">
-        <PlanWeekNav v-model="weekStart" />
-      </div>
-
-      <div class="plan-dialog__body">
-        <template v-if="loading">
-          <DishPlanDayRow v-for="i in 9" :key="i" loading />
-        </template>
-
-        <template v-else>
-          <!-- Prev weekend (Sat, Sun) -->
-          <DishPlanDayRow
-            v-for="date in planningWindow.slice(0, 2)"
-            :key="dateKey(date)"
-            :date="date"
-            :menu="menuForDate(date)"
-            :is-planned="isDishOnDay(date)"
-            :is-weekend="true"
-            :is-adding="addingDate === dateKey(date)"
-            :dish-name="dishName"
-            @toggle="toggleDay(date)"
-          />
-
-          <div class="plan-dialog__divider" />
-
-          <!-- Mon–Sun -->
-          <DishPlanDayRow
-            v-for="date in planningWindow.slice(2)"
-            :key="dateKey(date)"
-            :date="date"
-            :menu="menuForDate(date)"
-            :is-planned="isDishOnDay(date)"
-            :is-weekend="isWeekend(date)"
-            :is-adding="addingDate === dateKey(date)"
-            :dish-name="dishName"
-            @toggle="toggleDay(date)"
-          />
-        </template>
-      </div>
-    </v-card>
-  </v-dialog>
-
-  <!-- Mobile: bottom sheet -->
-  <v-bottom-sheet
-    v-else
-    :model-value="modelValue"
-    :max-height="sheetMaxHeight"
-    @update:model-value="close"
-  >
-    <v-card class="plan-sheet">
-      <div class="plan-sheet__handle" />
-      <div class="plan-sheet__header">
-        <span class="plan-sheet__title">{{ $t('dishes.planDish.dialogTitle', { dish: dishName }) }}</span>
-      </div>
-
-      <div class="plan-sheet__weeknav">
-        <PlanWeekNav v-model="weekStart" />
-      </div>
-
-      <div class="plan-sheet__body">
-        <template v-if="loading">
-          <DishPlanDayRow v-for="i in 9" :key="i" loading />
-        </template>
-
-        <template v-else>
-          <!-- Prev weekend -->
-          <DishPlanDayRow
-            v-for="date in planningWindow.slice(0, 2)"
-            :key="dateKey(date)"
-            :date="date"
-            :menu="menuForDate(date)"
-            :is-planned="isDishOnDay(date)"
-            :is-weekend="true"
-            :is-adding="addingDate === dateKey(date)"
-            :dish-name="dishName"
-            @toggle="toggleDay(date)"
-          />
-
-          <div class="plan-dialog__divider" />
-
-          <!-- Mon–Sun -->
-          <DishPlanDayRow
-            v-for="date in planningWindow.slice(2)"
-            :key="dateKey(date)"
-            :date="date"
-            :menu="menuForDate(date)"
-            :is-planned="isDishOnDay(date)"
-            :is-weekend="isWeekend(date)"
-            :is-adding="addingDate === dateKey(date)"
-            :dish-name="dishName"
-            @toggle="toggleDay(date)"
-          />
-        </template>
-      </div>
-    </v-card>
-  </v-bottom-sheet>
+  <PickerShell :open="modelValue" :title="$t('dishes.planDish.dialogTitle', { dish: dishName })" :close-label="$t('dishes.planDish.close')" @update:open="emit('update:modelValue', $event)">
+    <template #navigation><PlanWeekNav v-model="weekStart" /></template>
+    <template v-if="loading"><DishPlanDayRow v-for="i in 9" :key="i" loading /></template>
+    <template v-else>
+      <template v-for="(date, index) in planningWindow" :key="dateKey(date)">
+        <div v-if="index === 2" class="plan-picker__divider" />
+        <DishPlanDayRow :date="date" :menu="menuForDate(date)" :is-planned="isDishOnDay(date)" :is-weekend="isWeekend(date)" :is-adding="addingDate === dateKey(date)" :dish-name="dishName" @toggle="toggleDay(date)" />
+      </template>
+    </template>
+  </PickerShell>
 </template>
-
-<style scoped>
-/* ── Dialog ──────────────────────────────────────────────────────────────────── */
-.plan-dialog {
-  border-radius: var(--radius-lg) !important;
-  overflow: hidden;
-}
-
-.plan-dialog__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-4) var(--space-3);
-}
-
-.plan-dialog__title {
-  font-size: var(--text-base);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.plan-dialog__close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: none;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  color: var(--color-text-muted);
-  flex-shrink: 0;
-  transition: background-color var(--duration-fast) var(--ease-out);
-}
-
-.plan-dialog__close:hover {
-  background-color: var(--color-surface-variant);
-  color: var(--color-text-secondary);
-}
-
-.plan-dialog__weeknav {
-  padding: 0 var(--space-4) var(--space-3);
-}
-
-.plan-dialog__body {
-  padding-bottom: var(--space-2);
-  max-height: 440px;
-  overflow-y: auto;
-}
-
-.plan-dialog__divider {
-  height: 1px;
-  background: var(--color-border-medium);
-  margin: var(--space-1) var(--space-4);
-}
-
-/* ── Sheet ───────────────────────────────────────────────────────────────────── */
-.plan-sheet {
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: env(safe-area-inset-bottom, 0);
-}
-
-.plan-sheet__handle {
-  width: 36px;
-  height: 4px;
-  border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.15);
-  margin: 12px auto 0;
-  flex-shrink: 0;
-}
-
-.plan-sheet__header {
-  padding: 12px var(--space-4) var(--space-2);
-  flex-shrink: 0;
-}
-
-.plan-sheet__title {
-  font-size: var(--text-base);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.plan-sheet__weeknav {
-  padding: 0 var(--space-4) var(--space-3);
-  flex-shrink: 0;
-}
-
-.plan-sheet__body {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  flex: 1;
-  padding-bottom: var(--space-2);
-}
-</style>

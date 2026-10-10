@@ -13,7 +13,7 @@ import type { PlanningDish } from '~/types/week-planning'
 import { menuChangeRequestSchema } from '~/types/dish-recommendations'
 
 const scopes: EffectScope[] = []
-afterEach(() => { scopes.splice(0).forEach(scope => scope.stop()) })
+afterEach(() => { scopes.splice(0).forEach(scope => scope.stop()); vi.useRealTimers() })
 function scoped<Value>(create: () => Value): Value {
   const scope = effectScope()
   scopes.push(scope)
@@ -38,6 +38,34 @@ function dinnerWorkspace(fetch = vi.fn().mockResolvedValue([]), writes = vi.fn()
 }
 
 describe('locally owned planning window', () => {
+  it.each([
+    ['2026-10-05', '2026-10-05', '2026-10-03', '2026-10-11'],
+    ['2026-10-06', '2026-10-05', '2026-10-03', '2026-10-11'],
+    ['2026-10-07', '2026-10-05', '2026-10-03', '2026-10-11'],
+    ['2026-10-08', '2026-10-05', '2026-10-03', '2026-10-11'],
+    ['2026-10-09', '2026-10-05', '2026-10-03', '2026-10-11'],
+    ['2026-10-10', '2026-10-12', '2026-10-10', '2026-10-18'],
+    ['2026-10-11', '2026-10-12', '2026-10-10', '2026-10-18'],
+    ['2027-01-02', '2027-01-04', '2027-01-02', '2027-01-10'],
+  ])('selects the local planning week on %s', (today, expectedMonday, first, last) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(DateTime.fromISO(today).toJSDate())
+    const planning = scoped(() => useWeekPlanning({ family: shallowRef('family'), account: shallowRef('account'), dishes: shallowRef([]), unavailableDishLabel: shallowRef('Unavailable'), dinners: new DinnerRepository(vi.fn().mockResolvedValue([])), recommendations: new DishRecommendationsRepository(vi.fn()) }))
+    expect(planning.monday.value).toBe(expectedMonday)
+    expect(planning.dates.value).toHaveLength(9)
+    expect(planning.dates.value[0]).toBe(first)
+    expect(planning.dates.value[8]).toBe(last)
+    expect(planning.days.value.map(day => day.date)).toEqual(planningWindow(expectedMonday))
+  })
+
+  it.each(['2026-10-09', '2026-10-10', '2027-01-02'])('retains an explicitly supplied Monday on %s', today => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(DateTime.fromISO(today).toJSDate())
+    const { planning } = dinnerWorkspace()
+    expect(planning.monday.value).toBe('2026-10-12')
+    expect(planning.dates.value).toEqual(planningWindow('2026-10-12'))
+  })
+
   it.each(['added', 'removed'])('never offers undo for a server %s no-op', async kind => {
     const action = kind === 'added' ? 'added' : 'removed'
     const fetch = vi.fn().mockResolvedValue(action === 'removed' ? [{ date: '2026-10-12', menu: [{ dishId }], optOutReason: null }] : [])

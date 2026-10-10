@@ -1,5 +1,6 @@
 import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import { DateTime } from 'luxon'
+import { useWeekNav } from './useWeekNav'
 import { z } from 'zod'
 import type { DinnerRepository } from '~/repository/dinner-repository'
 import type { DishRecommendationsRepository } from '~/repository/dish-recommendations-repository'
@@ -15,7 +16,7 @@ export function planningWindow(monday: string): string[] {
 }
 
 export function useWeekPlanning(options: { family: Ref<string>; account: Ref<string>; dishes: Ref<Dish[]>; unavailableDishLabel: Ref<string>; dinners: DinnerRepository; recommendations: DishRecommendationsRepository; initialMonday?: string }) {
-  const monday = shallowRef(options.initialMonday ?? DateTime.local().startOf('week').toFormat('yyyy-MM-dd'))
+  const monday = shallowRef(options.initialMonday ?? useWeekNav().weekStart.value.toFormat('yyyy-MM-dd'))
   const selectedDate = shallowRef<string | null>(null)
   const saved = shallowRef<PlanningDinner[]>([])
   const loading = shallowRef(false)
@@ -55,6 +56,7 @@ export function useWeekPlanning(options: { family: Ref<string>; account: Ref<str
   }
 
   function navigate(offset: number) {
+    if (busy.value) return
     monday.value = DateTime.fromISO(monday.value).plus({ weeks: offset }).toFormat('yyyy-MM-dd')
     if (selectedDate.value && !dates.value.includes(selectedDate.value)) selectedDate.value = null
   }

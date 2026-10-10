@@ -364,6 +364,7 @@
     "assignTitle": "Planlæg {name}",
     "add": "Tilføj",
     "alreadyAssigned": "Allerede planlagt",
+    "alreadyAssignedDay": "\"{dish}\" er allerede planlagt til {day}",
     "close": "Luk",
     "refreshIdeas": "Opdatér idéer",
     "previousContext": "Disse idéer er fra den forrige uge. Opdatér, når du ønsker idéer til denne uge.",
