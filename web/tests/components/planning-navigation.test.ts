@@ -13,7 +13,7 @@ describe('additive planning navigation', () => {
     vi.stubGlobal('useDisplay', () => ({ smAndDown: shallowRef(mobile), md: shallowRef(false) }))
     vi.stubGlobal('useAppStore', () => ({ activeFamilyId: 'family' }))
     vi.stubGlobal('useFamiliesStore', () => ({ getFamilySelectors: async () => {}, getActiveFamily: async () => {} }))
-    vi.stubGlobal('useSnackbar', () => ({ visible: shallowRef(false), color: shallowRef(''), timeout: shallowRef(0), message: shallowRef(''), dismiss: () => {} }))
+    vi.stubGlobal('useSnackbar', () => ({ visible: shallowRef(false), color: shallowRef(''), timeout: shallowRef(0), message: shallowRef(''), action: shallowRef(null), id: shallowRef(0), dismiss: () => {} }))
     vi.stubGlobal('useRoute', () => ({ path }))
     vi.stubGlobal('useI18n', () => ({ t: (key: string) => key }))
     vi.stubGlobal('computed', computed)

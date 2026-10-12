@@ -66,6 +66,7 @@ export function useWeekPlanning(options: { family: Ref<string>; account: Ref<str
     if (!canMutate.value || !dates.value.includes(date)) return
     const day = days.value.find(day => day.date === date)
     if (!day) throw new Error('DAY_OUTSIDE_WINDOW')
+    notice.value = null
     const present = day.menu.some(item => item.dishId === dishId)
     if ((kind === 'added') === present) { feedback.value = null; notice.value = kind === 'added' ? 'duplicate' : 'unchanged'; return 'NoOp' }
     if (kind === 'added' && day.optOutReason && !confirmedOptOut) throw new Error('OPT_OUT_CONFIRMATION_REQUIRED')

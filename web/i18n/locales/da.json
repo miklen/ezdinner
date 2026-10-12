@@ -53,6 +53,7 @@
     "signOut": "Log ud"
   },
   "common": {
+    "close": "Luk",
     "cancel": "Annuller",
     "save": "Gem",
     "create": "Opret",

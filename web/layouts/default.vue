@@ -105,15 +105,20 @@ watch(() => appStore.activeFamilyId, () => {
     </v-overlay>
 
     <v-snackbar
-      v-model="snackbar.visible.value"
+      :key="snackbar.id.value"
+      :model-value="snackbar.visible.value"
       :color="snackbar.color.value"
       :timeout="snackbar.timeout.value"
       location="bottom"
       rounded="lg"
+      @update:model-value="!$event && snackbar.dismiss()"
     >
       {{ snackbar.message.value }}
       <template #actions>
-        <v-btn variant="text" @click="snackbar.dismiss()">
+        <v-btn v-if="snackbar.action.value" variant="text" :disabled="snackbar.action.value.disabled?.value" @click="snackbar.runAction()">
+          {{ snackbar.action.value.label }}
+        </v-btn>
+        <v-btn variant="text" :aria-label="t('common.close')" @click="snackbar.dismiss()">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </template>

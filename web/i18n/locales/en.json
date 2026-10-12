@@ -53,6 +53,7 @@
     "signOut": "Sign out"
   },
   "common": {
+    "close": "Close",
     "cancel": "Cancel",
     "save": "Save",
     "create": "Create",

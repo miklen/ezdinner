@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
-import { computed, defineComponent, h, KeepAlive, nextTick, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue'
+import { computed, defineComponent, h, KeepAlive, nextTick, onMounted, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue'
 import { DateTime } from 'luxon'
 import { createPinia, setActivePinia } from 'pinia'
 import { z } from 'zod'
 import Workspace from '~/components/WeekPlanning/Workspace.vue'
+import Layout from '~/layouts/default.vue'
+import { useSnackbar } from '~/composables/useSnackbar'
 import PlannedDinnerDetails from '~/components/Plan/PlannedDinnerDetails.vue'
 import type { Dinner, Dish, WishlistItem } from '~/types'
 import type { PlanningDinner } from '~/types/week-planning'
@@ -86,6 +88,7 @@ const undo = vi.fn(async (_family: string, target: string, intent: { before: { d
 })
 
 const Block = defineComponent({ setup: (_, { slots }) => () => h('div', slots.default?.()) })
+const Snackbar = defineComponent({ props: { modelValue: Boolean }, setup: (props, { slots }) => () => props.modelValue ? h('div', { role: 'status' }, [slots.default?.(), slots.actions?.()]) : null })
 const Button = defineComponent({ props: { disabled: Boolean, loading: Boolean }, setup: (props, { slots }) => () => h('button', { disabled: props.disabled || props.loading }, slots.default?.()) })
 const Field = defineComponent({ props: { modelValue: String, label: String }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { value: props.modelValue, 'aria-label': props.label, onInput: (event: Event) => { if (event.target instanceof HTMLInputElement) emit('update:modelValue', event.target.value) } }) })
 const Select = defineComponent({ props: { modelValue: String, label: String, items: Array }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('select', { 'aria-label': props.label, value: props.modelValue ?? 'NULL', onChange: (event: Event) => { if (event.target instanceof HTMLSelectElement) emit('update:modelValue', event.target.value === 'NULL' ? null : event.target.value) } }, z.array(z.object({ title: z.string(), value: z.string().nullable() })).parse(props.items).map(item => h('option', { value: item.value ?? 'NULL' }, item.title))) })
@@ -119,6 +122,16 @@ beforeEach(() => {
   catalog = [dish(favouriteId, 'Forgotten favourite', ['Main']), dish(sideId, 'Potato side', ['Side']), dish(unknownId, 'Unclassified soup', [])]
   saved = [{ date: date(0), menu: [{ dishId: sideId }], optOutReason: null }, { date: date(1), menu: [], optOutReason: 'Eating out' }]
   vi.stubGlobal('useI18n', () => ({ t: translate, locale }))
+  useSnackbar().dismiss()
+  vi.stubGlobal('useSnackbar', useSnackbar)
+  vi.stubGlobal('useDisplay', () => ({ smAndDown: shallowRef(false), md: shallowRef(false) }))
+  vi.stubGlobal('useFamiliesStore', () => ({ getFamilySelectors: async () => {}, getActiveFamily: () => {} }))
+  vi.stubGlobal('useRoute', () => ({ path: '/plan-your-week' }))
+  vi.stubGlobal('computed', computed)
+  vi.stubGlobal('reactive', reactive)
+  vi.stubGlobal('shallowRef', shallowRef)
+  vi.stubGlobal('onMounted', onMounted)
+  vi.stubGlobal('watch', watch)
   vi.stubGlobal('useAppStore', () => app)
   vi.stubGlobal('useDishesStore', () => ({ dishes: catalog }))
   vi.stubGlobal('onScopeDispose', onScopeDispose)
@@ -138,7 +151,15 @@ function button(wrapper: VueWrapper, name: string) {
   if (!found) throw new Error(`Missing button: ${name}`)
   return found
 }
-async function workspace() { const wrapper = mount(Workspace, { global, attachTo: document.body }); await flushPromises(); return wrapper }
+async function workspace() {
+  const wrapper = mount(Layout, {
+    slots: { default: () => h(Workspace) },
+    global: { ...global, stubs: { ...global.stubs, VApp: Block, VMain: Block, VContainer: Block, VNavigationDrawer: Block, VList: Block, VListItem: Block, VOverlay: Block, VSnackbar: Snackbar, TopbarLarge: Block, TopbarSmall: Block, BottomNav: Block } },
+    attachTo: document.body,
+  })
+  await flushPromises()
+  return wrapper
+}
 
 afterEach(() => { vi.useRealTimers() })
 
@@ -171,6 +192,31 @@ describe('existing plan day controls', () => {
 
 describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interactions on %s', today => {
   beforeEach(() => { vi.setSystemTime(DateTime.fromISO(today).toJSDate()) })
+  it.each(['en', 'da'])('dismisses shared assignment feedback without changing the saved plan in %s', async language => {
+    locale.value = language
+    const wrapper = await workspace()
+    await button(wrapper, translate('weekPlanning.planDish')).trigger('click')
+    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="status"]').text()).toContain('Forgotten favourite')
+    expect(useSnackbar().timeout.value).toBe(6000)
+    await wrapper.findComponent(Snackbar).find('button[aria-label="' + translate('common.close') + '"]').trigger('click')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(saved[0].menu.map(item => item.dishId)).toEqual([sideId, favouriteId])
+    expect(undo).not.toHaveBeenCalled()
+  })
+
+  it('clears the Undo notification when the family changes', async () => {
+    const wrapper = await workspace()
+    await button(wrapper, 'Plan dish').trigger('click')
+    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="status"]').text()).toContain('Undo')
+    app.activeFamilyId = 'other-family'
+    await flushPromises()
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    expect(useSnackbar().action.value).toBeNull()
+  })
   it('skips a selected day with a previous reason and removes its opt-out', async () => {
     const wrapper = await workspace()
     await wrapper.findAll('.dinner-card__header')[4].trigger('click')

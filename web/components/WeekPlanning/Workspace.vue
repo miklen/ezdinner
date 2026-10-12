@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onActivated, shallowRef, watch } from 'vue'
+import { computed, nextTick, onActivated, onDeactivated, shallowRef, watch } from 'vue'
 import { DateTime } from 'luxon'
 import type { Dish, DishStats, WishlistItem } from '~/types'
 import type { PlanningDish } from '~/types/week-planning'
@@ -17,6 +17,7 @@ const app = useAppStore()
 const { $msal } = useNuxtApp()
 const repository = useRepositories()
 const { t, locale } = useI18n()
+const snackbar = useSnackbar()
 const family = computed(() => app.activeFamilyId)
 const account = computed(() => $msal.isAuthenticated.value ? ($msal.getObjectId() ?? '') : '')
 const dishes = shallowRef<Dish[]>([])
@@ -26,6 +27,22 @@ const catalogError = shallowRef(false)
 const catalogLoading = shallowRef(false)
 const mobileOverview = shallowRef(false)
 const planning = useWeekPlanning({ family, account, dishes, unavailableDishLabel: computed(() => t('weekPlanning.dishUnavailable')), dinners: repository.dinners, recommendations: repository.dishRecommendations })
+let dismissFeedback: (() => void) | undefined
+watch([planning.feedback, planning.notice], ([feedback, notice]) => {
+  if (feedback) {
+    dismissFeedback = snackbar.show(t(`weekPlanning.${feedback.kind}`, {
+      name: dishes.value.find(dish => dish.id === feedback.dishId)?.name,
+      date: DateTime.fromISO(feedback.date).setLocale(locale.value).toFormat('ccc d/M'),
+    }), { type: 'success', duration: 6000, action: { label: t('weekPlanning.undo'), onClick: planning.undo, disabled: planning.busy } })
+    return
+  }
+  if (notice) {
+    dismissFeedback = snackbar.show(t(`weekPlanning.${notice}`), { type: notice === 'conflict' ? 'error' : notice === 'restored' ? 'success' : 'info' })
+    return
+  }
+  dismissFeedback?.()
+}, { flush: 'sync' })
+onDeactivated(() => dismissFeedback?.())
 const recommendations = useDishRecommendations({ family, account, monday: planning.monday, target: planning.selectedDate, locale, repository: repository.dishRecommendations })
 const entries = computed<PlanningDish[]>(() => dishes.value.filter(dish => !dish.isArchived).map(dish => ({ dish, stats: stats.value[dish.id], wishVotes: wishes.value.find(wish => wish.dishId === dish.id)?.voteCount })))
 const explorationStore = useDishExplorationPreferencesStore()
@@ -113,7 +130,7 @@ onActivated(async () => {
   await nextTick()
   if (recipeReturn) { exploration.restorePosition(false); recipeReturn = false }
 })
-onScopeDispose(() => { catalogGeneration++ })
+onScopeDispose(() => { catalogGeneration++; dismissFeedback?.() })
 </script>
 
 <template>
@@ -134,10 +151,6 @@ onScopeDispose(() => { catalogGeneration++ })
         <PlanningWeekOverview :monday="planning.monday.value" :days="planning.days.value" :selected-date="planning.selectedDate.value" :busy="!planning.canMutate.value" :navigation-disabled="planning.busy.value" :reasons="planning.optOutReasons.value" @navigate="planning.navigate" @select="planning.selectedDate.value = $event" @remove="(id, date) => planning.mutate('removed', id, date)" @opt-out="planning.updateOptOut" />
       </aside>
     </div>
-    <div v-if="planning.feedback.value || planning.notice.value" class="workspace-feedback" role="status">
-      <template v-if="planning.feedback.value">{{ t(`weekPlanning.${planning.feedback.value.kind}`, { name: dishes.find(dish => dish.id === planning.feedback.value?.dishId)?.name, date: DateTime.fromISO(planning.feedback.value.date).setLocale(locale).toFormat('ccc d/M') }) }} <v-btn :disabled="planning.busy.value" variant="text" @click="planning.undo">{{ t('weekPlanning.undo') }}</v-btn></template>
-      <template v-else-if="planning.notice.value">{{ t(`weekPlanning.${planning.notice.value}`) }}</template>
-    </div>
     <PlanningAssignmentPicker :open="!!pickerDish" :monday="planning.monday.value" :dish-id="pickerDish?.id ?? ''" :dish-name="pickerDish?.name ?? ''" :days="planning.days.value" :busy="planning.busy.value" :loading="planning.loading.value" :can-mutate="planning.canMutate.value" :error="planning.error.value" @close="pickerDish = null" @assign="pickerDish && assign(pickerDish.id, $event)" @navigate="planning.navigate" @retry="planning.refresh" />
     <v-dialog :model-value="!!optOutConfirmation" max-width="460" @update:model-value="!$event && (optOutConfirmation = null)">
       <v-card :title="t('weekPlanning.clearOptOutTitle')"><v-card-text>{{ t('weekPlanning.clearOptOutWarning', { reason: optOutConfirmation?.reason }) }}</v-card-text><v-card-actions><v-btn @click="optOutConfirmation = null">{{ t('weekPlanning.cancel') }}</v-btn><v-btn color="primary" @click="confirmOptOut">{{ t('weekPlanning.confirmAdd') }}</v-btn></v-card-actions></v-card>
@@ -152,7 +165,6 @@ onScopeDispose(() => { catalogGeneration++ })
 .workspace-exploration { min-width: 0; }
 .workspace-week { position: sticky; top: 90px; max-height: calc(100dvh - 110px); overflow-y: auto; }
 .mobile-week-control { display: none; }
-.workspace-feedback { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 2000; background: var(--color-surface); padding: var(--space-2) var(--space-4); border: 1px solid var(--color-primary); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); max-width: 90vw; }
 @media (max-width: 959px) {
   .workspace-layout { display: flex; flex-direction: column; gap: var(--space-3); }
   .workspace-exploration { width: 100%; order: 2; }
