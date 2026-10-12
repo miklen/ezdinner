@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DateTime } from 'luxon'
 import type { Dish, DishStats } from '~/types'
+import DishCardSkeleton from '~/components/Dish/DishCardSkeleton.vue'
 import { useDishCatalogPreferences } from '~/composables/useDishCatalogPreferences'
 import type { CatalogSortKey as SortKey } from '~/utils/dish-catalog-preferences'
 
@@ -375,12 +376,7 @@ watch([catalogPreferences.scope, showArchived], init, { immediate: true })
 
     <!-- ── Skeleton loaders ────────────────────────────────────────────────── -->
     <div v-if="loading" class="dish-grid">
-      <v-skeleton-loader
-        v-for="i in 6"
-        :key="i"
-        type="card"
-        :elevation="0"
-      />
+      <DishCardSkeleton v-for="i in 6" :key="i" />
     </div>
 
     <!-- ── Empty: no dishes in family ─────────────────────────────────────── -->

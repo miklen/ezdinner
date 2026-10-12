@@ -4,7 +4,8 @@ import type { DishRole } from '~/types'
 import type { PlanningDish } from '~/types/week-planning'
 import type { RecommendationState } from '~/types/dish-recommendations'
 import PlanningDishCard from './PlanningDishCard.vue'
-const props = defineProps<{ state: RecommendationState; entries: PlanningDish[]; constraints: string[]; role: DishRole | null; nameFilter?: string; scopeDecisionRequired: boolean; stale: boolean; scopedDay: string | null; planned: Record<string, string[]>; target: string | null; busy: boolean }>()
+import DishCardSkeleton from '~/components/Dish/DishCardSkeleton.vue'
+const props = defineProps<{ state: RecommendationState; entries: PlanningDish[]; constraints: string[]; role: DishRole | null; nameFilter?: string; scopeDecisionRequired: boolean; stale: boolean; scopedDay: string | null; planned: Record<string, string[]>; target: string | null; busy: boolean; loading?: boolean }>()
 const emit = defineEmits<{ ask: [text: string]; more: []; refresh: []; retry: []; reset: []; constraints: [constraints: string[]]; role: [role: DishRole | null]; nameFilter: [text: string]; scope: [choice: 'keep' | 'new']; assign: [id: string]; otherDate: [id: string]; dismiss: [id: string] }>()
 const { t } = useI18n()
 const text = shallowRef('')
@@ -39,7 +40,10 @@ function editConstraint(index: number, value: string) { emit('constraints', prop
     </form>
     <v-alert v-if="state.status === 'failed'" type="error" variant="tonal" role="alert">{{ t('weekPlanning.recommendationFailed') }} <v-btn variant="text" @click="emit('retry')">{{ t('weekPlanning.retry') }}</v-btn></v-alert>
     <p v-if="state.result && state.result.outcome !== 'Matches'" role="status">{{ state.result.message || t(`weekPlanning.outcomes.${state.result.outcome}`) }}</p>
-    <div class="recommendation-grid">
+    <div v-if="!entries.length && (loading || state.status === 'loading')" class="recommendation-grid" role="status" :aria-label="t('weekPlanning.loading')" aria-busy="true">
+      <DishCardSkeleton v-for="index in 6" :key="index" />
+    </div>
+    <div v-else class="recommendation-grid">
       <PlanningDishCard v-for="entry in entries" :key="entry.dish.id" :entry="entry" :assigned-dates="planned[entry.dish.id] ?? []" :target="target" :busy="busy" @assign="emit('assign', $event)" @other-date="emit('otherDate', $event)" @dismiss="emit('dismiss', $event)" />
     </div>
     <v-btn v-if="state.result" variant="tonal" :disabled="scopeDecisionRequired || state.status === 'loading'" @click="emit('more')">{{ t('weekPlanning.moreIdeas') }}</v-btn>

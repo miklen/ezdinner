@@ -5,7 +5,7 @@ import type { Dinner } from '~/types'
 import type { PlanningDay } from '~/types/week-planning'
 import WeekPlan from '~/components/Plan/WeekPlan.vue'
 import DinnerDayDetails from '~/components/Plan/DinnerDayDetails.vue'
-const props = defineProps<{ monday: string; days: PlanningDay[]; selectedDate: string | null; busy: boolean; navigationDisabled?: boolean; reasons: string[] }>()
+const props = defineProps<{ monday: string; days: PlanningDay[]; selectedDate: string | null; busy: boolean; loading?: boolean; navigationDisabled?: boolean; reasons: string[] }>()
 const emit = defineEmits<{ navigate: [offset: number]; select: [date: string | null]; remove: [dishId: string, date: string]; optOut: [date: string, reason: string | null] }>()
 const { t } = useI18n()
 const weekStart = computed(() => DateTime.fromISO(props.monday))
@@ -21,7 +21,7 @@ function navigate(date: DateTime) {
 
 <template>
   <section class="week-overview" :aria-label="t('weekPlanning.overview')">
-    <WeekPlan :monday="weekStart" :dinners="dinners" :selected-date="selectedDate" :navigation-disabled="navigationDisabled" clear-target @navigate="navigate" @select="emit('select', $event)">
+    <WeekPlan :monday="weekStart" :dinners="dinners" :selected-date="selectedDate" :loading="loading" :navigation-disabled="navigationDisabled" clear-target @navigate="navigate" @select="emit('select', $event)">
       <template #details="{ dinner }">
         <DinnerDayDetails :dinner="dinner" :reasons="reasons" :busy="busy" @remove-dish="emit('remove', $event, dinner.date.toFormat('yyyy-MM-dd'))" @set-opt-out="emit('optOut', dinner.date.toFormat('yyyy-MM-dd'), $event)" @remove-opt-out="emit('optOut', dinner.date.toFormat('yyyy-MM-dd'), null)">
           <template #assignment>

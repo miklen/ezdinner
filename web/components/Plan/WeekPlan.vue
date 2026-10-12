@@ -35,7 +35,7 @@ const previousWeekendLabel = computed(() => t('plan.weekWeekend', { week: props.
         <v-skeleton-loader type="list-item-two-line" />
       </div>
     </template>
-    <template v-else>
+    <div v-show="!loading" :inert="loading">
       <template v-for="(group, index) in groups" :key="index">
         <div v-if="index === 0 && group.length" class="week-section-label">{{ previousWeekendLabel }}</div>
         <PlannedDinner
@@ -56,7 +56,7 @@ const previousWeekendLabel = computed(() => t('plan.weekWeekend', { week: props.
         </PlannedDinner>
         <div v-if="index === 0 && group.length" class="week-divider" />
       </template>
-    </template>
+    </div>
   </div>
 </template>
 

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, shallowRef, useId } from 'vue'
 import PlanningDishCard from './PlanningDishCard.vue'
+import DishCardSkeleton from '~/components/Dish/DishCardSkeleton.vue'
+import EmptyState from '~/components/EmptyState.vue'
 import type { PlanningDish, ExplorationPreferences } from '~/types/week-planning'
-const props = defineProps<{ entries: PlanningDish[]; preferences: ExplorationPreferences; planned: Record<string, string[]>; target: string | null; busy: boolean; cuisines: string[] }>()
+const props = defineProps<{ entries: PlanningDish[]; preferences: ExplorationPreferences; planned: Record<string, string[]>; target: string | null; busy: boolean; loading?: boolean; cuisines: string[] }>()
 const emit = defineEmits<{ update: [preferences: ExplorationPreferences]; assign: [id: string]; otherDate: [id: string] }>()
 const { t } = useI18n()
 const filtersExpanded = shallowRef(false)
@@ -48,8 +50,11 @@ function selectSort(sort: ExplorationPreferences['sort']) {
         </div>
       </div>
     </div>
-    <p v-if="!entries.length" role="status">{{ t('weekPlanning.emptyCatalog') }}</p>
-    <div class="dish-grid">
+    <div v-if="loading && !entries.length" class="dish-grid" role="status" :aria-label="t('weekPlanning.loading')" aria-busy="true">
+      <DishCardSkeleton v-for="index in 6" :key="index" />
+    </div>
+    <EmptyState v-else-if="!entries.length" icon="mdi-silverware-fork-knife" :message="t('weekPlanning.emptyCatalog')" role="status" />
+    <div v-else class="dish-grid">
       <PlanningDishCard v-for="entry in entries" :key="entry.dish.id" :entry="entry" :assigned-dates="planned[entry.dish.id] ?? []" :target="target" :busy="busy" @assign="emit('assign', $event)" @other-date="emit('otherDate', $event)" />
     </div>
   </section>

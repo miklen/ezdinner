@@ -89,7 +89,7 @@ async function loadCatalog(refreshIdeas = true) {
     dishes.value = catalog
     stats.value = usage
     wishes.value = activeWishes
-    if (refreshIdeas) await recommendations.submit('automatic')
+    if (refreshIdeas) void recommendations.submit('automatic')
   }
   catch { if (token === catalogGeneration) catalogError.value = true }
   finally { if (token === catalogGeneration) catalogLoading.value = false }
@@ -141,14 +141,12 @@ onScopeDispose(() => { catalogGeneration++; dismissFeedback?.() })
     <div class="workspace-layout">
       <main class="workspace-exploration">
         <v-alert v-if="catalogError" type="error">{{ t('weekPlanning.catalogFailed') }} <v-btn @click="loadCatalog()">{{ t('weekPlanning.retry') }}</v-btn></v-alert>
-        <v-progress-linear v-if="catalogLoading" indeterminate :aria-label="t('weekPlanning.loading')" />
-        <RecommendationExplorer :key="explorationScope" :state="recommendations.state.value" :entries="suggested" :constraints="recommendations.constraints.value" :role="recommendations.role.value" :name-filter="recommendations.nameFilter.value" :scope-decision-required="recommendations.scopeDecisionRequired.value" :stale="recommendations.staleContext.value" :scoped-day="recommendations.scopedDay.value" :planned="planned" :target="planning.selectedDate.value" :busy="!planning.canMutate.value" @ask="recommendations.submit('request', $event)" @more="recommendations.submit('more')" @refresh="recommendations.submit(recommendations.constraints.value.length ? 'request' : 'automatic')" @retry="recommendations.retry" @reset="resetRequest" @constraints="recommendations.constraints.value = $event" @role="recommendations.role.value = $event" @name-filter="recommendations.nameFilter.value = $event" @scope="recommendations.decideScope" @assign="assign" @other-date="openPicker" @dismiss="recommendations.dismiss" />
-        <DishExplorer :entries="exploration.visible.value" :preferences="exploration.preferences.value" :planned="planned" :target="planning.selectedDate.value" :busy="!planning.canMutate.value" :cuisines="cuisines" @update="exploration.update" @assign="assign" @other-date="openPicker" />
+        <RecommendationExplorer :key="explorationScope" :loading="catalogLoading" :state="recommendations.state.value" :entries="suggested" :constraints="recommendations.constraints.value" :role="recommendations.role.value" :name-filter="recommendations.nameFilter.value" :scope-decision-required="recommendations.scopeDecisionRequired.value" :stale="recommendations.staleContext.value" :scoped-day="recommendations.scopedDay.value" :planned="planned" :target="planning.selectedDate.value" :busy="!planning.canMutate.value" @ask="recommendations.submit('request', $event)" @more="recommendations.submit('more')" @refresh="recommendations.submit(recommendations.constraints.value.length ? 'request' : 'automatic')" @retry="recommendations.retry" @reset="resetRequest" @constraints="recommendations.constraints.value = $event" @role="recommendations.role.value = $event" @name-filter="recommendations.nameFilter.value = $event" @scope="recommendations.decideScope" @assign="assign" @other-date="openPicker" @dismiss="recommendations.dismiss" />
+        <DishExplorer :loading="catalogLoading" :entries="exploration.visible.value" :preferences="exploration.preferences.value" :planned="planned" :target="planning.selectedDate.value" :busy="!planning.canMutate.value" :cuisines="cuisines" @update="exploration.update" @assign="assign" @other-date="openPicker" />
       </main>
       <aside class="workspace-week" :class="{ 'workspace-week--open': mobileOverview }">
-        <v-progress-linear v-if="planning.loading.value" indeterminate :aria-label="t('weekPlanning.loading')" />
         <v-alert v-if="planning.error.value" type="error" role="alert">{{ t(`weekPlanning.${planning.error.value}`) }} <v-btn @click="planning.refresh">{{ t('weekPlanning.refreshWeek') }}</v-btn></v-alert>
-        <PlanningWeekOverview :monday="planning.monday.value" :days="planning.days.value" :selected-date="planning.selectedDate.value" :busy="!planning.canMutate.value" :navigation-disabled="planning.busy.value" :reasons="planning.optOutReasons.value" @navigate="planning.navigate" @select="planning.selectedDate.value = $event" @remove="(id, date) => planning.mutate('removed', id, date)" @opt-out="planning.updateOptOut" />
+        <PlanningWeekOverview :loading="planning.loading.value" :monday="planning.monday.value" :days="planning.days.value" :selected-date="planning.selectedDate.value" :busy="!planning.canMutate.value" :navigation-disabled="planning.busy.value" :reasons="planning.optOutReasons.value" @navigate="planning.navigate" @select="planning.selectedDate.value = $event" @remove="(id, date) => planning.mutate('removed', id, date)" @opt-out="planning.updateOptOut" />
       </aside>
     </div>
     <PlanningAssignmentPicker :open="!!pickerDish" :monday="planning.monday.value" :dish-id="pickerDish?.id ?? ''" :dish-name="pickerDish?.name ?? ''" :days="planning.days.value" :busy="planning.busy.value" :loading="planning.loading.value" :can-mutate="planning.canMutate.value" :error="planning.error.value" @close="pickerDish = null" @assign="pickerDish && assign(pickerDish.id, $event)" @navigate="planning.navigate" @retry="planning.refresh" />

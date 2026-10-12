@@ -32,6 +32,7 @@ let undoConflict = false
 let catalog: Dish[] = []
 let wishes: WishlistItem[] = []
 const readDinners = vi.fn(async () => structuredClone(saved))
+const readCatalog = vi.fn(async () => catalog)
 const setOptOut = vi.fn(async (_family: string, target: DateTime, reason: string) => {
   const chosenDate = target.toFormat('yyyy-MM-dd')
   saved = saved.filter(day => day.date !== chosenDate)
@@ -112,6 +113,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   changeMenu.mockReset().mockImplementation(persistMenu)
   readDinners.mockReset().mockImplementation(async () => structuredClone(saved))
+  readCatalog.mockReset().mockImplementation(async () => catalog)
   setActivePinia(createPinia())
   locale.value = 'en'
   app.activeFamilyId = 'family'
@@ -137,7 +139,7 @@ beforeEach(() => {
   vi.stubGlobal('onScopeDispose', onScopeDispose)
   vi.stubGlobal('useNuxtApp', () => ({ $msal: { isAuthenticated: shallowRef(true), getObjectId: () => account.value } }))
   vi.stubGlobal('useRepositories', () => ({
-    dishes: { all: async () => catalog, allUsageStats: async () => Object.fromEntries(catalog.map(dish => [dish.id, dish.dishStats])), getFull: async (id: string) => catalog.find(dish => dish.id === id) },
+    dishes: { all: readCatalog, allUsageStats: async () => Object.fromEntries(catalog.map(dish => [dish.id, dish.dishStats])), getFull: async (id: string) => catalog.find(dish => dish.id === id) },
     wishlist: { getWishlist: async () => wishes },
     dinners: { getRange: readDinners, addDishToMenu: add, removeDishFromMenu: remove, setOptOut, removeOptOut, getOptOutReasons: async () => ['Family gathering'] },
     dishRecommendations: { recommend, undo, changeMenu },
@@ -192,6 +194,61 @@ describe('existing plan day controls', () => {
 
 describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interactions on %s', today => {
   beforeEach(() => { vi.setSystemTime(DateTime.fromISO(today).toJSDate()) })
+  it.each(['en', 'da'])('shows card placeholders without an empty catalog message while dishes load in %s', async language => {
+    locale.value = language
+    let finishLoading: (dishes: Dish[]) => void = () => { throw new Error('Catalog request has not started') }
+    readCatalog.mockImplementationOnce(() => new Promise(resolve => { finishLoading = resolve }))
+    const wrapper = await workspace()
+    expect(wrapper.find('.dish-grid[aria-busy="true"]').attributes('aria-label')).toBe(translate('weekPlanning.loading'))
+    expect(wrapper.find('.recommendation-grid[aria-busy="true"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain(translate('weekPlanning.emptyCatalog'))
+    expect(wrapper.findAll('.planning-card')).toHaveLength(0)
+    finishLoading(catalog)
+    await flushPromises()
+    expect(wrapper.find('.dish-grid[aria-busy="true"]').exists()).toBe(false)
+    expect(wrapper.findAll('.dish-grid .planning-card__name').map(card => card.text())).toEqual(['Forgotten favourite', 'Unclassified soup'])
+  })
+
+  it('shows the catalog while initial ideas are still loading', async () => {
+    const result = { outcome: 'Matches', dishes: [match()], activeConstraints: [], contextSummary: '', message: null }
+    let finishLoading: (response: typeof result) => void = () => { throw new Error('Recommendation request has not started') }
+    recommend.mockImplementationOnce(() => new Promise(resolve => { finishLoading = resolve }))
+    const wrapper = await workspace()
+    expect(wrapper.find('.dish-grid[aria-busy="true"]').exists()).toBe(false)
+    expect(wrapper.findAll('.dish-grid .planning-card__name').map(card => card.text())).toEqual(['Forgotten favourite', 'Unclassified soup'])
+    expect(wrapper.find('.recommendation-grid[aria-busy="true"]').exists()).toBe(true)
+    finishLoading(result)
+    await flushPromises()
+    expect(wrapper.find('.recommendation-grid[aria-busy="true"]').exists()).toBe(false)
+    expect(wrapper.find('.recommendation-grid').text()).toContain('Forgotten favourite')
+  })
+
+  it('keeps prior ideas visible while more ideas load', async () => {
+    const wrapper = await workspace()
+    const result = { outcome: 'Matches', dishes: [match(unknownId)], activeConstraints: [], contextSummary: '', message: null }
+    let finishLoading: (response: typeof result) => void = () => { throw new Error('Recommendation request has not started') }
+    recommend.mockImplementationOnce(() => new Promise(resolve => { finishLoading = resolve }))
+    await button(wrapper, translate('weekPlanning.moreIdeas')).trigger('click')
+    expect(wrapper.find('.recommendation-grid[aria-busy="true"]').exists()).toBe(false)
+    expect(wrapper.find('.recommendation-grid').text()).toContain('Forgotten favourite')
+    finishLoading(result)
+    await flushPromises()
+    expect(wrapper.findAll('.recommendation-grid .planning-card__name').map(card => card.text())).toEqual(['Forgotten favourite', 'Unclassified soup'])
+  })
+
+  it('shows week placeholders while navigating instead of offering unloaded days', async () => {
+    const wrapper = await workspace()
+    let finishLoading: (dinners: PlanningDinner[]) => void = () => { throw new Error('Week request has not started') }
+    readDinners.mockImplementationOnce(() => new Promise(resolve => { finishLoading = resolve }))
+    await button(wrapper, translate('plan.nextWeekAriaLabel')).trigger('click')
+    expect(wrapper.findAll('.workspace-week .skeleton-card')).toHaveLength(9)
+    expect(wrapper.findAll('.workspace-week .dinner-card__header').every(day => !day.isVisible())).toBe(true)
+    finishLoading([])
+    await flushPromises()
+    expect(wrapper.findAll('.workspace-week .skeleton-card')).toHaveLength(0)
+    expect(wrapper.findAll('.workspace-week .dinner-card__header')).toHaveLength(9)
+  })
+
   it.each(['en', 'da'])('dismisses shared assignment feedback without changing the saved plan in %s', async language => {
     locale.value = language
     const wrapper = await workspace()
