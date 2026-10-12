@@ -253,7 +253,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
     locale.value = language
     const wrapper = await workspace()
     await button(wrapper, translate('weekPlanning.planDish')).trigger('click')
-    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[2].find('button').trigger('click')
     await flushPromises()
     expect(wrapper.find('[role="status"]').text()).toContain('Forgotten favourite')
     expect(useSnackbar().timeout.value).toBe(6000)
@@ -266,7 +266,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
   it('clears the Undo notification when the family changes', async () => {
     const wrapper = await workspace()
     await button(wrapper, 'Plan dish').trigger('click')
-    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[2].find('button').trigger('click')
     await flushPromises()
     expect(wrapper.find('[role="status"]').text()).toContain('Undo')
     app.activeFamilyId = 'other-family'
@@ -405,7 +405,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
   it('clears obsolete opt-out confirmation on navigation while retaining the dish', async () => {
     const wrapper = await workspace()
     await button(wrapper, 'Plan dish').trigger('click')
-    await wrapper.findAll('.assignment-day')[3].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[3].find('button').trigger('click')
     expect(wrapper.findAll('[role="dialog"]')).toHaveLength(2)
     await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
     await flushPromises()
@@ -417,7 +417,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
   it.each(['family', 'account'])('closes the picker and clears its pending confirmation on %s change', async scope => {
     const wrapper = await workspace()
     await button(wrapper, 'Plan dish').trigger('click')
-    await wrapper.findAll('.assignment-day')[3].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[3].find('button').trigger('click')
     if (scope === 'family') app.activeFamilyId = 'another-family'
     if (scope === 'account') account.value = 'another-account'
     await flushPromises()
@@ -484,9 +484,9 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
   it('safely undoes the additive assignment in its original date after picker navigation', async () => {
     const wrapper = await workspace()
     await button(wrapper, 'Plan dish').trigger('click')
-    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[2].find('button').trigger('click')
     await flushPromises()
-    expect(wrapper.findAll('.assignment-day')[2].find('button').attributes('disabled')).toBeDefined()
+    expect(wrapper.findAll('.plan-picker__day')[2].find('button').attributes('disabled')).toBeDefined()
     expect(saved[0].menu.map(item => item.dishId)).toEqual([sideId, favouriteId])
     await wrapper.findAll('.plan-picker .week-nav__arrow')[1].trigger('click')
     await flushPromises()
@@ -568,7 +568,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
     expect(wrapper.find('.dish-grid .planning-card').text()).toContain('Family wish · 2 votes')
     if (outcome !== 'Changed') changeMenu.mockResolvedValueOnce({ outcome })
     await button(wrapper, 'Plan dish').trigger('click')
-    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[2].find('button').trigger('click')
     await flushPromises()
     expect(wrapper.find('.dish-grid .planning-card').text().includes('Family wish · 2 votes')).toBe(outcome !== 'Changed')
   })
@@ -577,7 +577,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
     const wrapper = await workspace()
     saved[0].menu.push({ dishId: favouriteId })
     await button(wrapper, 'Plan dish').trigger('click')
-    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[2].find('button').trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('This dish is already planned')
     expect(wrapper.findAll('button').some(button => button.text() === 'Undo')).toBe(false)
@@ -784,13 +784,13 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     await button(wrapper, 'Plan dish').trigger('click')
-    expect(wrapper.findAll('[role="dialog"] .assignment-day')).toHaveLength(9)
+    expect(wrapper.findAll('[role="dialog"] .plan-picker__day')).toHaveLength(9)
     expect(wrapper.find('[role="dialog"]').text()).toContain('Potato side')
-    const row = wrapper.findAll('.assignment-day')[2]
+    const row = wrapper.findAll('.plan-picker__day')[2]
     await row.find('button').trigger('click')
     await flushPromises()
     expect(saved.find(day => day.date === date(0))?.menu.map(item => item.dishId)).toEqual([sideId, favouriteId])
-    await wrapper.findAll('.assignment-day')[4].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[4].find('button').trigger('click')
     await flushPromises()
     expect(saved.find(day => day.date === date(2))?.menu.map(item => item.dishId)).toEqual([favouriteId])
     await button(wrapper, 'Close').trigger('click')
@@ -809,7 +809,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
   it('requires confirmation before clearing an opt-out', async () => {
     const wrapper = await workspace()
     await button(wrapper, 'Plan dish').trigger('click')
-    await wrapper.findAll('.assignment-day')[3].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[3].find('button').trigger('click')
     await flushPromises()
     expect(add).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Adding a dish will clear “Eating out”')
@@ -887,7 +887,7 @@ describe.each(['2026-10-12', '2026-10-10'])('planning workspace public interacti
   it('shows undo conflict and keeps exploration open', async () => {
     const wrapper = await workspace()
     await button(wrapper, 'Plan dish').trigger('click')
-    await wrapper.findAll('.assignment-day')[2].find('button').trigger('click')
+    await wrapper.findAll('.plan-picker__day')[2].find('button').trigger('click')
     await flushPromises()
     await button(wrapper, 'Close').trigger('click')
     undoConflict = true

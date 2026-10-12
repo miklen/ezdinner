@@ -2,6 +2,7 @@ import { computed, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 import type { ExplorationPreferences, PlanningDish } from '~/types/week-planning'
 import { defaultExplorationPreferences } from '~/utils/dish-exploration-preferences'
+import { sortDishes } from '~/utils/dish-sorting'
 
 export function useDishExploration(dishes: Ref<PlanningDish[]>, locale: Ref<string>, preferences: Ref<ExplorationPreferences> = shallowRef(defaultExplorationPreferences())) {
   const visible = computed(() => {
@@ -13,14 +14,7 @@ export function useDishExploration(dishes: Ref<PlanningDish[]>, locale: Ref<stri
       (choice.season === 'All' || dish.seasonAffinity === choice.season) &&
       (!choice.cuisine || dish.cuisine === choice.cuisine) &&
       (!choice.wishesOnly || wishVotes !== undefined))
-    const direction = choice.sortDir === 'asc' ? 1 : -1
-    return matching.sort((first, second) => {
-      const alphabetical = first.dish.name.localeCompare(second.dish.name, locale.value)
-      if (choice.sort === 'rating') return direction * (first.dish.rating - second.dish.rating) || alphabetical
-      if (choice.sort === 'usage') return direction * ((first.stats?.timesUsed ?? 0) - (second.stats?.timesUsed ?? 0)) || alphabetical
-      if (choice.sort === 'lastUsed') return direction * ((first.stats?.lastUsed?.toMillis() ?? -Infinity) - (second.stats?.lastUsed?.toMillis() ?? -Infinity)) || alphabetical
-      return direction * alphabetical
-    })
+    return sortDishes(matching, choice.sort === 'usage' ? 'timesUsed' : choice.sort, choice.sortDir, locale.value)
   })
   function update(next: ExplorationPreferences) { preferences.value = next }
   function reset() { preferences.value = defaultExplorationPreferences() }

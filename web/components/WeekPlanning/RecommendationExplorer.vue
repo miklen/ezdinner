@@ -5,6 +5,7 @@ import type { PlanningDish } from '~/types/week-planning'
 import type { RecommendationState } from '~/types/dish-recommendations'
 import PlanningDishCard from './PlanningDishCard.vue'
 import DishCardSkeleton from '~/components/Dish/DishCardSkeleton.vue'
+import CatalogSearch from '~/components/Catalog/Search.vue'
 const props = defineProps<{ state: RecommendationState; entries: PlanningDish[]; constraints: string[]; role: DishRole | null; nameFilter?: string; scopeDecisionRequired: boolean; stale: boolean; scopedDay: string | null; planned: Record<string, string[]>; target: string | null; busy: boolean; loading?: boolean }>()
 const emit = defineEmits<{ ask: [text: string]; more: []; refresh: []; retry: []; reset: []; constraints: [constraints: string[]]; role: [role: DishRole | null]; nameFilter: [text: string]; scope: [choice: 'keep' | 'new']; assign: [id: string]; otherDate: [id: string]; dismiss: [id: string] }>()
 const { t } = useI18n()
@@ -34,7 +35,7 @@ function editConstraint(index: number, value: string) { emit('constraints', prop
     </div>
     <form class="request-form" @submit.prevent="ask">
       <v-select variant="outlined" rounded="lg" density="compact" :model-value="role" :items="roleOptions" :label="t('weekPlanning.requestRole')" hide-details @update:model-value="emit('role', $event)" />
-      <v-text-field variant="outlined" rounded="lg" density="compact" prepend-inner-icon="mdi-magnify" clearable :model-value="nameFilter ?? ''" :placeholder="t('weekPlanning.recommendationNameFilter')" :aria-label="t('weekPlanning.recommendationNameFilter')" maxlength="100" hide-details @update:model-value="emit('nameFilter', $event ?? '')" />
+      <CatalogSearch :model-value="nameFilter ?? ''" :placeholder="t('weekPlanning.recommendationNameFilter')" :maxlength="100" @update:model-value="emit('nameFilter', $event)" />
       <v-textarea v-model="text" variant="outlined" rounded="lg" density="compact" :label="t('weekPlanning.askLabel')" :placeholder="t('weekPlanning.askPlaceholder')" rows="2" auto-grow maxlength="2000" hide-details />
       <div class="request-actions"><v-btn type="submit" color="primary" variant="tonal" rounded="lg" :loading="state.status === 'loading'" :disabled="scopeDecisionRequired || !text.trim()">{{ t('weekPlanning.ask') }}</v-btn><v-btn variant="text" @click="resetRequest">{{ t('weekPlanning.startNew') }}</v-btn></div>
     </form>
@@ -50,7 +51,8 @@ function editConstraint(index: number, value: string) { emit('constraints', prop
   </section>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+@use "~/assets/dish-grid.scss" as dish-grid;
 .recommendation-explorer { padding-bottom: var(--space-6); border-bottom: 1px solid var(--color-border-medium); }
 .recommendation-explorer__heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
 .request-form { display: grid; gap: var(--space-4); margin: var(--space-4) 0; }
@@ -58,6 +60,6 @@ function editConstraint(index: number, value: string) { emit('constraints', prop
 .request-actions { flex-wrap: wrap; }
 .request-constraints { margin-top: var(--space-3); }
 .request-constraint { margin-bottom: var(--space-2); }
-.recommendation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin: var(--space-4) 0; }
-@media (max-width: 600px) { .recommendation-grid { grid-template-columns: 1fr; } }
+.recommendation-grid { @include dish-grid.layout; margin: var(--space-4) 0; }
+
 </style>

@@ -142,6 +142,8 @@
     "sortRating": "Rating",
     "sortTimesUsed": "Times used",
     "sortLastUsed": "Last used",
+    "sortAriaLabel": "Sort by",
+    "filterAriaLabel": "Filter by",
     "filter": "Filter",
     "clearFilter": "\u00d7 clear",
     "archived": "Archived",

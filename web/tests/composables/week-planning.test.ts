@@ -299,6 +299,20 @@ function dish(id: string, roles: Dish['roles'], effortLevel: Dish['effortLevel']
 }
 
 describe('dish exploration', () => {
+  it.each(['asc', 'desc'])('places dishes without serving history last when sorting last-used %s', direction => {
+    const entries = shallowRef<PlanningDish[]>([
+      { dish: dish('Soup unknown', ['Main']) },
+      { dish: dish('Soup recent', ['Main']), stats: { dishId: 'recent', timesUsed: 1, lastUsed: DateTime.fromISO('2026-09-01') } },
+      { dish: dish('Soup old', ['Main']), stats: { dishId: 'old', timesUsed: 3, lastUsed: DateTime.fromISO('2026-01-01') } },
+    ])
+    const exploration = useDishExploration(entries, shallowRef('en'))
+    exploration.update({ ...exploration.preferences.value, sort: 'lastUsed', sortDir: direction === 'asc' ? 'asc' : 'desc' })
+    expect(exploration.visible.value.map(entry => entry.dish.id)).toEqual(direction === 'asc'
+      ? ['Soup old', 'Soup recent', 'Soup unknown']
+      : ['Soup recent', 'Soup old', 'Soup unknown'])
+    expect(entries.value.map(entry => entry.dish.id)).toEqual(['Soup unknown', 'Soup recent', 'Soup old'])
+  })
+
   it('orders rating and usage descending with stable alphabetical ties', () => {
     const entries = shallowRef<PlanningDish[]>([
       { dish: { ...dish('Soup C', ['Main']), rating: 4 }, stats: { dishId: 'Soup C', timesUsed: 8, lastUsed: undefined } },

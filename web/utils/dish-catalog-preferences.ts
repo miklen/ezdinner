@@ -1,5 +1,7 @@
-export type CatalogSortKey = 'name' | 'rating' | 'timesUsed' | 'lastUsed'
-export type CatalogSortDirection = 'asc' | 'desc'
+import type { DishSortDirection, DishSortKey } from './dish-sorting'
+
+export type CatalogSortKey = DishSortKey
+export type CatalogSortDirection = DishSortDirection
 export type CatalogFilterDimension = 'roles' | 'effort' | 'season' | 'cuisine'
 
 export interface DishCatalogPreferences {

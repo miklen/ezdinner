@@ -6,11 +6,14 @@ import { DateTime } from 'luxon'
 import Catalog from '~/pages/dishes/index.vue'
 import type { Dish } from '~/types'
 import { catalogPreferencesKey, defaultCatalogPreferences } from '~/utils/dish-catalog-preferences'
+import english from '~/i18n/locales/en.json'
+import danish from '~/i18n/locales/da.json'
 
 enableAutoUnmount(afterEach)
 afterEach(() => vi.unstubAllGlobals())
 const app = reactive({ activeFamilyId: 'family' })
 const account = shallowRef('account')
+const locale = shallowRef('en')
 const read = vi.fn()
 const usage = vi.fn().mockResolvedValue({})
 const populateDishes = vi.fn().mockResolvedValue(undefined)
@@ -18,6 +21,15 @@ const Block = defineComponent({ setup: (_, { slots }) => () => h('div', slots.de
 const Card = defineComponent({ props: ['dish', 'dishStats'], setup: props => () => h('article', props.dish.name) })
 const Field = defineComponent({ props: ['modelValue'], emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { value: props.modelValue, onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value) }) })
 const Chip = defineComponent({ setup: (_, { slots }) => () => h('button', slots.default?.()) })
+
+function translate(key: string): string {
+  let value: unknown = locale.value === 'da' ? danish : english
+  for (const part of key.split('.')) {
+    if (typeof value !== 'object' || value === null) return key
+    value = Reflect.get(value, part)
+  }
+  return typeof value === 'string' ? value : key
+}
 
 function dish(id: string, rating: number, archived = false): Dish {
   return { id, name: `Rice ${id}`, rating, isArchived: archived, roles: ['Main'], effortLevel: 'Quick', seasonAffinity: 'AllYear', cuisine: 'Italian', dates: [], ratings: [], notes: '', url: '', dishStats: { dishId: id, timesUsed: 0, lastUsed: undefined } }
@@ -38,7 +50,9 @@ beforeEach(() => {
   setActivePinia(createPinia())
   app.activeFamilyId = 'family'
   account.value = 'account'
+  locale.value = 'en'
   read.mockReset().mockResolvedValue([dish('a', 2), dish('b', 4)])
+  usage.mockReset().mockResolvedValue({})
   populateDishes.mockClear()
   const boundaries = {
     computed, ref, shallowRef, watch, onMounted, onScopeDispose,
@@ -49,7 +63,7 @@ beforeEach(() => {
     useWishlistStore: () => ({ fetchWishes: async () => {} }),
     useRepositories: () => ({ dishes: { all: read, allUsageStats: usage } }),
     useSnackbar: () => ({ show: () => {} }),
-    useI18n: () => ({ t: (key: string) => key }),
+    useI18n: () => ({ t: translate, locale }),
     useWeekNav: () => ({ weekStart: shallowRef(DateTime.local().startOf('week')) }),
     useDisplay: () => ({ mdAndUp: shallowRef(false) }),
     useNuxtApp: () => ({ $msal: { isAuthenticated: shallowRef(true), getObjectId: () => account.value } }),
@@ -58,6 +72,52 @@ beforeEach(() => {
 })
 
 describe('catalog navigation uses remembered controls with fresh data', () => {
+  it('preserves multiple selected roles through the shared filter controls', async () => {
+    read.mockResolvedValue([dish('a', 2), dish('b', 4), { ...dish('side', 3), roles: ['Side'] }])
+    const wrapper = page()
+    await flushPromises()
+    await wrapper.find('.catalog__filter-toggle').trigger('click')
+    await wrapper.find('input').setValue('Rice')
+    await wrapper.findAll('.sort-chip')[1].trigger('click')
+    const roles = wrapper.findAll('.filter-tag--role')
+    await roles[0].trigger('click')
+    expect(wrapper.findAll('article').map(card => card.text())).toEqual(['Rice b', 'Rice a'])
+    await roles[1].trigger('click')
+    expect(roles.map(role => role.attributes('aria-pressed'))).toEqual(['true', 'true'])
+    expect(wrapper.findAll('article').map(card => card.text())).toEqual(['Rice b', 'Rice side', 'Rice a'])
+    await wrapper.find('.filter-clear').trigger('click')
+    expect(roles.map(role => role.attributes('aria-pressed'))).toEqual(['false', 'false'])
+    expect(wrapper.find('input').element.value).toBe('Rice')
+    expect(wrapper.findAll('.sort-chip')[1].text()).toContain('↓')
+  })
+
+  it('keeps dishes without serving history last in both last-used sort directions', async () => {
+    read.mockResolvedValue([dish('unknown', 2), dish('recent', 4), dish('old', 3)])
+    usage.mockResolvedValue({
+      recent: { dishId: 'recent', timesUsed: 1, lastUsed: DateTime.fromISO('2026-09-01') },
+      old: { dishId: 'old', timesUsed: 2, lastUsed: DateTime.fromISO('2026-01-01') },
+    })
+    const wrapper = page()
+    await flushPromises()
+    await wrapper.findAll('.sort-chip')[3].trigger('click')
+    expect(wrapper.findAll('article').map(card => card.text())).toEqual(['Rice recent', 'Rice old', 'Rice unknown'])
+    await wrapper.findAll('.sort-chip')[3].trigger('click')
+    expect(wrapper.findAll('article').map(card => card.text())).toEqual(['Rice old', 'Rice recent', 'Rice unknown'])
+  })
+
+  it('updates shared control labels when the locale changes', async () => {
+    const wrapper = page()
+    await flushPromises()
+    expect(wrapper.find('.catalog__sort').attributes('aria-label')).toBe('Sort by')
+    expect(wrapper.find('input').attributes('aria-label')).toBe('Find a dish…')
+    locale.value = 'da'
+    await flushPromises()
+    expect(wrapper.find('.catalog__sort').attributes('aria-label')).toBe('Sortér efter')
+    expect(wrapper.find('.catalog__filter-body').attributes('aria-label')).toBe('Filtrér efter')
+    expect(wrapper.findAll('.sort-chip')[0].text()).toContain(translate('dishes.sortName'))
+    expect(wrapper.find('input').attributes('aria-label')).toBe(translate('dishes.findADish'))
+  })
+
   it('restores search/filter/sort after route remount and sorts newly fetched dishes', async () => {
     const first = page()
     await flushPromises()

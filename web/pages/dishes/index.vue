@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { DateTime } from 'luxon'
-import type { Dish, DishStats } from '~/types'
+import type { Dish, DishStats, DishRole, EffortLevel, SeasonAffinity } from '~/types'
 import DishCardSkeleton from '~/components/Dish/DishCardSkeleton.vue'
 import { useDishCatalogPreferences } from '~/composables/useDishCatalogPreferences'
-import type { CatalogSortKey as SortKey } from '~/utils/dish-catalog-preferences'
+import CatalogControls from '~/components/Catalog/Controls.vue'
+import type { CatalogFilterOption, CatalogSortOption } from '~/types/catalog-controls'
+import { sortDishes } from '~/utils/dish-sorting'
 
 useHead({ title: 'Dishes' })
 
@@ -13,7 +15,7 @@ const dinnersStore = useDinnersStore()
 const wishlistStore = useWishlistStore()
 const { dishes: dishRepo } = useRepositories()
 const { show: showSnackbar } = useSnackbar()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // ── Assistant panel (sidebar + mobile sheet) ──────────────────────────────────
 
@@ -90,42 +92,38 @@ const filterEffort = computed(() => new Set(preferences.value.effort))
 const filterSeason = computed(() => new Set(preferences.value.season))
 const filterCuisine = computed(() => new Set(preferences.value.cuisine))
 
-const filtersExpanded = shallowRef(false)
-
 const activeFilterCount = computed(() =>
   filterRoles.value.size + filterEffort.value.size + filterSeason.value.size + filterCuisine.value.size + (showArchived.value ? 1 : 0),
 )
-
-const hasActiveFilters = computed(() => activeFilterCount.value > 0)
 
 const { toggleFilter, clearFilters, selectSort } = catalogPreferences
 const sortKey = computed(() => preferences.value.sortKey)
 const sortDir = computed(() => preferences.value.sortDir)
 
-const sortChips = computed(() => [
-  { key: 'name' as SortKey, label: t('dishes.sortName') },
-  { key: 'rating' as SortKey, label: t('dishes.sortRating') },
-  { key: 'timesUsed' as SortKey, label: t('dishes.sortTimesUsed') },
-  { key: 'lastUsed' as SortKey, label: t('dishes.sortLastUsed') },
+const sortChips = computed<CatalogSortOption[]>(() => [
+  { key: 'name', label: t('dishes.sortName') },
+  { key: 'rating', label: t('dishes.sortRating') },
+  { key: 'timesUsed', label: t('dishes.sortTimesUsed') },
+  { key: 'lastUsed', label: t('dishes.sortLastUsed') },
 ])
 
 // ── Derived filter options (from loaded dish list) ────────────────────────────
 
 const availableRoles = computed(() => {
-  const roles = new Set<string>()
+  const roles = new Set<DishRole>()
   for (const d of allDishes.value) for (const r of d.roles ?? []) roles.add(r)
   return [...roles].sort()
 })
 
 const availableEffort = computed(() => {
-  const order = ['Quick', 'Medium', 'Elaborate']
+  const order: EffortLevel[] = ['Quick', 'Medium', 'Elaborate']
   const values = new Set<string>()
   for (const d of allDishes.value) if (d.effortLevel) values.add(d.effortLevel)
   return order.filter((e) => values.has(e))
 })
 
 const availableSeason = computed(() => {
-  const order = ['Summer', 'Winter', 'Spring', 'Autumn', 'AllYear']
+  const order: SeasonAffinity[] = ['Summer', 'Winter', 'Spring', 'Autumn', 'AllYear']
   const values = new Set<string>()
   for (const d of allDishes.value) if (d.seasonAffinity) values.add(d.seasonAffinity)
   return order.filter((s) => values.has(s))
@@ -142,7 +140,19 @@ const availableCuisine = computed(() => {
   return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]))
 })
 
-// ── Derived dish list ─────────────────────────────────────────────────────────
+const filters = computed<CatalogFilterOption[]>(() => [
+  ...availableRoles.value.map((value): CatalogFilterOption => ({ dimension: 'roles', value, label: t('dishes.roles.' + value), selected: filterRoles.value.has(value) })),
+  ...availableEffort.value.map((value): CatalogFilterOption => ({ dimension: 'effort', value, label: t('dishes.effortLevels.' + value), selected: filterEffort.value.has(value) })),
+  ...availableSeason.value.map((value): CatalogFilterOption => ({ dimension: 'season', value, label: t('dishes.seasons.' + value), selected: filterSeason.value.has(value) })),
+  ...availableCuisine.value.map(([value, label]): CatalogFilterOption => ({ dimension: 'cuisine', value, label, selected: filterCuisine.value.has(value) })),
+  { dimension: 'archive', value: 'archive', label: t('dishes.archived'), selected: showArchived.value, disabled: loading.value },
+])
+
+function selectFilter(option: CatalogFilterOption) {
+  if (option.dimension === 'archive') { toggleArchived(); return }
+  if (option.dimension === 'wishes') return
+  toggleFilter(option.dimension, option.value)
+}
 
 const dishes = computed<Dish[]>(() => {
   const query = searchDish.value.toLowerCase()
@@ -156,23 +166,7 @@ const dishes = computed<Dish[]>(() => {
     return true
   })
 
-  const dir = sortDir.value === 'asc' ? 1 : -1
-
-  return filtered.sort((a, b) => {
-    switch (sortKey.value) {
-      case 'name':
-        return dir * a.name.localeCompare(b.name)
-      case 'rating':
-        return dir * (a.rating - b.rating)
-      case 'timesUsed':
-        return dir * ((stats.value[a.id]?.timesUsed ?? 0) - (stats.value[b.id]?.timesUsed ?? 0))
-      case 'lastUsed': {
-        const aMs = stats.value[a.id]?.lastUsed?.toMillis() ?? (dir === 1 ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER)
-        const bMs = stats.value[b.id]?.lastUsed?.toMillis() ?? (dir === 1 ? Number.MAX_SAFE_INTEGER : Number.MIN_SAFE_INTEGER)
-        return dir * (aMs - bMs)
-      }
-    }
-  })
+  return sortDishes(filtered.map(dish => ({ dish, stats: stats.value[dish.id] })), sortKey.value, sortDir.value, locale.value).map(entry => entry.dish)
 })
 
 const activeDishes = computed(() => allDishes.value.filter((d) => !d.isArchived))
@@ -262,111 +256,7 @@ watch([catalogPreferences.scope, showArchived], init, { immediate: true })
       </div>
     </div>
 
-    <!-- ── Search bar ──────────────────────────────────────────────────────── -->
-    <v-text-field
-      v-model="searchDish"
-      :placeholder="$t('dishes.findADish')"
-      prepend-inner-icon="mdi-magnify"
-      variant="outlined"
-      rounded="lg"
-      density="compact"
-      hide-details
-      clearable
-      class="catalog__search"
-    />
-
-    <!-- ── Sort row ────────────────────────────────────────────────────────── -->
-    <div class="catalog__sort" role="group" aria-label="Sort by">
-      <v-chip
-        v-for="chip in sortChips"
-        :key="chip.key"
-        :color="sortKey === chip.key ? 'primary' : undefined"
-        :variant="sortKey === chip.key ? 'tonal' : 'outlined'"
-        size="small"
-        class="sort-chip"
-        @click="selectSort(chip.key)"
-      >
-        {{ chip.label }}
-        <span v-if="sortKey === chip.key" class="sort-chip__dir" aria-hidden="true">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
-      </v-chip>
-    </div>
-
-    <!-- ── Filter panel ─────────────────────────────────────────────────────── -->
-    <div class="catalog__filter-section">
-      <!-- Header row — always visible -->
-      <div class="catalog__filter-header">
-        <button
-          class="catalog__filter-toggle"
-          :aria-expanded="filtersExpanded"
-          aria-controls="filter-panel"
-          @click="filtersExpanded = !filtersExpanded"
-        >
-          <span class="catalog__filter-label">{{ $t('dishes.filter') }}</span>
-          <span v-if="hasActiveFilters" class="filter-count">{{ activeFilterCount }}</span>
-          <span class="filter-chevron" :class="{ 'filter-chevron--open': filtersExpanded }" aria-hidden="true">›</span>
-        </button>
-        <button v-if="hasActiveFilters" class="filter-clear" @click="clearFilters">
-          {{ $t('dishes.clearFilter') }}
-        </button>
-      </div>
-
-      <!-- Collapsible body -->
-      <div
-        id="filter-panel"
-        class="catalog__filter-body"
-        :class="{ 'catalog__filter-body--open': filtersExpanded }"
-        role="group"
-        aria-label="Filter by"
-      >
-        <div class="catalog__filter-inner">
-          <template v-if="availableRoles.length">
-            <button
-              v-for="role in availableRoles"
-              :key="role"
-              :class="['filter-tag', 'filter-tag--role', { 'filter-tag--active': filterRoles.has(role) }]"
-              :aria-pressed="filterRoles.has(role)"
-              @click="toggleFilter('roles', role)"
-            ><span class="filter-tag__pip" aria-hidden="true" />{{ $t(`dishes.roles.${role}`) }}</button>
-          </template>
-
-          <template v-if="availableEffort.length">
-            <button
-              v-for="effort in availableEffort"
-              :key="effort"
-              :class="['filter-tag', 'filter-tag--effort', { 'filter-tag--active': filterEffort.has(effort) }]"
-              :aria-pressed="filterEffort.has(effort)"
-              @click="toggleFilter('effort', effort)"
-            ><span class="filter-tag__pip" aria-hidden="true" />{{ $t(`dishes.effortLevels.${effort}`) }}</button>
-          </template>
-
-          <template v-if="availableSeason.length">
-            <button
-              v-for="season in availableSeason"
-              :key="season"
-              :class="['filter-tag', 'filter-tag--season', { 'filter-tag--active': filterSeason.has(season) }]"
-              :aria-pressed="filterSeason.has(season)"
-              @click="toggleFilter('season', season)"
-            ><span class="filter-tag__pip" aria-hidden="true" />{{ $t(`dishes.seasons.${season}`) }}</button>
-          </template>
-
-          <template v-if="availableCuisine.length">
-            <button
-              v-for="[key, label] in availableCuisine"
-              :key="key"
-              :class="['filter-tag', 'filter-tag--cuisine', { 'filter-tag--active': filterCuisine.has(key) }]"
-              :aria-pressed="filterCuisine.has(key)"
-              @click="toggleFilter('cuisine', key)"
-            ><span class="filter-tag__pip" aria-hidden="true" />{{ label }}</button>
-          </template>
-
-          <button
-            :class="['filter-tag', 'filter-tag--archive', { 'filter-tag--active': showArchived }]"
-            :aria-pressed="showArchived"
-            @click="toggleArchived"
-          ><span class="filter-tag__pip" aria-hidden="true" />{{ $t('dishes.archived') }}</button>
-        </div>
-      </div>
-    </div>
+    <CatalogControls v-model:search="searchDish" :search-placeholder="t('dishes.findADish')" :sort-key="sortKey" :sort-direction="sortDir" :sort-options="sortChips" :filters="filters" :active-filter-count="activeFilterCount" @sort="selectSort" @filter="selectFilter" @clear="clearFilters" />
 
     <!-- ── Archived view banner ───────────────────────────────────────────── -->
     <div v-if="showArchived && !loading" class="catalog__archived-banner">
@@ -480,7 +370,7 @@ watch([catalogPreferences.scope, showArchived], init, { immediate: true })
 </template>
 
 <style scoped lang="scss">
-@use "~/assets/catalog-controls.scss";
+@use "~/assets/dish-grid.scss" as dish-grid;
 .catalog {
   padding: var(--space-6) var(--space-4);
   max-width: 1200px;
@@ -506,42 +396,7 @@ watch([catalogPreferences.scope, showArchived], init, { immediate: true })
   margin: 0;
 }
 
-.catalog__search {
-  margin-bottom: var(--space-3);
-}
-
-/* ── Sort row ──────────────────────────────────────────────────────────── */
-
-/* CSS grid gives equal horizontal and vertical gaps */
-.dish-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-4);
-}
-
-@media (min-width: 960px) {
-  .dish-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1280px) {
-  .dish-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.catalog__filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  margin-bottom: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  background-color: var(--color-surface-variant);
-  border-radius: var(--radius-sm);
-}
-
+.dish-grid { @include dish-grid.layout($medium-breakpoint: 960px, $max-columns: 3); }
 
 .catalog__archived-banner {
   display: flex;

@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 import { useDishCatalogPreferencesStore } from '~/stores/dishCatalogPreferences'
 import { catalogPreferencesKey, decodeCatalogPreferences, defaultCatalogPreferences } from '~/utils/dish-catalog-preferences'
 import type { CatalogFilterDimension, CatalogSortKey, DishCatalogPreferences } from '~/utils/dish-catalog-preferences'
+import { nextDishSortDirection } from '~/utils/dish-sorting'
 
 type PreferenceStorage = Pick<Storage, 'getItem' | 'setItem'>
 
@@ -48,7 +49,7 @@ export function useDishCatalogPreferences(account: Ref<string>, family: Ref<stri
 
   function selectSort(key: CatalogSortKey) {
     const current = preferences.value
-    update({ sortKey: key, sortDir: current.sortKey === key ? (current.sortDir === 'asc' ? 'desc' : 'asc') : key === 'name' ? 'asc' : 'desc' })
+    update({ sortKey: key, sortDir: nextDishSortDirection(current.sortKey, current.sortDir, key) })
   }
 
   function clearFilters() {

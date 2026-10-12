@@ -1,55 +1,53 @@
 <script setup lang="ts">
-import { computed, shallowRef, useId } from 'vue'
+import { computed } from 'vue'
 import PlanningDishCard from './PlanningDishCard.vue'
 import DishCardSkeleton from '~/components/Dish/DishCardSkeleton.vue'
 import EmptyState from '~/components/EmptyState.vue'
+import CatalogControls from '~/components/Catalog/Controls.vue'
+import type { CatalogFilterOption, CatalogSortOption } from '~/types/catalog-controls'
+import { nextDishSortDirection } from '~/utils/dish-sorting'
+import type { DishSortKey } from '~/utils/dish-sorting'
+import type { DishRole, EffortLevel, SeasonAffinity } from '~/types'
 import type { PlanningDish, ExplorationPreferences } from '~/types/week-planning'
 const props = defineProps<{ entries: PlanningDish[]; preferences: ExplorationPreferences; planned: Record<string, string[]>; target: string | null; busy: boolean; loading?: boolean; cuisines: string[] }>()
 const emit = defineEmits<{ update: [preferences: ExplorationPreferences]; assign: [id: string]; otherDate: [id: string] }>()
 const { t } = useI18n()
-const filtersExpanded = shallowRef(false)
-const filterId = useId()
 const activeFilterCount = computed(() => Number(props.preferences.role !== 'All') + Number(props.preferences.effort !== 'All') + Number(props.preferences.season !== 'All') + Number(!!props.preferences.cuisine) + Number(props.preferences.wishesOnly))
-const roleOptions = computed(() => (['All', 'Main', 'Side', 'Dessert', 'Other'] as const).map(value => ({ value, title: t(`weekPlanning.roles.${value}`) })))
-const effortOptions = computed(() => (['All', 'Quick', 'Medium', 'Elaborate'] as const).map(value => ({ value, title: t(`weekPlanning.efforts.${value}`) })))
-const seasonOptions = computed(() => (['All', 'Spring', 'Summer', 'Autumn', 'Winter', 'AllYear'] as const).map(value => ({ value, title: t(`weekPlanning.seasons.${value}`) })))
-const sortOptions = computed(() => (['name', 'rating', 'usage', 'lastUsed'] as const).map(value => ({ value, title: t(`weekPlanning.sorts.${value}`) })))
+const roles: (DishRole | 'All')[] = ['All', 'Main', 'Side', 'Dessert', 'Other']
+const efforts: (EffortLevel | 'All')[] = ['All', 'Quick', 'Medium', 'Elaborate']
+const seasons: (SeasonAffinity | 'All')[] = ['All', 'Spring', 'Summer', 'Autumn', 'Winter', 'AllYear']
+const filters = computed<CatalogFilterOption[]>(() => [
+  ...roles.map((value): CatalogFilterOption => ({ dimension: 'roles', value, label: t('weekPlanning.roles.' + value), selected: props.preferences.role === value })),
+  ...efforts.map((value): CatalogFilterOption => ({ dimension: 'effort', value, label: t('weekPlanning.efforts.' + value), selected: props.preferences.effort === value })),
+  ...seasons.map((value): CatalogFilterOption => ({ dimension: 'season', value, label: t('weekPlanning.seasons.' + value), selected: props.preferences.season === value })),
+  ...props.cuisines.map((value): CatalogFilterOption => ({ dimension: 'cuisine', value, label: value, selected: props.preferences.cuisine === value })),
+  { dimension: 'wishes', value: 'wishes', label: t('weekPlanning.wishesOnly'), selected: props.preferences.wishesOnly },
+])
+const sortKey = computed<DishSortKey>(() => props.preferences.sort === 'usage' ? 'timesUsed' : props.preferences.sort)
+const sortOptions = computed<CatalogSortOption[]>(() => [
+  { key: 'name', label: t('weekPlanning.sorts.name') },
+  { key: 'rating', label: t('weekPlanning.sorts.rating') },
+  { key: 'timesUsed', label: t('weekPlanning.sorts.usage') },
+  { key: 'lastUsed', label: t('weekPlanning.sorts.lastUsed') },
+])
 function update<Key extends keyof ExplorationPreferences>(key: Key, value: ExplorationPreferences[Key]) { emit('update', { ...props.preferences, [key]: value }) }
-function selectSort(sort: ExplorationPreferences['sort']) {
-  const sortDir = props.preferences.sort === sort ? (props.preferences.sortDir === 'asc' ? 'desc' : 'asc') : sort === 'name' ? 'asc' : 'desc'
-  emit('update', { ...props.preferences, sort, sortDir })
+function selectSort(key: DishSortKey) {
+  emit('update', { ...props.preferences, sort: key === 'timesUsed' ? 'usage' : key, sortDir: nextDishSortDirection(sortKey.value, props.preferences.sortDir, key) })
 }
+function selectFilter(option: CatalogFilterOption) {
+  if (option.dimension === 'roles') { update('role', option.value); return }
+  if (option.dimension === 'effort') { update('effort', option.selected ? 'All' : option.value); return }
+  if (option.dimension === 'season') { update('season', option.selected ? 'All' : option.value); return }
+  if (option.dimension === 'cuisine') { update('cuisine', option.selected ? '' : option.value); return }
+  if (option.dimension === 'wishes') update('wishesOnly', !props.preferences.wishesOnly)
+}
+function clearFilters() { emit('update', { ...props.preferences, role: 'All', effort: 'All', season: 'All', cuisine: '', wishesOnly: false }) }
 </script>
 
 <template>
   <section :aria-label="t('weekPlanning.catalog')">
     <h2 class="text-section-title catalog-heading">{{ t('weekPlanning.catalog') }}</h2>
-    <v-text-field variant="outlined" rounded="lg" density="compact" prepend-inner-icon="mdi-magnify" clearable :placeholder="t('weekPlanning.search')" :aria-label="t('weekPlanning.search')" :model-value="preferences.search" hide-details class="catalog-search" @update:model-value="update('search', $event ?? '')" />
-    <div class="catalog__sort" role="group" :aria-label="t('weekPlanning.sort')">
-      <v-chip v-for="option in sortOptions" :key="option.value" :color="preferences.sort === option.value ? 'primary' : undefined" :variant="preferences.sort === option.value ? 'tonal' : 'outlined'" size="small" class="sort-chip" @click="selectSort(option.value)">
-        {{ option.title }}
-        <span v-if="preferences.sort === option.value" class="sort-chip__dir" aria-hidden="true">{{ preferences.sortDir === 'asc' ? '↑' : '↓' }}</span>
-      </v-chip>
-    </div>
-    <div class="catalog__filter-section">
-      <div class="catalog__filter-header">
-        <button class="catalog__filter-toggle" :aria-expanded="filtersExpanded" :aria-controls="filterId" @click="filtersExpanded = !filtersExpanded">
-          <span class="catalog__filter-label">{{ t('dishes.filter') }}</span>
-          <span v-if="activeFilterCount" class="filter-count">{{ activeFilterCount }}</span>
-          <span class="filter-chevron" :class="{ 'filter-chevron--open': filtersExpanded }" aria-hidden="true">›</span>
-        </button>
-        <button v-if="activeFilterCount" class="filter-clear" @click="emit('update', { ...preferences, role: 'All', effort: 'All', season: 'All', cuisine: '', wishesOnly: false })">{{ t('dishes.clearFilter') }}</button>
-      </div>
-      <div :id="filterId" class="catalog__filter-body" :class="{ 'catalog__filter-body--open': filtersExpanded }" :inert="!filtersExpanded">
-        <div class="catalog__filter-inner">
-          <button v-for="option in roleOptions" :key="option.value" class="filter-tag filter-tag--role" :class="{ 'filter-tag--active': preferences.role === option.value }" :aria-pressed="preferences.role === option.value" @click="update('role', option.value)"><span class="filter-tag__pip" aria-hidden="true" />{{ option.title }}</button>
-          <button v-for="option in effortOptions" :key="option.value" class="filter-tag filter-tag--effort" :class="{ 'filter-tag--active': preferences.effort === option.value }" :aria-pressed="preferences.effort === option.value" @click="update('effort', preferences.effort === option.value ? 'All' : option.value)"><span class="filter-tag__pip" aria-hidden="true" />{{ option.title }}</button>
-          <button v-for="option in seasonOptions" :key="option.value" class="filter-tag filter-tag--season" :class="{ 'filter-tag--active': preferences.season === option.value }" :aria-pressed="preferences.season === option.value" @click="update('season', preferences.season === option.value ? 'All' : option.value)"><span class="filter-tag__pip" aria-hidden="true" />{{ option.title }}</button>
-          <button v-for="cuisine in cuisines" :key="cuisine" class="filter-tag filter-tag--cuisine" :class="{ 'filter-tag--active': preferences.cuisine === cuisine }" :aria-pressed="preferences.cuisine === cuisine" @click="update('cuisine', preferences.cuisine === cuisine ? '' : cuisine)"><span class="filter-tag__pip" aria-hidden="true" />{{ cuisine }}</button>
-          <button class="filter-tag filter-tag--archive" :class="{ 'filter-tag--active': preferences.wishesOnly }" :aria-pressed="preferences.wishesOnly" @click="update('wishesOnly', !preferences.wishesOnly)"><span class="filter-tag__pip" aria-hidden="true" />{{ t('weekPlanning.wishesOnly') }}</button>
-        </div>
-      </div>
-    </div>
+    <CatalogControls :search="preferences.search" :search-placeholder="t('weekPlanning.search')" :sort-key="sortKey" :sort-direction="preferences.sortDir" :sort-options="sortOptions" :filters="filters" :active-filter-count="activeFilterCount" @update:search="update('search', $event)" @sort="selectSort" @filter="selectFilter" @clear="clearFilters" />
     <div v-if="loading && !entries.length" class="dish-grid" role="status" :aria-label="t('weekPlanning.loading')" aria-busy="true">
       <DishCardSkeleton v-for="index in 6" :key="index" />
     </div>
@@ -61,9 +59,7 @@ function selectSort(sort: ExplorationPreferences['sort']) {
 </template>
 
 <style scoped lang="scss">
-@use "~/assets/catalog-controls.scss";
-.catalog-search { margin-bottom: var(--space-3); }
+@use "~/assets/dish-grid.scss" as dish-grid;
 .catalog-heading { margin: var(--space-6) 0 var(--space-4); }
-.dish-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
-@media (max-width: 600px) { .dish-grid { grid-template-columns: 1fr; } }
+.dish-grid { @include dish-grid.layout; margin-top: var(--space-4); }
 </style>

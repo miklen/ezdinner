@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import PickerShell from '~/components/Plan/PickerShell.vue'
+import DayList from '~/components/Plan/DayList.vue'
 import type { Dinner } from '~/types'
 
 const props = defineProps<{
@@ -43,6 +44,7 @@ const planningWindow = computed<DateTime[]>(() => {
 const dinners = ref<Dinner[]>([])
 const loading = shallowRef(false)
 const addingDate = shallowRef<string | null>(null)
+const pickerDays = computed(() => planningWindow.value.map(date => ({ date, menu: menuForDate(date) })))
 
 async function fetchDinners() {
   loading.value = true
@@ -142,27 +144,11 @@ watch(weekStart, () => {
   if (props.modelValue) fetchDinners()
 })
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function isWeekend(date: DateTime) {
-  return date.weekday === 6 || date.weekday === 7
-}
-
-function dateKey(date: DateTime) {
-  return date.toFormat('yyyy-MM-dd')
-}
-
 </script>
 
 <template>
   <PickerShell :open="modelValue" :title="$t('dishes.planDish.dialogTitle', { dish: dishName })" :close-label="$t('dishes.planDish.close')" @update:open="emit('update:modelValue', $event)">
     <template #navigation><PlanWeekNav v-model="weekStart" /></template>
-    <template v-if="loading"><DishPlanDayRow v-for="i in 9" :key="i" loading /></template>
-    <template v-else>
-      <template v-for="(date, index) in planningWindow" :key="dateKey(date)">
-        <div v-if="index === 2" class="plan-picker__divider" />
-        <DishPlanDayRow :date="date" :menu="menuForDate(date)" :is-planned="isDishOnDay(date)" :is-weekend="isWeekend(date)" :is-adding="addingDate === dateKey(date)" :dish-name="dishName" @toggle="toggleDay(date)" />
-      </template>
-    </template>
+    <DayList :days="pickerDays" :dish-id="dishId" :dish-name="dishName" :loading="loading" :adding-date="addingDate" @select="toggleDay" />
   </PickerShell>
 </template>

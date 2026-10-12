@@ -142,6 +142,8 @@
     "sortRating": "Vurdering",
     "sortTimesUsed": "Gange brugt",
     "sortLastUsed": "Sidst brugt",
+    "sortAriaLabel": "Sortér efter",
+    "filterAriaLabel": "Filtrér efter",
     "filter": "Filter",
     "clearFilter": "\u00d7 ryd",
     "archived": "Arkiveret",
