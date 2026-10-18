@@ -17,8 +17,14 @@ export const useFamiliesStore = defineStore('families', () => {
   async function getActiveFamily() {
     if (!appStore.activeFamilyId) return
     const { families } = useRepositories()
-    activeFamily.value = await families.get(appStore.activeFamilyId)
+    const familyId = appStore.activeFamilyId
+    const family = await families.get(familyId)
+    if (familyId === appStore.activeFamilyId) activeFamily.value = family
   }
 
-  return { familySelectors, activeFamily, getFamilySelectors, getActiveFamily }
+  function updateGroceryStores(familyId: string, storeIds: string[]) {
+    if (activeFamily.value?.id === familyId) activeFamily.value = { ...activeFamily.value, groceryStores: [...storeIds] }
+  }
+
+  return { familySelectors, activeFamily, getFamilySelectors, getActiveFamily, updateGroceryStores }
 })

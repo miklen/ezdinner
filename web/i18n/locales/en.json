@@ -454,29 +454,194 @@
     }
   },
   "ratingReminders": {
-      "loading": "Loading rating reminders",
-      "rated":  "Rating saved",
-      "dismissFailed":  "Could not dismiss this reminder. Try again.",
-      "unavailable":  "This dish or family is no longer available.",
-      "retry":  "Try again",
-      "subscriptionRequired":  "Enable notifications above to receive rating reminders.",
-      "rateFailed":  "Could not save your rating. Try again.",
-      "yesterday":  "On your menu yesterday",
-      "heading":  "How was this dish?",
-      "menuDate":  "On your menu {date}",
-      "pending":  "Saving…",
-      "memberRating":  "{name}’s rating",
-      "loadFailed":  "Could not refresh rating reminders.",
-      "yourRating":  "Your rating",
-      "dismissed":  "Reminder dismissed",
-      "average":  "{value} average",
-      "preferenceHint":  "An occasional reminder to rate a dish from your recent menu.",
-      "preferenceLoadFailed":  "Could not load your reminder preference.",
-      "preferenceFailed":  "Could not save your reminder preference.",
-      "notNow":  "Not now",
-      "home":  "Back to Home",
-      "preference":  "Rating reminders",
-      "heartLabel":  "{0} of {1} hearts",
-      "nextDish":  "Next dish: {name}"
+    "loading": "Loading rating reminders",
+    "rated": "Rating saved",
+    "dismissFailed": "Could not dismiss this reminder. Try again.",
+    "unavailable": "This dish or family is no longer available.",
+    "retry": "Try again",
+    "subscriptionRequired": "Enable notifications above to receive rating reminders.",
+    "rateFailed": "Could not save your rating. Try again.",
+    "yesterday": "On your menu yesterday",
+    "heading": "How was this dish?",
+    "menuDate": "On your menu {date}",
+    "pending": "Saving…",
+    "memberRating": "{name}’s rating",
+    "loadFailed": "Could not refresh rating reminders.",
+    "yourRating": "Your rating",
+    "dismissed": "Reminder dismissed",
+    "average": "{value} average",
+    "preferenceHint": "An occasional reminder to rate a dish from your recent menu.",
+    "preferenceLoadFailed": "Could not load your reminder preference.",
+    "preferenceFailed": "Could not save your reminder preference.",
+    "notNow": "Not now",
+    "home": "Back to Home",
+    "preference": "Rating reminders",
+    "heartLabel": "{0} of {1} hearts",
+    "nextDish": "Next dish: {name}"
+  },
+  "grocery": {
+    "storesTitle": "Grocery stores",
+    "storesSummaryHelp": "Your usual shops, for dinner ideas that fit.",
+    "chooseStores": "Choose stores",
+    "editStores": "Edit stores",
+    "selectedStores": "Selected stores",
+    "noStoresSelected": "No stores selected yet",
+    "selectedCount": "{count} selected",
+    "localStores": "Supermarkets & online",
+    "borderStores": "Border shops",
+    "offersPending": "Offers aren't available yet. You can still save your favourite stores.",
+    "offersUnavailable": "Offers not available yet",
+    "storesHelp": "Choose stores whose offers can help suggest dinners for your family.",
+    "storesReadOnly": "A family owner can change the stores used for dinner ideas.",
+    "storeUnavailable": "Currently unavailable.",
+    "borderTrade": "Border trade.",
+    "flyerOnly": "Flyer offers only.",
+    "noStores": "The store list is unavailable. Try again later.",
+    "noSelection": "No stores selected. Dinner ideas use your usual preferences.",
+    "saveFailed": "Stores could not be saved. Your selection is kept; try saving again.",
+    "saveStores": "Save stores",
+    "product": "{product} at {store}: {price}",
+    "observedProduct": "Recorded {date}: {product} at {store}, {price}",
+    "referencePrice": "Reference price {price} · {discount} off",
+    "ingredientMatch": "Ingredient match: {ingredient}",
+    "expiredEvidence": "This price may have changed. Check the current price at the store before buying.",
+    "staleObservation": "This offer is from an earlier check. Confirm availability with the store.",
+    "buyBy": "Buy by {date}",
+    "unknownExpiry": "The store hasn’t provided an end date. Check the offer before buying.",
+    "evidenceDeadline": "Check the price again from {date} (Copenhagen time)",
+    "purchaseAhead": "Buy while the offer is valid; availability on your dinner date is not guaranteed.",
+    "viewSource": "View offer at {store}",
+    "localeRefresh": "These ideas keep their original language. Refresh ideas to use your selected language before requesting more.",
+    "selectionRefresh": "Your grocery stores have changed. Refresh ideas before requesting more.",
+    "coverage": {
+      "Fresh": "Offers checked for your selected stores.",
+      "Stale": "Some offer evidence is out of date. Refresh ideas to check again.",
+      "Unavailable": "Grocery offers are unavailable. Dinner ideas still use your preferences.",
+      "Partial": "Only some grocery offers could be checked.",
+      "Disabled": "Grocery offers are not enabled for these ideas.",
+      "Unknown": "Grocery offer coverage is unknown."
+    },
+    "conditions": {
+      "chain-price": "Chain-level price; local availability may vary.",
+      "border-trade": "Border-trade offer; check location and purchase conditions.",
+      "unknown": "Check the store for purchase conditions."
+    },
+    "limitations": {
+      "source-unavailable": "Some selected stores did not provide usable offers for this check. Their offers aren’t included.",
+      "source-stale": "Some store information is older. Check the purchase deadline shown beside each offer.",
+      "source-partial": "Some products couldn’t be reliably matched to an ingredient or price, so they were left out.",
+      "profiles-partial": "We couldn’t confidently identify ingredients for every dish. Those dishes are still suggested, without an offer boost.",
+      "enrichment-timeout": "The offer check took too long. We kept your meal ideas and the matches that were ready.",
+      "source-disabled": "Offer matching is currently switched off for this service.",
+      "coverage-partial": "Only part of the offer information was available for these ideas.",
+      "coverage-unknown": "The offer status wasn’t included with these ideas.",
+      "unknown": "Some offer information couldn’t be confirmed. Your meal ideas are still available."
+    },
+    "ingredients": {
+      "minced-meat": "minced meat",
+      "minced-beef": "minced beef",
+      "minced-pork": "minced pork",
+      "poultry": "poultry",
+      "chicken": "chicken",
+      "turkey": "turkey",
+      "beef": "beef",
+      "pork": "pork",
+      "fish": "fish",
+      "salmon": "salmon",
+      "cod": "cod",
+      "lentils": "lentils",
+      "beans": "beans",
+      "chickpeas": "chickpeas",
+      "tofu": "tofu",
+      "eggs": "eggs",
+      "cheese": "cheese",
+      "potatoes": "potatoes",
+      "rice": "rice",
+      "pasta": "pasta",
+      "tomatoes": "tomatoes",
+      "mushrooms": "mushrooms",
+      "prepared-meatballs": "prepared meatballs",
+      "sausages": "sausages",
+      "salt": "salt"
+    },
+    "status": {
+      "manualCheck": {
+        "title": "Worth checking yourself",
+        "body": "We have no usable discounts from these stores for your ideas. You may still find offers in their leaflets, apps or in store.",
+        "Fresh": "Checked · no usable discounts found",
+        "Partial": "Limited coverage · no confirmed discounts",
+        "Unavailable": "Couldn’t check this store",
+        "Stale": "No current discounts confirmed"
+      },
+      "label": "Grocery offers",
+      "forYourFamily": "Picked for your family",
+      "refine": "Make these ideas your own",
+      "keepPlanning": "You can keep planning",
+      "settings": "Choose stores in family settings",
+      "details": "What this means",
+      "nextCheck": "Completed store checks are reused until the next daily update at 05:00 Copenhagen time. If a check failed, refresh ideas after five minutes to try that store again. You can keep planning while offers are missing.",
+      "requestFailedTitle": "We couldn’t load new ideas",
+      "requestFailedRetained": "Your previous ideas are still here and your meal plan is unchanged. Try again to load a new set.",
+      "requestFailedEmpty": "Your meal plan is unchanged. Try again, or choose dishes from the catalogue below.",
+      "states": {
+        "Loading": {
+          "badge": "Checking",
+          "title": "Finding ideas for your week",
+          "body": "We’re checking your family’s preferences and available offers. This can take a little longer on the first visit."
+        },
+        "Selection": {
+          "badge": "Ready to update",
+          "title": "Your stores have changed",
+          "body": "Refresh ideas once to use your new store selection. Your saved meal plan stays as it is."
+        },
+        "Locale": {
+          "badge": "Ready to update",
+          "title": "See your ideas in this language",
+          "body": "Refresh ideas to update their explanations. Your saved meal plan stays as it is."
+        },
+        "Fresh": {
+          "badge": "Up to date",
+          "title": "Offers are included in your ideas",
+          "body": "Matching offers from your chosen stores can give suitable dishes a little extra priority. Your family’s preferences still come first."
+        },
+        "NoMatch": {
+          "badge": "Checked",
+          "title": "Good ideas, even without a matching offer",
+          "body": "We checked your stores, but found no suitable offer match for these ideas. They’re still based on your family’s preferences."
+        },
+        "Partial": {
+          "badge": "Some offers missing",
+          "title": "Your ideas are ready to use",
+          "body": "Offer matching is incomplete, so some savings may be missing. Your family’s preferences still guide the ideas below."
+        },
+        "Unavailable": {
+          "badge": "Offers unavailable",
+          "title": "Meal ideas without offers for now",
+          "body": "We couldn’t get usable offers from your stores. You can still plan with ideas based on your family’s preferences."
+        },
+        "Stale": {
+          "badge": "Update available",
+          "title": "These offers need a fresh check",
+          "body": "Some offer information is older or has expired. Refresh ideas before relying on the prices; your saved meal plan is unchanged."
+        },
+        "Disabled": {
+          "badge": "Not active",
+          "title": "Ideas based on your family",
+          "body": "Grocery offers aren’t active right now. Your family’s preferences still guide your meal ideas."
+        },
+        "NoStores": {
+          "badge": "Optional",
+          "title": "Add offers from the stores you use",
+          "body": "Your ideas already use your family’s preferences. Choose stores in family settings if you’d like matching offers included too."
+        },
+        "Unknown": {
+          "badge": "Not confirmed",
+          "title": "Your meal ideas are still here",
+          "body": "We don’t have a confirmed offer status for these ideas. Use them for planning, but don’t rely on offer prices yet."
+        }
+      }
+    },
+    "offerDetails": "Why this offer is shown",
+    "offerSaving": "Save {discount}"
   }
 }

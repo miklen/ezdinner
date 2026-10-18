@@ -22,6 +22,7 @@ public class RecommendationFunctionTests
     [InlineData("dish")]
     [InlineData("dinner")]
     [InlineData("wishlist")]
+    [InlineData("family")]
     public async Task UnauthorizedFamilyAccessNeverLoadsEvidence(string denied)
     {
         var authorization = new Mock<IAuthzService>();
@@ -48,6 +49,42 @@ public class RecommendationFunctionTests
         dishes.VerifyNoOtherCalls();
     }
 
+    [Fact]
+    public async Task Aborted_request_body_returns_client_closed_without_loading_evidence()
+    {
+        var authorization = new Mock<IAuthzService>();
+        authorization.Setup(service => service.Authorize(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), Actions.Read)).Returns(true);
+        var dishes = new Mock<IDishRepository>(MockBehavior.Strict);
+        var request = Request("{}", true);
+        request.HttpContext.RequestAborted = new CancellationToken(true);
+
+        var result = await Endpoint(authorization.Object, dishes.Object).Run(request, Guid.NewGuid().ToString());
+
+        Assert.Equal(StatusCodes.Status499ClientClosedRequest, Assert.IsType<StatusCodeResult>(result).StatusCode);
+        dishes.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Unrelated_cancellation_is_not_reported_as_client_disconnect()
+    {
+        var authorization = new Mock<IAuthzService>();
+        authorization.Setup(service => service.Authorize(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), Actions.Read)).Returns(true);
+        var dishes = new Mock<IDishRepository>(MockBehavior.Strict);
+        var request = Request("{}", true);
+        request.Body = new CancelledReadStream();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            Endpoint(authorization.Object, dishes.Object).Run(request, Guid.NewGuid().ToString()));
+
+        dishes.VerifyNoOtherCalls();
+    }
+
+    private sealed class CancelledReadStream : MemoryStream
+    {
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+            ValueTask.FromException<int>(new TaskCanceledException());
+    }
+
     private static DishRecommendationsFunction Endpoint(IAuthzService authorization, IDishRepository dishes)
     {
         var limits = new DishRecommendationLimits();
@@ -69,6 +106,7 @@ public class RecommendationFunctionTests
         "dish" => Resources.Dish,
         "dinner" => Resources.Dinner,
         "wishlist" => Resources.Wishlist,
+        "family" => Resources.Family,
         _ => "none"
     };
 }

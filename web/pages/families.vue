@@ -48,6 +48,7 @@
               </template>
             </v-list-item>
           </v-list>
+          <FamilyGroceryStores :family="family" :owner="isOwnerOf(family.id)" :account="userId ?? null" @saved="family.groceryStores = $event" />
           <v-card-actions>
             <v-btn v-if="isOwnerOf(family.id)" variant="text" color="primary" @click="openInviteDialog(family.id)">{{ $t('common.invite') }}</v-btn>
             <v-btn v-if="isOwnerOf(family.id)" variant="text" color="primary" @click="openAddMemberDialog(family.id)">{{ $t('common.create') }}</v-btn>

@@ -87,6 +87,8 @@ export interface Family {
   id: string
   name: string
   familyMembers: FamilyMember[]
+  groceryStores?: string[]
+  supportedGroceryStores?: import('./grocery-offers').GroceryStore[]
 }
 
 export interface FamilySelect {

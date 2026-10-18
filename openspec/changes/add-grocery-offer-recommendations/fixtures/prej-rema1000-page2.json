@@ -1,0 +1,118 @@
+{
+    "requestPath":  "/v1/offers?chain=rema1000\u0026category=koed-og-fisk\u0026limit=3\u0026page=2",
+    "retrievedAt":  "2026-10-18T12:10:07.1555085Z",
+    "elapsedMilliseconds":  1485,
+    "status":  200,
+    "quotaLimit":  "25",
+    "quotaRemaining":  "19",
+    "response":  {
+                     "offers":  [
+                                    {
+                                        "product_id":  37324,
+                                        "name":  "Rema 1000 Kalvesticks med Bacon/Svampe",
+                                        "brand":  "Rema1000",
+                                        "image_url":  "https://rema-product-images.digital.rema1000.dk/405495/1-large-v09glAD0PA.webp",
+                                        "gtins":  [
+                                                      "5705830616418"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5705830616418"
+                                                        ],
+                                        "chain_gtins_source":  "chain",
+                                        "chain_slug":  "rema1000",
+                                        "chain_name":  "Rema 1000",
+                                        "chain_logo_url":  "https://prej.dk/logos/rema1000.webp",
+                                        "price":  2000,
+                                        "normal_price":  2995,
+                                        "discount_pct":  33,
+                                        "unit":  "g",
+                                        "quantity":  280,
+                                        "unit_price":  7143,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-23",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "280 g",
+                                        "unit_price_label":  "71,43 kr/kg"
+                                    },
+                                    {
+                                        "product_id":  37581,
+                                        "name":  "Danske Koteletter",
+                                        "brand":  "Danske",
+                                        "image_url":  "https://rema-product-images.digital.rema1000.dk/400717/1-large-Z8qp7kKyo3.webp",
+                                        "gtins":  [
+                                                      "5701200191226",
+                                                      "5705830612878",
+                                                      "5705830614285",
+                                                      "5705830618689",
+                                                      "5705830619655"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5701200191226",
+                                                            "5705830612878",
+                                                            "5705830614285",
+                                                            "5705830618689",
+                                                            "5705830619655"
+                                                        ],
+                                        "chain_gtins_source":  "chain",
+                                        "chain_slug":  "rema1000",
+                                        "chain_name":  "Rema 1000",
+                                        "chain_logo_url":  "https://prej.dk/logos/rema1000.webp",
+                                        "price":  2500,
+                                        "normal_price":  2995,
+                                        "discount_pct":  17,
+                                        "unit":  "g",
+                                        "quantity":  400,
+                                        "unit_price":  6250,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-23",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "400 g",
+                                        "unit_price_label":  "62,50 kr/kg"
+                                    },
+                                    {
+                                        "product_id":  37672,
+                                        "name":  "Stegeflæsk i Skiver",
+                                        "brand":  "Dansk",
+                                        "image_url":  "https://rema-product-images.digital.rema1000.dk/400711/1-large-A5qV8ZwyPa.webp",
+                                        "gtins":  [
+                                                      "5701200161687",
+                                                      "5705451650846",
+                                                      "5705830618146",
+                                                      "5705830618443",
+                                                      "5705830619440",
+                                                      "5705830619679"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5701200161687",
+                                                            "5705451650846",
+                                                            "5705830618146",
+                                                            "5705830618443",
+                                                            "5705830619440",
+                                                            "5705830619679"
+                                                        ],
+                                        "chain_gtins_source":  "chain",
+                                        "chain_slug":  "rema1000",
+                                        "chain_name":  "Rema 1000",
+                                        "chain_logo_url":  "https://prej.dk/logos/rema1000.webp",
+                                        "price":  2500,
+                                        "normal_price":  2995,
+                                        "discount_pct":  17,
+                                        "unit":  "g",
+                                        "quantity":  400,
+                                        "unit_price":  6250,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-23",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "400 g",
+                                        "unit_price_label":  "62,50 kr/kg"
+                                    }
+                                ],
+                     "total":  22,
+                     "page":  2,
+                     "limit":  3,
+                     "as_of":  "2026-10-18"
+                 }
+}

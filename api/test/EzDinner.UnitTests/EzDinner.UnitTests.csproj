@@ -34,4 +34,8 @@
     <ProjectReference Include="..\..\src\EzDinner.Functions\EzDinner.Functions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Fixtures/Prej/*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

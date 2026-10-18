@@ -91,7 +91,7 @@
     "weekWeekend": "Uge {week} weekend",
     "thisWeek": "Denne uge",
     "lastWeek": "Forrige uge",
-    "nextWeek": "N\u00e6ste uge",
+    "nextWeek": "Næste uge",
     "previousWeekAriaLabel": "Forrige uge",
     "nextWeekAriaLabel": "N\u00e6ste uge",
     "tapToReturnToThisWeek": "Tryk for at vende tilbage til denne uge",
@@ -226,7 +226,7 @@
     "archivedLabel": "arkiveret",
     "roles": {
       "Main": "Hovedret",
-      "Side": "Tilbeh\u00f8r",
+      "Side": "Tilbehør",
       "Dessert": "Dessert",
       "Other": "Andet"
     },
@@ -238,9 +238,9 @@
     "seasons": {
       "Summer": "Sommer",
       "Winter": "Vinter",
-      "Spring": "For\u00e5r",
-      "Autumn": "Efter\u00e5r",
-      "AllYear": "Hele \u00e5ret"
+      "Spring": "Forår",
+      "Autumn": "Efterår",
+      "AllYear": "Hele året"
     },
     "planDish": {
       "buttonLabel": "Planl\u00e6g ret",
@@ -454,29 +454,194 @@
     }
   },
   "ratingReminders": {
-      "loading": "Indlæser påmindelser om vurderinger",
-      "rated":  "Vurdering gemt",
-      "dismissFailed":  "Kunne ikke afvise påmindelsen. Prøv igen.",
-      "unavailable":  "Retten eller familien er ikke længere tilgængelig.",
-      "retry":  "Prøv igen",
-      "subscriptionRequired":  "Slå notifikationer til ovenfor for at få påmindelser om vurderinger.",
-      "rateFailed":  "Kunne ikke gemme din vurdering. Prøv igen.",
-      "yesterday":  "På din menu i går",
-      "heading":  "Hvordan var retten?",
-      "menuDate":  "På din menu {date}",
-      "pending":  "Gemmer…",
-      "memberRating":  "{name}s vurdering",
-      "loadFailed":  "Kunne ikke opdatere påmindelser om vurderinger.",
-      "yourRating":  "Din vurdering",
-      "dismissed":  "Påmindelse afvist",
-      "average":  "{value} i gennemsnit",
-      "preferenceHint":  "En lejlighedsvis påmindelse om at vurdere en ret fra din seneste menu.",
-      "preferenceLoadFailed":  "Kunne ikke hente dit valg af påmindelser.",
-      "preferenceFailed":  "Kunne ikke gemme dit valg af påmindelser.",
-      "notNow":  "Ikke nu",
-      "home":  "Tilbage til forsiden",
-      "preference":  "Påmindelser om vurderinger",
-      "heartLabel":  "{0} af {1} hjerter",
-      "nextDish":  "Næste ret: {name}"
+    "loading": "Indlæser påmindelser om vurderinger",
+    "rated": "Vurdering gemt",
+    "dismissFailed": "Kunne ikke afvise påmindelsen. Prøv igen.",
+    "unavailable": "Retten eller familien er ikke længere tilgængelig.",
+    "retry": "Prøv igen",
+    "subscriptionRequired": "Slå notifikationer til ovenfor for at få påmindelser om vurderinger.",
+    "rateFailed": "Kunne ikke gemme din vurdering. Prøv igen.",
+    "yesterday": "På din menu i går",
+    "heading": "Hvordan var retten?",
+    "menuDate": "På din menu {date}",
+    "pending": "Gemmer…",
+    "memberRating": "{name}s vurdering",
+    "loadFailed": "Kunne ikke opdatere påmindelser om vurderinger.",
+    "yourRating": "Din vurdering",
+    "dismissed": "Påmindelse afvist",
+    "average": "{value} i gennemsnit",
+    "preferenceHint": "En lejlighedsvis påmindelse om at vurdere en ret fra din seneste menu.",
+    "preferenceLoadFailed": "Kunne ikke hente dit valg af påmindelser.",
+    "preferenceFailed": "Kunne ikke gemme dit valg af påmindelser.",
+    "notNow": "Ikke nu",
+    "home": "Tilbage til forsiden",
+    "preference": "Påmindelser om vurderinger",
+    "heartLabel": "{0} af {1} hjerter",
+    "nextDish": "Næste ret: {name}"
+  },
+  "grocery": {
+    "storesTitle": "Dagligvarebutikker",
+    "storesSummaryHelp": "Jeres faste butikker til familiens madidéer.",
+    "chooseStores": "Vælg butikker",
+    "editStores": "Rediger butikker",
+    "selectedStores": "Valgte butikker",
+    "noStoresSelected": "Ingen butikker valgt endnu",
+    "selectedCount": "{count} valgt",
+    "localStores": "Supermarkeder og online",
+    "borderStores": "Grænsebutikker",
+    "offersPending": "Tilbud er ikke tilgængelige endnu. I kan stadig gemme jeres foretrukne butikker.",
+    "offersUnavailable": "Tilbud er ikke tilgængelige endnu",
+    "storesHelp": "Vælg butikker, hvis tilbud kan hjælpe med at foreslå aftensmad til familien.",
+    "storesReadOnly": "En familieejer kan ændre butikkerne, der bruges til madidéer.",
+    "storeUnavailable": "Ikke tilgængelig i øjeblikket.",
+    "borderTrade": "Grænsehandel.",
+    "flyerOnly": "Kun tilbudsavis.",
+    "noStores": "Butikslisten er ikke tilgængelig. Prøv igen senere.",
+    "noSelection": "Ingen butikker valgt. Madidéer bruger jeres sædvanlige præferencer.",
+    "saveFailed": "Butikkerne kunne ikke gemmes. Dit valg er bevaret; prøv at gemme igen.",
+    "saveStores": "Gem butikker",
+    "product": "{product} hos {store}: {price}",
+    "observedProduct": "Registreret {date}: {product} hos {store}, {price}",
+    "referencePrice": "Referencepris {price} · {discount} rabat",
+    "ingredientMatch": "Ingrediensmatch: {ingredient}",
+    "expiredEvidence": "Prisen kan have ændret sig. Tjek den aktuelle pris hos butikken, før du køber.",
+    "staleObservation": "Tilbuddet stammer fra et tidligere tjek. Bekræft tilgængelighed hos butikken.",
+    "buyBy": "Køb senest {date}",
+    "unknownExpiry": "Butikken har ikke oplyst en slutdato. Tjek tilbuddet, før du køber.",
+    "evidenceDeadline": "Tjek prisen igen fra {date} (dansk tid)",
+    "purchaseAhead": "Køb mens tilbuddet gælder; tilgængelighed på middagsdatoen er ikke garanteret.",
+    "viewSource": "Se tilbud hos {store}",
+    "localeRefresh": "Idéerne beholder deres oprindelige sprog. Opdater idéer for at bruge dit valgte sprog, før du beder om flere.",
+    "selectionRefresh": "Jeres dagligvarebutikker er ændret. Opdater idéer, før du beder om flere.",
+    "coverage": {
+      "Fresh": "Tilbud er tjekket for jeres valgte butikker.",
+      "Stale": "Nogle tilbudsoplysninger er forældede. Opdater idéer for at tjekke igen.",
+      "Unavailable": "Dagligvaretilbud er ikke tilgængelige. Madidéer bruger stadig jeres præferencer.",
+      "Partial": "Kun nogle dagligvaretilbud kunne tjekkes.",
+      "Disabled": "Dagligvaretilbud er ikke aktiveret for disse idéer.",
+      "Unknown": "Dækningen af dagligvaretilbud er ukendt."
+    },
+    "conditions": {
+      "chain-price": "Kædepris; lokal tilgængelighed kan variere.",
+      "border-trade": "Grænsehandelstilbud; tjek sted og købsbetingelser.",
+      "unknown": "Tjek købsbetingelser hos butikken."
+    },
+    "limitations": {
+      "source-unavailable": "Nogle valgte butikker gav ikke brugbare tilbud ved dette tjek. Deres tilbud er derfor ikke med.",
+      "source-stale": "Nogle butiksoplysninger er ældre. Se købsfristen ved hvert tilbud.",
+      "source-partial": "Nogle produkter kunne ikke matches sikkert til en ingrediens eller pris og er derfor udeladt.",
+      "profiles-partial": "Vi kunne ikke sikkert finde ingredienserne i alle retter. De retter foreslås stadig, men får ikke ekstra prioritet fra tilbud.",
+      "enrichment-timeout": "Tilbudstjekket tog for lang tid. Vi har beholdt dine madidéer og de match, der var klar.",
+      "source-disabled": "Tilbudsmatch er i øjeblikket slået fra for tjenesten.",
+      "coverage-partial": "Kun en del af tilbudsoplysningerne var tilgængelige for disse idéer.",
+      "coverage-unknown": "Der fulgte ingen tilbudsstatus med disse idéer.",
+      "unknown": "Nogle tilbudsoplysninger kunne ikke bekræftes. Dine madidéer er stadig tilgængelige."
+    },
+    "ingredients": {
+      "minced-meat": "hakket kød",
+      "minced-beef": "hakket oksekød",
+      "minced-pork": "hakket svinekød",
+      "poultry": "fjerkræ",
+      "chicken": "kylling",
+      "turkey": "kalkun",
+      "beef": "oksekød",
+      "pork": "svinekød",
+      "fish": "fisk",
+      "salmon": "laks",
+      "cod": "torsk",
+      "lentils": "linser",
+      "beans": "bønner",
+      "chickpeas": "kikærter",
+      "tofu": "tofu",
+      "eggs": "æg",
+      "cheese": "ost",
+      "potatoes": "kartofler",
+      "rice": "ris",
+      "pasta": "pasta",
+      "tomatoes": "tomater",
+      "mushrooms": "svampe",
+      "prepared-meatballs": "førdige kødboller",
+      "sausages": "pølser",
+      "salt": "salt"
+    },
+    "status": {
+      "manualCheck": {
+        "title": "Værd at tjekke selv",
+        "body": "Vi har ingen brugbare tilbud fra disse butikker til dine idéer. Du kan stadig finde tilbud i deres tilbudsaviser, apps eller i butikken.",
+        "Fresh": "Tjekket · ingen brugbare tilbud fundet",
+        "Partial": "Begrænset dækning · ingen bekræftede tilbud",
+        "Unavailable": "Kunne ikke tjekke butikken",
+        "Stale": "Ingen aktuelle tilbud bekræftet"
+      },
+      "label": "Tilbud fra dine butikker",
+      "forYourFamily": "Udvalgt til din familie",
+      "refine": "Tilpas dine idéer",
+      "keepPlanning": "Du kan roligt planlægge videre",
+      "settings": "Vælg butikker i familieindstillinger",
+      "details": "Hvad betyder det",
+      "nextCheck": "Gennemførte butikstjek genbruges indtil næste daglige opdatering kl. 05 dansk tid. Hvis et tjek mislykkedes, kan du opdatere idéerne efter fem minutter for at prøve den butik igen. Du kan roligt planlægge videre, mens tilbud mangler.",
+      "requestFailedTitle": "Vi kunne ikke hente nye idéer",
+      "requestFailedRetained": "Dine tidligere idéer er her stadig, og din madplan er uændret. Prøv igen for at hente et nyt udvalg.",
+      "requestFailedEmpty": "Din madplan er uændret. Prøv igen, eller vælg retter fra kataloget nedenfor.",
+      "states": {
+        "Loading": {
+          "badge": "Tjekker",
+          "title": "Vi finder idéer til din uge",
+          "body": "Vi ser på familiens præferencer og de tilgængelige tilbud. Det kan tage lidt længere tid ved første besøg."
+        },
+        "Selection": {
+          "badge": "Klar til opdatering",
+          "title": "Du har ændret dine butikker",
+          "body": "Opdatér idéer én gang for at bruge dit nye butiksvalg. Din gemte madplan forbliver uændret."
+        },
+        "Locale": {
+          "badge": "Klar til opdatering",
+          "title": "Se idéerne på dette sprog",
+          "body": "Opdatér idéer for at få forklaringerne på det valgte sprog. Din gemte madplan forbliver uændret."
+        },
+        "Fresh": {
+          "badge": "Opdateret",
+          "title": "Tilbud er med i dine idéer",
+          "body": "Matchende tilbud fra dine butikker kan give egnede retter lidt ekstra prioritet. Familiens præferencer kommer stadig først."
+        },
+        "NoMatch": {
+          "badge": "Tjekket",
+          "title": "Gode idéer, også uden et matchende tilbud",
+          "body": "Vi har tjekket dine butikker, men fandt ingen egnede tilbudsmatch til disse idéer. De bygger stadig på familiens præferencer."
+        },
+        "Partial": {
+          "badge": "Nogle tilbud mangler",
+          "title": "Dine idéer er klar til brug",
+          "body": "Vi har ikke kunnet matche alle tilbud og retter, så nogle besparelser kan mangle. Familiens præferencer styrer stadig idéerne nedenfor."
+        },
+        "Unavailable": {
+          "badge": "Tilbud mangler",
+          "title": "Madidéer uden tilbud lige nu",
+          "body": "Vi kunne ikke hente brugbare tilbud fra dine butikker. Du kan stadig planlægge med idéer baseret på familiens præferencer."
+        },
+        "Stale": {
+          "badge": "Kan opdateres",
+          "title": "Disse tilbud skal tjekkes igen",
+          "body": "Nogle tilbudsoplysninger er ældre eller udløbet. Opdatér idéer, før du regner med priserne. Din gemte madplan er uændret."
+        },
+        "Disabled": {
+          "badge": "Ikke aktivt",
+          "title": "Idéer ud fra din familie",
+          "body": "Dagligvaretilbud er ikke aktive lige nu. Familiens præferencer bruges stadig til at finde madidéer."
+        },
+        "NoStores": {
+          "badge": "Valgfrit",
+          "title": "Få tilbud fra de butikker, du bruger",
+          "body": "Dine idéer bruger allerede familiens præferencer. Vælg butikker i familieindstillinger, hvis du også vil have matchende tilbud med."
+        },
+        "Unknown": {
+          "badge": "Ikke bekræftet",
+          "title": "Dine madidéer er her stadig",
+          "body": "Vi har ingen bekræftet tilbudsstatus for disse idéer. Brug dem gerne til planlægning, men regn ikke med tilbudspriserne endnu."
+        }
+      }
+    },
+    "offerDetails": "Derfor vises tilbuddet",
+    "offerSaving": "Spar {discount}"
   }
 }

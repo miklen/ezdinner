@@ -1,0 +1,109 @@
+{
+    "requestPath":  "/v1/offers?chain=rema1000\u0026category=koed-og-fisk\u0026limit=3\u0026page=1",
+    "retrievedAt":  "2026-10-18T12:09:10.7033684Z",
+    "status":  200,
+    "quotaLimit":  "25",
+    "quotaRemaining":  "23",
+    "response":  {
+                     "offers":  [
+                                    {
+                                        "product_id":  36982,
+                                        "name":  "Frilandsgris Wienerpølser",
+                                        "brand":  "Frilandsgris",
+                                        "image_url":  "https://rema-product-images.digital.rema1000.dk/414523/1-large-MNqZKrK79A.webp",
+                                        "gtins":  [
+                                                      "5705830609052",
+                                                      "5705830619068",
+                                                      "5708427020711",
+                                                      "5708427050718"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5705830609052",
+                                                            "5705830619068",
+                                                            "5708427020711",
+                                                            "5708427050718"
+                                                        ],
+                                        "chain_gtins_source":  "chain",
+                                        "chain_slug":  "rema1000",
+                                        "chain_name":  "Rema 1000",
+                                        "chain_logo_url":  "https://prej.dk/logos/rema1000.webp",
+                                        "price":  2500,
+                                        "normal_price":  2995,
+                                        "discount_pct":  17,
+                                        "unit":  "g",
+                                        "quantity":  375,
+                                        "unit_price":  6667,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-23",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "375 g",
+                                        "unit_price_label":  "66,67 kr/kg"
+                                    },
+                                    {
+                                        "product_id":  37251,
+                                        "name":  "Rema 1000 Hakkebøffer Bacon \u0026 Grønt",
+                                        "brand":  "Rema 1000",
+                                        "image_url":  "https://rema-product-images.digital.rema1000.dk/405411/1-large-A5qV8JDpPa.webp",
+                                        "gtins":  [
+                                                      "5705830615442"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5705830615442"
+                                                        ],
+                                        "chain_gtins_source":  "chain",
+                                        "chain_slug":  "rema1000",
+                                        "chain_name":  "Rema 1000",
+                                        "chain_logo_url":  "https://prej.dk/logos/rema1000.webp",
+                                        "price":  2000,
+                                        "normal_price":  2495,
+                                        "discount_pct":  20,
+                                        "unit":  "g",
+                                        "quantity":  250,
+                                        "unit_price":  8000,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-23",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "250 g",
+                                        "unit_price_label":  "80,00 kr/kg"
+                                    },
+                                    {
+                                        "product_id":  37260,
+                                        "name":  "Dansk Ungkvæg i tern",
+                                        "brand":  "Dansk UngkvæG",
+                                        "image_url":  "https://rema-product-images.digital.rema1000.dk/405238/1-large-MBoNXJBZ9v.webp",
+                                        "gtins":  [
+                                                      "5701050374893",
+                                                      "5701050417965",
+                                                      "5705830618351"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5701050374893",
+                                                            "5701050417965",
+                                                            "5705830618351"
+                                                        ],
+                                        "chain_gtins_source":  "chain",
+                                        "chain_slug":  "rema1000",
+                                        "chain_name":  "Rema 1000",
+                                        "chain_logo_url":  "https://prej.dk/logos/rema1000.webp",
+                                        "price":  3900,
+                                        "normal_price":  4495,
+                                        "discount_pct":  13,
+                                        "unit":  "g",
+                                        "quantity":  300,
+                                        "unit_price":  13000,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-23",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "300 g",
+                                        "unit_price_label":  "130,00 kr/kg"
+                                    }
+                                ],
+                     "total":  22,
+                     "page":  1,
+                     "limit":  3,
+                     "as_of":  "2026-10-18"
+                 }
+}

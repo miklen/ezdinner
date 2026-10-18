@@ -9,5 +9,6 @@ namespace EzDinner.Core.Aggregates.FamilyAggregate
   {
     public Task<Family?> GetFamily(Guid familyId);
     public Task SaveAsync(Family family);
+    public Task SaveGroceryStoresAsync(Family family);
   }
 }

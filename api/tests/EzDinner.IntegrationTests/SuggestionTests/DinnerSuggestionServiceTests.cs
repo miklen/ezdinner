@@ -1,5 +1,6 @@
 using EzDinner.Core.Aggregates.DinnerAggregate;
 using EzDinner.Core.Aggregates.DishAggregate;
+using EzDinner.Core.Aggregates.WishlistAggregate;
 using EzDinner.Core.DomainServices.DinnerSuggestions;
 using EzDinner.Query.Core.SuggestionQueries;
 using NodaTime;
@@ -31,7 +32,10 @@ namespace EzDinner.IntegrationTests.SuggestionTests
             };
 
             var engine = new DinnerSuggestionEngineService(rules);
-            _suggestionService = new DinnerSuggestionService(engine, _dishRepository, _dinnerRepository);
+            var wishlistRepository = (IWishlistRepository)startup.Provider.GetService(typeof(IWishlistRepository))!;
+            _suggestionService = new DinnerSuggestionService(engine, _dishRepository, _dinnerRepository,
+                wishlistRepository, new RuleBasedDinnerWeekPlanner(engine),
+                new SuggestionContextAssembler(_dishRepository, _dinnerRepository, wishlistRepository));
         }
 
         /// <summary>

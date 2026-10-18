@@ -1,4 +1,6 @@
 import type { Family, FamilySelect } from '~/types'
+import { grocerySelectionSchema, groceryStoreSchema } from '~/types/grocery-offers'
+import { z } from 'zod'
 
 type ApiFetch = <T>(path: string, options?: Parameters<typeof $fetch>[1]) => Promise<T>
 type ApiFetchRaw = (path: string, options?: RequestInit) => Promise<{ status: number; data: unknown }>
@@ -9,12 +11,22 @@ export class FamilyRepository {
     private apiFetchRaw: ApiFetchRaw,
   ) {}
 
-  all() {
-    return this.apiFetch<Family[]>('/api/families/')
+  async all() {
+    return (await this.apiFetch<Family[]>('/api/families/')).map(family => this.withGroceryStores(family))
   }
 
-  get(familyId: string) {
-    return this.apiFetch<Family>(`/api/families/${familyId}`)
+  async get(familyId: string) {
+    return this.withGroceryStores(await this.apiFetch<Family>(`/api/families/${familyId}`))
+  }
+
+  private withGroceryStores(family: Family): Family {
+    return { ...family, ...grocerySelectionSchema.parse({ groceryStores: family.groceryStores ?? [] }),
+      supportedGroceryStores: z.array(groceryStoreSchema).parse(family.supportedGroceryStores ?? []) }
+  }
+
+  async saveGroceryStores(familyId: string, storeIds: string[]) {
+    const response = await this.apiFetch<unknown>(`/api/families/${familyId}/grocery-stores`, { method: 'PUT', body: { storeIds } })
+    return grocerySelectionSchema.parse(response).groceryStores
   }
 
   familySelectors() {

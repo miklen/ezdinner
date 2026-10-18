@@ -1,0 +1,130 @@
+{
+  "chains": [
+    {
+      "name": "365discount",
+      "slug": "365discount",
+      "is_border_trade": false,
+      "is_flyer_only": true
+    },
+    {
+      "name": "Bilka",
+      "slug": "bilka",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "BilkaToGo",
+      "slug": "bilkatogo",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Brugsen",
+      "slug": "brugsen",
+      "is_border_trade": false,
+      "is_flyer_only": true
+    },
+    {
+      "name": "Calle",
+      "slug": "calle",
+      "is_border_trade": true,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Fakta Tyskland",
+      "slug": "fakta-de",
+      "is_border_trade": true,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Fleggaard",
+      "slug": "fleggaard",
+      "is_border_trade": true,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Føtex",
+      "slug": "fotex",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Kvickly",
+      "slug": "kvickly",
+      "is_border_trade": false,
+      "is_flyer_only": true
+    },
+    {
+      "name": "Lidl",
+      "slug": "lidl",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Meny",
+      "slug": "meny",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Min Købmand",
+      "slug": "minkobmand",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Motatos",
+      "slug": "motatos",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Nemlig",
+      "slug": "nemlig",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Netto",
+      "slug": "netto",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Poetzsch Padborg",
+      "slug": "poetzsch",
+      "is_border_trade": true,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Rema 1000",
+      "slug": "rema1000",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Scandinavian Park",
+      "slug": "scandinavian-park",
+      "is_border_trade": true,
+      "is_flyer_only": false
+    },
+    {
+      "name": "Spar",
+      "slug": "spar",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    },
+    {
+      "name": "SuperBrugsen",
+      "slug": "superbrugsen",
+      "is_border_trade": false,
+      "is_flyer_only": true
+    },
+    {
+      "name": "Wolt Market",
+      "slug": "wolt-market",
+      "is_border_trade": false,
+      "is_flyer_only": false
+    }
+  ]
+}

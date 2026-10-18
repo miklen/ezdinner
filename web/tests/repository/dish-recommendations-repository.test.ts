@@ -38,13 +38,13 @@ describe('dish recommendations repository', () => {
     const fetch = vi.fn().mockResolvedValue(empty)
     const signal = new AbortController().signal
     const intent = { ...request, mode, turns: mode === 'request' ? ['Potato pairing'] : [] }
-    expect(await new DishRecommendationsRepository(fetch).recommend('family', intent, signal)).toEqual(empty)
+    expect(await new DishRecommendationsRepository(fetch).recommend('family', intent, signal)).toEqual({ ...empty, groceryCoverage: { status: 'Unknown', evaluatedAt: null, storeIds: [], limitations: [] } })
     expect(fetch).toHaveBeenCalledWith('/api/families/family/dish-recommendations', { method: 'POST', body: intent, signal })
   })
 
   it.each(['NoMatch', 'Exhausted', 'NeedsClarification'])('preserves the %s outcome', async (outcome) => {
     const result = { ...empty, outcome }
-    expect(await new DishRecommendationsRepository(vi.fn().mockResolvedValue(result)).recommend('family', request)).toEqual(result)
+    expect(await new DishRecommendationsRepository(vi.fn().mockResolvedValue(result)).recommend('family', request)).toEqual({ ...result, groceryCoverage: { status: 'Unknown', evaluatedAt: null, storeIds: [], limitations: [] } })
   })
 
   it('rejects malformed success responses', async () => {

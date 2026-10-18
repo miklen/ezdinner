@@ -1,0 +1,44 @@
+{
+    "requestPath":  "/v1/offers?chain=nemlig\u0026limit=1\u0026page=1",
+    "retrievedAt":  "2026-10-18T12:10:03.9059734Z",
+    "elapsedMilliseconds":  1365,
+    "status":  200,
+    "quotaLimit":  "25",
+    "quotaRemaining":  "22",
+    "response":  {
+                     "offers":  [
+                                    {
+                                        "product_id":  36,
+                                        "name":  "AMA Madlavning 4% fedt",
+                                        "brand":  "AMA",
+                                        "image_url":  "https://digitalassets.sallinggroup.com/image/upload/e_trim:2/b_white,c_pad,e_sharpen:80,f_auto,q_auto,w_690,h_690/b7be4fd1-9096-488b-a1fd-09b644e13f68",
+                                        "gtins":  [
+                                                      "5701043001386"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5701043001386"
+                                                        ],
+                                        "chain_gtins_source":  "matched",
+                                        "chain_slug":  "nemlig",
+                                        "chain_name":  "Nemlig",
+                                        "chain_logo_url":  "https://prej.dk/logos/nemlig.webp",
+                                        "price":  800,
+                                        "normal_price":  1150,
+                                        "discount_pct":  30,
+                                        "unit":  "ml",
+                                        "quantity":  330,
+                                        "unit_price":  2424,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-18",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "330 ml",
+                                        "unit_price_label":  "24,24 kr/L"
+                                    }
+                                ],
+                     "total":  965,
+                     "page":  1,
+                     "limit":  1,
+                     "as_of":  "2026-10-18"
+                 }
+}

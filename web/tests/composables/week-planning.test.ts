@@ -214,13 +214,16 @@ function requestWorkspace(fetch = vi.fn().mockResolvedValue(noMatch)) {
 }
 
 describe('recommendation conversation continuity', () => {
-  it('clears explanations in the previous language while retaining editable preferences', async () => {
+  it('retains prior-language results and requires explicit refresh while retaining editable preferences', async () => {
     const { recommendation, locale, fetch } = requestWorkspace()
     await recommendation.submit('request', 'With potatoes')
     expect(recommendation.state.value.result).not.toBeNull()
     locale.value = 'da'
     await nextTick()
-    expect(recommendation.state.value).toEqual({ status: 'idle', result: null })
+    expect(recommendation.state.value.result).not.toBeNull()
+    expect(recommendation.staleLocale.value).toBe(true)
+    await recommendation.submit('more')
+    expect(fetch).toHaveBeenCalledTimes(1)
     expect(recommendation.constraints.value).toEqual(['With potatoes'])
     await recommendation.submit('request')
     expect(fetch.mock.calls[1][1].body).toMatchObject({ locale: 'da', constraints: ['With potatoes'] })

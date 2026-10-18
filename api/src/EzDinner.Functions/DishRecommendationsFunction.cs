@@ -25,6 +25,7 @@ public sealed class DishRecommendationsFunction(DishRecommendationQuery query, I
         if (!Guid.TryParse(familyId, out var family) || family == Guid.Empty) return new BadRequestObjectResult("INVALID_FAMILY_ID");
         var caller = request.HttpContext.User.GetNameIdentifierId();
         if (caller is null || !authorization.Authorize(caller, familyId, Resources.Dish, Actions.Read) ||
+            !authorization.Authorize(caller, familyId, Resources.Family, Actions.Read) ||
             !authorization.Authorize(caller, familyId, Resources.Dinner, Actions.Read) ||
             !authorization.Authorize(caller, familyId, Resources.Wishlist, Actions.Read)) return new UnauthorizedResult();
         try
@@ -41,6 +42,17 @@ public sealed class DishRecommendationsFunction(DishRecommendationQuery query, I
             return new OkObjectResult(new
             {
                 outcome = result.Outcome.ToString(), result.ActiveConstraints, result.ContextSummary, result.Message,
+                groceryCoverage = new
+                {
+                    status = result.GroceryCoverage?.Status.ToString() ?? "Unknown",
+                    evaluatedAt = result.GroceryCoverage is {} coverage ? InstantPattern.ExtendedIso.Format(coverage.EvaluatedAt) : null,
+                    storeIds = result.GroceryCoverage?.StoreIds ?? [],
+                    limitations = result.GroceryCoverage?.Limitations ?? [],
+                    stores = result.GroceryCoverage?.Stores.Select(store => new
+                    {
+                        store.StoreId, store.StoreName, status = store.Status.ToString(), store.UsableOfferCount
+                    }).ToArray() ?? []
+                },
                 dishes = result.Dishes.Select(dish => new
                 {
                     dish.DishId, dish.Name,
@@ -51,9 +63,24 @@ public sealed class DishRecommendationsFunction(DishRecommendationQuery query, I
                     assignedDates = dish.Signals.AssignedDates.Select(LocalDatePattern.Iso.Format),
                     historicalReasons = dish.HistoricalReasons.Select(reason => new { kind = reason.Kind.ToString(), reason.Value }),
                     explanations = dish.Explanations.Select(reason => new { reason.Text, kind = reason.Kind.ToString(), reason.SourceReferences }),
-                    dish.Limitations
+                    dish.Limitations,
+                    groceryOffers = dish.GroceryOffers.Select(offer => new
+                    {
+                        offer.OfferId, offer.Ingredient, offer.StoreId, offer.StoreName, offer.ProductName,
+                        offer.Price, offer.ReferencePrice, offer.DiscountFraction, offer.Currency,
+                        validFrom = offer.ValidFrom is {} start ? LocalDatePattern.Iso.Format(start) : null,
+                        validThrough = offer.ValidThrough is {} end ? LocalDatePattern.Iso.Format(end) : null,
+                        observedAt = InstantPattern.ExtendedIso.Format(offer.ObservedAt),
+                        usableUntil = InstantPattern.ExtendedIso.Format(offer.UsableUntil),
+                        offer.SourceUrl, offer.Relationship, offer.Conditions, offer.Freshness
+                    })
                 })
             });
+        }
+        catch (OperationCanceledException) when (request.HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            logger?.LogInformation("Dish recommendation request was aborted by the caller");
+            return new StatusCodeResult(StatusCodes.Status499ClientClosedRequest);
         }
         catch (JsonException) { return new BadRequestObjectResult("INVALID_PAYLOAD"); }
         catch (ArgumentException exception) { return new BadRequestObjectResult(exception.Message); }

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { groceryCoverageSchema, groceryOfferSchema, unknownGroceryCoverage } from './grocery-offers'
 
 const date = z.iso.date()
 const role = z.enum(['Main', 'Side', 'Dessert', 'Other'])
@@ -23,9 +24,11 @@ export const recommendedDishSchema = z.object({
   historicalReasons: z.array(z.object({ kind: z.enum(['Rating', 'Wish', 'NeverUsed', 'ObservedRotation', 'ForgottenFavourite', 'FormerRegular', 'RecentlyServed']), value: z.number().nullable() })),
   explanations: z.array(z.object({ text: z.string(), kind: z.enum(['Fact', 'Inference']), sourceReferences: z.array(z.string()) })),
   limitations: z.array(z.string()),
+  groceryOffers: z.array(groceryOfferSchema).default([]),
 })
 export type RecommendedDish = z.infer<typeof recommendedDishSchema>
 const resultFields = {
+  groceryCoverage: groceryCoverageSchema.default(unknownGroceryCoverage),
   activeConstraints: z.array(z.string()), contextSummary: z.string(), message: z.string().nullable(),
 }
 export const recommendationResultSchema = z.discriminatedUnion('outcome', [
