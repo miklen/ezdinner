@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
+import { useId } from 'vue'
 import { useDisplay } from 'vuetify'
-import type { Dinner } from '~/types'
+import type { Dinner, Dish } from '~/types'
 import DinnerDayDetails from './DinnerDayDetails.vue'
 
 const props = defineProps<{ dinner: Dinner }>()
@@ -45,11 +46,18 @@ async function removeOptOut() {
   }
 }
 
+type DishChoice =
+  | { kind: 'dish'; id: string; name: string; dish: Dish }
+  | { kind: 'create'; id: 'create-dish'; name: string; dishName: string }
+
 const dishSearch = ref('')
-const selectedDish = ref<Dish | null>(null)
-const dishSelector = ref<HTMLElement | null>(null)
+const selectedChoice = ref<DishChoice | null>(null)
+const assigningDish = ref(false)
 const mobileSheetOpen = ref(false)
 const mobileSearchRef = ref<InstanceType<typeof import('vuetify/components').VTextField> | null>(null)
+const mobileList = ref<HTMLElement | null>(null)
+const mobileActiveIndex = ref(0)
+const mobileListId = useId()
 
 const wishlistStore = useWishlistStore()
 
@@ -73,17 +81,31 @@ const filteredDishes = computed(() => {
   })
 })
 
-async function onDishSelected(dish: Dish | null) {
-  if (!dish) return
-  await addDishToMenu(dish.id)
-  selectedDish.value = null
+const dishChoices = computed<DishChoice[]>(() => {
+  const choices: DishChoice[] = filteredDishes.value.map(dish => ({ kind: 'dish', id: dish.id, name: dish.name, dish }))
+  const dishName = dishSearch.value.trim()
+  const exactMatch = dishesStore.dishes.some(dish => dish.name.trim().toLowerCase() === dishName.toLowerCase())
+  if (dishName && !exactMatch) {
+    choices.push({ kind: 'create', id: 'create-dish', name: t('plan.createDish', { name: dishName }), dishName })
+  }
+  return choices
+})
+
+async function selectDishChoice(choice: DishChoice | null) {
+  if (!choice || assigningDish.value) return
+  assigningDish.value = true
+  try {
+    if (choice.kind === 'create') await createDish(choice.dishName)
+    if (choice.kind === 'dish') await addDishToMenu(choice.dish.id)
+    mobileSheetOpen.value = false
+  } finally {
+    selectedChoice.value = null
+    dishSearch.value = ''
+    assigningDish.value = false
+  }
 }
 
-async function createDish() {
-  const dishName = dishSearch.value.trim()
-  if (!dishName) return
-  dishSearch.value = ''
-  dishSelector.value?.blur()
+async function createDish(dishName: string) {
   const dishId = (await dishRepo.create(appStore.activeFamilyId, dishName)) as string
   dishRepo.enrich(appStore.activeFamilyId, dishId).catch(() => {
     showSnackbar(t('dishes.aiAnalysisFailed'), { type: 'error' })
@@ -103,16 +125,26 @@ async function removeDishFromMenu(dishId: string) {
   emit('dinner:menuupdated', { date: props.dinner.date, dishId, dishName: '' })
 }
 
-async function selectDishFromSheet(dish: Dish) {
-  mobileSheetOpen.value = false
-  dishSearch.value = ''
-  await addDishToMenu(dish.id)
+function onMobileSearchKeydown(event: KeyboardEvent) {
+  if (event.isComposing || event.repeat || assigningDish.value) return
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    const choice = dishChoices.value[mobileActiveIndex.value]
+    if (choice) void selectDishChoice(choice)
+    return
+  }
+  if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return
+  event.preventDefault()
+  const direction = event.key === 'ArrowDown' ? 1 : -1
+  mobileActiveIndex.value = Math.max(0, Math.min(dishChoices.value.length - 1, mobileActiveIndex.value + direction))
+  nextTick(() => mobileList.value?.querySelector('.v-list-item--active')?.scrollIntoView({ block: 'nearest' }))
 }
 
-async function createDishFromSheet() {
-  mobileSheetOpen.value = false
-  await createDish()
+function onDesktopKeydown(event: KeyboardEvent) {
+  if (event.key === 'Tab' || (event.key === 'Enter' && (event.isComposing || event.repeat))) event.stopPropagation()
 }
+
+watch(dishChoices, () => { mobileActiveIndex.value = 0 })
 
 watch(mobileSheetOpen, (open) => {
   if (!open) dishSearch.value = ''
@@ -156,46 +188,52 @@ function focusMobileSearch() {
             <div class="sheet-search">
               <v-text-field
                 ref="mobileSearchRef"
-                v-model="dishSearch"
+                :model-value="dishSearch"
                 variant="outlined"
                 density="compact"
                 :placeholder="$t('plan.searchDishes')"
                 prepend-inner-icon="mdi-magnify"
                 clearable
                 hide-details
+                :disabled="assigningDish"
+                :loading="assigningDish"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="true"
+                :aria-controls="mobileListId"
+                :aria-activedescendant="dishChoices.length ? `${mobileListId}-${mobileActiveIndex}` : undefined"
+                @update:model-value="dishSearch = $event ?? ''"
+                @keydown="onMobileSearchKeydown"
               />
             </div>
 
-            <div class="sheet-list">
-              <v-list density="compact">
-                <template v-if="filteredDishes.length > 0">
-                  <v-list-item
-                    v-for="dish in filteredDishes"
-                    :key="dish.id"
-                    :title="undefined"
-                    class="dish-row"
-                    min-height="48"
-                    @click="selectDishFromSheet(dish)"
-                  >
-                    <PlanDishRow :dish="dish" />
-                  </v-list-item>
-                </template>
-
-                <v-list-item v-if="filteredDishes.length === 0 && !dishSearch">
-                  <span class="text-body-2 text-medium-emphasis">{{ $t('plan.noDishesYet') }}</span>
+            <div ref="mobileList" class="sheet-list">
+              <v-list :id="mobileListId" density="compact" role="listbox" :aria-label="$t('plan.searchDishes')">
+                <v-list-item
+                  v-for="(choice, index) in dishChoices"
+                  :id="`${mobileListId}-${index}`"
+                  :key="choice.id"
+                  :title="undefined"
+                  class="dish-picker-item"
+                  :class="choice.kind === 'create' ? 'create-dish-item' : 'dish-row'"
+                  :active="index === mobileActiveIndex"
+                  :aria-selected="index === mobileActiveIndex"
+                  :disabled="assigningDish"
+                  role="option"
+                  min-height="48"
+                  @focus="mobileActiveIndex = index"
+                  @click="selectDishChoice(choice)"
+                >
+                  <template v-if="choice.kind === 'create'" #prepend>
+                    <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
+                  </template>
+                  <PlanDishRow v-if="choice.kind === 'dish'" :dish="choice.dish" />
+                  <span v-else class="text-body-2">{{ choice.name }}</span>
                 </v-list-item>
 
-                <template v-if="dishSearch">
-                  <v-divider v-if="filteredDishes.length > 0" class="my-1" />
-                  <v-list-item class="create-dish-item" min-height="48" @click="createDishFromSheet">
-                    <template #prepend>
-                      <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
-                    </template>
-                    <span class="text-body-2">
-                      {{ $t('plan.createDish', { name: dishSearch }) }}
-                    </span>
-                  </v-list-item>
-                </template>
+                <v-list-item v-if="dishChoices.length === 0">
+                  <span class="text-body-2 text-medium-emphasis">{{ $t('plan.noDishesYet') }}</span>
+                </v-list-item>
               </v-list>
             </div>
           </v-card>
@@ -205,54 +243,38 @@ function focusMobileSearch() {
       <!-- Desktop: compact autocomplete -->
       <v-autocomplete
         v-else
-        ref="dishSelector"
-        v-model="selectedDish"
+        v-model="selectedChoice"
         v-model:search="dishSearch"
-        :items="filteredDishes"
+        :items="dishChoices"
         item-title="name"
         item-value="id"
         return-object
         no-filter
+        auto-select-first
+        :disabled="assigningDish"
+        :loading="assigningDish"
         variant="outlined"
         density="compact"
         :label="$t('plan.addDishToMenu')"
         :placeholder="$t('plan.searchDishes')"
         class="dinner-details__autocomplete"
-        @update:model-value="onDishSelected"
-        @keyup.enter="createDish"
+        @keydown.capture="onDesktopKeydown"
+        @update:model-value="selectDishChoice"
       >
         <template #item="{ item, props: itemProps }">
-          <v-list-item v-bind="itemProps" :title="undefined" min-height="36" class="dish-row">
-            <PlanDishRow :dish="item.raw" />
+          <v-list-item v-bind="itemProps" :title="undefined" min-height="36" class="dish-picker-item" :class="item.raw.kind === 'create' ? 'create-dish-item' : 'dish-row'" role="option">
+            <template v-if="item.raw.kind === 'create'" #prepend>
+              <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
+            </template>
+            <PlanDishRow v-if="item.raw.kind === 'dish'" :dish="item.raw.dish" />
+            <span v-else class="text-body-2">{{ item.raw.name }}</span>
           </v-list-item>
         </template>
 
         <template #no-data>
-          <v-list-item v-if="!dishSearch">
+          <v-list-item>
             <span class="text-body-2 text-medium-emphasis">{{ $t('plan.startTypingToSearch') }}</span>
           </v-list-item>
-          <v-list-item v-else class="create-dish-item" @click="createDish">
-            <template #prepend>
-              <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
-            </template>
-            <span class="text-body-2">
-              {{ $t('plan.createDish', { name: dishSearch }) }}
-            </span>
-          </v-list-item>
-        </template>
-
-        <template #append-item>
-          <template v-if="dishSearch">
-            <v-divider class="my-1" />
-            <v-list-item class="create-dish-item" @click="createDish">
-              <template #prepend>
-                <v-icon size="16" color="primary">mdi-plus-circle-outline</v-icon>
-              </template>
-              <span class="text-body-2">
-                {{ $t('plan.createDish', { name: dishSearch }) }}
-              </span>
-            </v-list-item>
-          </template>
         </template>
       </v-autocomplete>
 
@@ -279,6 +301,11 @@ function focusMobileSearch() {
 
 .create-dish-item:hover {
   background: var(--color-surface-variant);
+}
+
+.dish-picker-item.v-list-item--active,
+.dish-picker-item:focus-visible {
+  background: rgba(var(--color-primary-rgb), 0.12);
 }
 
 /* Bottom sheet */
