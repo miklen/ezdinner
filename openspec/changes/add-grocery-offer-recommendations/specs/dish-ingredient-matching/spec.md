@@ -6,13 +6,18 @@ Relate supermarket offers to important ingredients in family dishes while honest
 
 ## ADDED Requirements
 
-### Requirement: Recognise supported ingredient names in both application languages
-Explicit ingredient validation SHALL recognise common Danish names and English singular forms for supported canonical ingredients, including oksekød, æg, feta and cherrytomater. Aliases SHALL match whole words, require actual source excerpts for factual claims, and remain subject to family-note exclusions. Vocabulary updates SHALL invalidate previously cached profiles through the profile cache identity.
+### Requirement: Model normalizes ingredient language without maintained translations
+The model SHALL interpret ingredient names, synonyms, inflections, exclusions and substitutions in the original source language, including mixed-language text, and map them to supported canonical ingredient keys. Code SHALL NOT require a maintained translation/alias list or language-specific exclusion patterns. Factual matches SHALL retain a verbatim original-language excerpt from a cited current dish source; translated or invented excerpts, foreign references, unknown keys and invalid weights SHALL be rejected. Canonical category compatibility and scoring SHALL remain deterministic. Semantic interpretation and family-note precedence are model responsibilities, not independently verified by excerpt matching. Profile/prompt/vocabulary updates SHALL invalidate previously cached profiles through the profile cache identity.
 
 #### Scenario: Saved Danish recipe contains ordinary ingredients
 - **WHEN** a saved recipe explicitly contains Æg, Feta and Cherrytomater
 - **THEN** supported factual matches for eggs, cheese and tomatoes are accepted
 - **AND** family notes excluding æg still prevent an egg match
+
+#### Scenario: Ingredient appears in another source language
+- **WHEN** the model maps huevos or 卵 to eggs and cites that verbatim source excerpt
+- **THEN** the ingredient profile is accepted without adding either word to a translation table
+- **AND** a translated supporting excerpt absent from the cited source is rejected
 
 ### Requirement: Ingredient matches retain confidence and evidence
 The system SHALL derive a bounded set of primary, cost-relevant ingredient matches from a dish's current name, family notes, and captured recipe when available. Each match SHALL retain ingredient identity and specificity, ingredient importance, bounded confidence, and whether it is supported by saved evidence or culinary inference. A recognizable dish without a recipe SHALL remain eligible for confident inference; a vague title alone SHALL NOT support invented ingredient matches. Confidence SHALL describe the specific ingredient relationship and SHALL NOT be presented as a measured probability.

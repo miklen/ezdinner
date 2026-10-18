@@ -21,7 +21,12 @@ public class DishIngredientProfileTests
     [InlineData("tomatoes", "tomato")]
     [InlineData("mushrooms", "champignon")]
     [InlineData("pork", "svinekød")]
-    public async Task DanishAndEnglishIngredientNamesRetainExplicitEvidence(string key, string excerpt)
+    [InlineData("eggs", "huevos")]
+    [InlineData("eggs", "卵")]
+    [InlineData("cheese", "fromage de chèvre")]
+    [InlineData("chickpeas", "ceci")]
+    [InlineData("mushrooms", "Pilze")]
+    public async Task ModelNormalizedIngredientsRetainOriginalLanguageEvidenceWithoutAnAliasList(string key, string excerpt)
     {
         var dish = Dish("Dinner", recipe: $"200 g {excerpt}");
         var completion = new Completion((_, _) => Task.FromResult(Response(dish, key, "Fact", "recipe", excerpt)));
@@ -31,23 +36,13 @@ public class DishIngredientProfileTests
         Assert.Equal(excerpt, ingredient.SupportingExcerpt);
     }
 
-    [Theory]
-    [InlineData("eggs", "Æg", "Uden æg")]
-    [InlineData("cheese", "Feta", "Erstat feta med tofu")]
-    [InlineData("beef", "oksekød", "Ingen oksekød")]
-    public async Task DanishAliasesDoNotOverrideFamilyExclusions(string key, string excerpt, string notes)
+    [Fact]
+    public async Task TranslatedExcerptCannotReplaceVerbatimSourceEvidence()
     {
-        var dish = Dish("Dinner", notes, excerpt);
-        var completion = new Completion((_, _) => Task.FromResult(Response(dish, key, "Fact", "recipe", excerpt)));
+        var dish = Dish("Dinner", recipe: "2 Æg");
+        var completion = new Completion((_, _) => Task.FromResult(Response(dish, "eggs", "Fact", "recipe", "2 eggs")));
         await Assert.ThrowsAsync<DishRecommendationProviderException>(() => new DishIngredientProfileInference(completion).InferAsync([dish], default));
     }
-
-    [Theory]
-    [InlineData("eggs", "æggefri")]
-    [InlineData("beef", "oksekødsfri")]
-    [InlineData("cheese", "fetaagtig")]
-    public void IngredientAliasesMustMatchWholeWords(string key, string excerpt)
-        => Assert.False(IngredientVocabularyFactory.SupportsExplicitClaim(key, excerpt));
 
     [Fact]
     public async Task UnsupportedClaimDoesNotDiscardOtherDishesValidProfiles()
@@ -55,7 +50,7 @@ public class DishIngredientProfileTests
         var valid = Dish("Lentil soup", "lentils");
         var invalid = Dish("Mystery");
         using var validResponse = JsonDocument.Parse(Response(valid, "lentils", "Fact", "notes", "lentils"));
-        using var invalidResponse = JsonDocument.Parse(Response(invalid, "minced-beef", "Fact", "title", "Mystery"));
+        using var invalidResponse = JsonDocument.Parse(Response(invalid, "minced-beef", "Fact", "title", "invented beef"));
         var response = JsonSerializer.Serialize(new { profiles = new[]
         { validResponse.RootElement.GetProperty("profiles")[0], invalidResponse.RootElement.GetProperty("profiles")[0] } });
         var cache = new Cache();
@@ -108,7 +103,7 @@ public class DishIngredientProfileTests
     [Theory]
     [InlineData("notes", "invented lentils", "lentils")]
     [InlineData("foreign", "lentils", "lentils")]
-    [InlineData("title", "Lasagne", "minced-beef")]
+    [InlineData("title", "lentils", "lentils")]
     [InlineData("notes", "lentils", "invented-key")]
     public async Task UnsupportedExplicitClaimsAndForeignReferencesAreRejected(string source, string excerpt, string key)
     {
@@ -124,19 +119,31 @@ public class DishIngredientProfileTests
     [InlineData("Brug linser i stedet for kød")]
     [InlineData("Uden hakket oksekød")]
     [InlineData("No beef")]
-    public async Task RecipeFactCannotOverrideExplicitFamilyAdaptationEvenWhenModelIgnoresPrecedence(string notes)
+    [InlineData("Sin carne")]
+    [InlineData("肉を使わない")]
+    public async Task FamilyAdaptationsReachModelUnmodifiedAndItsResolvedEmptyProfileHasNoOfferMatch(string notes)
     {
         var dish = Dish("Lasagne", notes, "500 g minced beef");
-        var completion = new Completion((_, _) => Task.FromResult(Response(dish, "minced-beef", "Fact", "recipe", "minced beef")));
-        await Assert.ThrowsAsync<DishRecommendationProviderException>(() => new DishIngredientProfileInference(completion).InferAsync([dish], default));
+        var completion = new Completion((evidence, _) =>
+        {
+            using var sent = JsonDocument.Parse(evidence);
+            var sources = sent.RootElement.GetProperty("dishes")[0].GetProperty("sources").EnumerateArray();
+            Assert.Contains(sources, source => source.GetProperty("text").GetString() == notes);
+            return Task.FromResult(JsonSerializer.Serialize(new { profiles = new[] { new { dishId = dish.DishId, ingredients = Array.Empty<object>() } } }));
+        });
+        var profiles = await new DishIngredientProfileInference(completion).InferAsync([dish], default);
+        Assert.Empty(profiles[dish.DishId]);
+        Assert.Contains("exclusions, negation and substitutions semantically in every source language", DishIngredientProfileInference.SystemPrompt);
+        Assert.Contains("notes override saved recipes", DishIngredientProfileInference.SystemPrompt);
     }
 
     [Fact]
-    public async Task RecipeAdaptationOverridesTitleInferenceButExplicitNotesMayOverrideRecipe()
+    public async Task ModelResolvedRecipeAndNoteAdaptationsRetainTheirOwnEvidence()
     {
         var dish = Dish("Lasagne", recipe: "Use lentils instead of meat");
-        var completion = new Completion((_, _) => Task.FromResult(Response(dish, "minced-beef", "Inference", "title", "Lasagne")));
-        await Assert.ThrowsAsync<DishRecommendationProviderException>(() => new DishIngredientProfileInference(completion).InferAsync([dish], default));
+        var completion = new Completion((_, _) => Task.FromResult(Response(dish, "lentils", "Fact", "recipe", "lentils")));
+        var vegetarian = await new DishIngredientProfileInference(completion).InferAsync([dish], default);
+        Assert.Equal("lentils", Assert.Single(vegetarian[dish.DishId]).Key);
         dish = dish with { Sources = dish.Sources.Append(new DishRecommendationSource($"{dish.DishId}:notes", "Use minced beef in our family version")).ToArray() };
         completion = new Completion((_, _) => Task.FromResult(Response(dish, "minced-beef", "Fact", "notes", "minced beef")));
         var profile = await new DishIngredientProfileInference(completion).InferAsync([dish], default);

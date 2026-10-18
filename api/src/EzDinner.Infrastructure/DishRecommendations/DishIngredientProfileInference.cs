@@ -9,13 +9,16 @@ namespace EzDinner.Infrastructure.DishRecommendations;
 
 public sealed class DishIngredientProfileInference(IDishRecommendationCompletionClient completion)
 {
-    public const string Version = "haiku-4-5-20251001:ingredients-2:vocabulary-" + IngredientVocabularyFactory.Version;
+    public const string Version = "haiku-4-5-20251001:ingredients-3:vocabulary-" + IngredientVocabularyFactory.Version;
     public const string SystemPrompt = """
         Infer cost-relevant ingredients for each supplied dish, independently of offers. Return JSON only:
         {"profiles":[{"dishId":"GUID","ingredients":[{"key":"canonical vocabulary key","importance":1.0,"confidence":0.9,"evidenceKind":"Fact|Inference","sourceReferences":["supplied reference"],"supportingExcerpt":null,"role":"Primary|Incidental"}]}]}
         Return every supplied dish once, at most five ingredients per dish, or an empty array when culinary identity is missing.
         Use only the supplied vocabulary keys. Weights must be finite numbers in [0,1].
+        Interpret ingredients in any source language, including mixed-language text, synonyms, inflections and culinary names. Map their meaning to the supplied canonical keys; no translation dictionary is supplied or required.
+        Keep supportingExcerpt verbatim in its original language. Never translate, paraphrase or correct the excerpt itself.
         Explicit family adaptations in notes override saved recipes; saved recipes override explicit titles; explicit titles override general culinary inference.
+        Interpret exclusions, negation and substitutions semantically in every source language. An ingredient mentioned only as excluded, replaced, optional but not used, or in a free-from claim is not evidence that the dish contains it.
         Resolve contradictions conservatively: omit unsupported ingredients. If notes replace meat with lentils, omit every meat ingredient even if the recipe or title normally contains meat.
         Fact requires a verbatim supportingExcerpt from a supplied source that explicitly names that ingredient, with its sourceReference.
         Conventional ingredients inferred from dish names are Inference, never Fact. Vague curry does not establish chicken; unnamed minced meat does not establish beef or pork.
@@ -87,14 +90,11 @@ public sealed class DishIngredientProfileInference(IDishRecommendationCompletion
         var sources = dish.Sources.ToDictionary(source => source.Reference);
         return Array.AsReadOnly(profile.Ingredients.Select(ingredient =>
         {
-            if (DishIngredientSourceValidator.ContradictsSources(ingredient.Key, dish.Sources))
-                throw new JsonException("Ingredient contradicts higher-priority saved evidence");
             if (ingredient.SourceReferences.Any(reference => !sources.ContainsKey(reference)))
                 throw new JsonException("Unknown ingredient source");
             if (ingredient.EvidenceKind == IngredientEvidenceKind.Fact &&
                 (string.IsNullOrWhiteSpace(ingredient.SupportingExcerpt) ||
-                 !ingredient.SourceReferences.Any(reference => sources[reference].Text.Contains(ingredient.SupportingExcerpt, StringComparison.Ordinal)) ||
-                 !IngredientVocabularyFactory.SupportsExplicitClaim(ingredient.Key, ingredient.SupportingExcerpt)))
+                 !ingredient.SourceReferences.Any(reference => sources[reference].Text.Contains(ingredient.SupportingExcerpt, StringComparison.Ordinal))))
                 throw new JsonException("Unsupported explicit ingredient");
             return new DishIngredientMatchValueObject(ingredient.Key, ingredient.Importance, ingredient.Confidence,
                 ingredient.EvidenceKind, ingredient.SourceReferences, ingredient.SupportingExcerpt, ingredient.Role);

@@ -25,6 +25,8 @@ Observed integration points:
 
 ## Decisions
 
+Ingredient interpretation update: at the user's request, ingredient translation and natural-language source-precedence interpretation belong to the existing inference model. The canonical vocabulary contains only supported categories and compatibility, without language aliases. The inference adapter checks response structure, current dish/source references, verbatim factual excerpts and bounded weights; it does not claim that these checks independently establish semantic correctness. The model receives explicit multilingual normalization, negation/substitution and family-note precedence instructions. Profile and vocabulary versions invalidate earlier profiles after removing the lexical validator. This adds no second model call or per-product AI classification.
+
 ### 1. Gate retailer enablement on acquisition evidence
 
 Implement one narrow `IGroceryOfferSource` boundary, with adapters only for verified sources. Source/provider identity is separate from stable retailer IDs `nemlig` and `rema1000`; one authorized provider may cover both without two duplicate clients. All Prej catalog chains are selectable through one adapter. Per-chain verification gates offer acquisition independently of selection; no plugin platform is introduced.
