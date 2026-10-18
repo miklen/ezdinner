@@ -1,4 +1,6 @@
 using System;
+using EzDinner.Application.Commands.Families;
+using EzDinner.Functions.Models.Query;
 using AutoMapper;
 using EzDinner.Query.Core.FamilyQueries;
 using Microsoft.AspNetCore.Http;
@@ -14,12 +16,14 @@ namespace EzDinner.Functions
         private readonly ILogger<FamiliesGet> _logger;
         private readonly IFamilyQueryService _familyService;
         private readonly IMapper _mapper;
+        private readonly IGroceryStoreCatalog _stores;
 
-        public FamiliesGetFull(ILogger<FamiliesGet> logger, IMapper mapper, IFamilyQueryService familyService)
+        public FamiliesGetFull(ILogger<FamiliesGet> logger, IMapper mapper, IFamilyQueryService familyService, IGroceryStoreCatalog stores)
         {
             _logger = logger;
             _familyService = familyService;
             _mapper = mapper;
+            _stores = stores;
         }
 
         [Function(nameof(FamiliesGetFull))]
@@ -31,7 +35,8 @@ namespace EzDinner.Functions
 
             var families = await _familyService.GetFamiliesDetailsAsync(Guid.Parse(req.HttpContext.User.GetNameIdentifierId()!));
 
-            return new OkObjectResult(families);
+            var stores = await _stores.GetStoresAsync(req.HttpContext.RequestAborted);
+            return new OkObjectResult(families.Select(family => new FamilyDetailsQueryModel(family, stores)).ToArray());
         }
     }
 }

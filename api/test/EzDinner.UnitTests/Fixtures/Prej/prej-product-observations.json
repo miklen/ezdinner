@@ -1,0 +1,117 @@
+{
+    "requestPath":  "/v1/products/batch?ids=17590,37260",
+    "retrievedAt":  "2026-10-18T12:10:05.6662904Z",
+    "elapsedMilliseconds":  252,
+    "status":  200,
+    "quotaLimit":  "25",
+    "quotaRemaining":  "20",
+    "response":  {
+                     "products":  [
+                                      {
+                                          "id":  17590,
+                                          "name":  "Rose Kyllingebrystfilet",
+                                          "description":  "Rose kyllingebrystfilet. 750 g.",
+                                          "brand":  "Rose",
+                                          "image_url":  "https://www.nemlig.com/scommerce/images/kyllingebrystfilet.jpg?i=P9n09ddb/5064235",
+                                          "unit":  "g",
+                                          "quantity":  650,
+                                          "organic":  false,
+                                          "chain_count":  1,
+                                          "gtins":  [
+                                                        "5760725238434"
+                                                    ],
+                                          "category_name":  "Kød \u0026 fisk",
+                                          "category_slug":  "koed-og-fisk",
+                                          "subcategory_name":  "Kylling",
+                                          "subcategory_slug":  "kylling",
+                                          "sub_subcategory_name":  "Kyllingebrystfilet",
+                                          "sub_subcategory_slug":  "kyllingebryst",
+                                          "on_offer":  true,
+                                          "offer_flyer":  false,
+                                          "offer_upcoming":  true,
+                                          "prices":  [
+                                                         {
+                                                             "chain_slug":  "nemlig",
+                                                             "chain_name":  "Nemlig",
+                                                             "chain_logo_url":  "https://prej.dk/logos/nemlig.webp",
+                                                             "image_url":  null,
+                                                             "unit":  "g",
+                                                             "quantity":  650,
+                                                             "price":  5000,
+                                                             "unit_price":  7692,
+                                                             "last_seen_date":  "2026-10-18",
+                                                             "source":  "scraped",
+                                                             "ai_matched":  true,
+                                                             "chain_gtins":  [
+                                                                                 "5760725238434"
+                                                                             ],
+                                                             "chain_gtins_source":  "matched",
+                                                             "is_offer":  true,
+                                                             "offer_starts":  null,
+                                                             "offer_ends":  "2026-10-18",
+                                                             "multi_buy":  null,
+                                                             "quantity_label":  "650 g",
+                                                             "unit_price_label":  "76,92 kr/kg"
+                                                         }
+                                                     ],
+                                          "quantity_label":  "650 g",
+                                          "unit_price_label":  null
+                                      },
+                                      {
+                                          "id":  37260,
+                                          "name":  "Dansk Ungkvæg i tern",
+                                          "description":  "Ungkvæg i tern fra Danmark. 300 g pakke fra Rema 1000.",
+                                          "brand":  "Dansk UngkvæG",
+                                          "image_url":  "https://rema-product-images.digital.rema1000.dk/405238/1-large-MBoNXJBZ9v.webp",
+                                          "unit":  "g",
+                                          "quantity":  300,
+                                          "organic":  false,
+                                          "chain_count":  1,
+                                          "gtins":  [
+                                                        "5701050374893",
+                                                        "5701050417965",
+                                                        "5705830618351"
+                                                    ],
+                                          "category_name":  "Kød \u0026 fisk",
+                                          "category_slug":  "koed-og-fisk",
+                                          "subcategory_name":  "Oksekød",
+                                          "subcategory_slug":  "oksekoed",
+                                          "sub_subcategory_name":  null,
+                                          "sub_subcategory_slug":  null,
+                                          "on_offer":  true,
+                                          "offer_flyer":  false,
+                                          "offer_upcoming":  true,
+                                          "prices":  [
+                                                         {
+                                                             "chain_slug":  "rema1000",
+                                                             "chain_name":  "Rema 1000",
+                                                             "chain_logo_url":  "https://prej.dk/logos/rema1000.webp",
+                                                             "image_url":  null,
+                                                             "unit":  "g",
+                                                             "quantity":  300,
+                                                             "price":  3900,
+                                                             "unit_price":  13000,
+                                                             "last_seen_date":  "2026-10-18",
+                                                             "source":  "scraped",
+                                                             "ai_matched":  false,
+                                                             "chain_gtins":  [
+                                                                                 "5701050374893",
+                                                                                 "5701050417965",
+                                                                                 "5705830618351"
+                                                                             ],
+                                                             "chain_gtins_source":  "chain",
+                                                             "is_offer":  true,
+                                                             "offer_starts":  null,
+                                                             "offer_ends":  "2026-10-23",
+                                                             "multi_buy":  null,
+                                                             "quantity_label":  "300 g",
+                                                             "unit_price_label":  "130,00 kr/kg"
+                                                         }
+                                                     ],
+                                          "quantity_label":  "300 g",
+                                          "unit_price_label":  null
+                                      }
+                                  ],
+                     "as_of":  "2026-10-18"
+                 }
+}

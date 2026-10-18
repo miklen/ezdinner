@@ -1,0 +1,99 @@
+{
+    "requestPath":  "/v1/offers?chain=nemlig\u0026category=koed-og-fisk\u0026limit=3\u0026page=1",
+    "retrievedAt":  "2026-10-18T12:09:09.2816203Z",
+    "status":  200,
+    "quotaLimit":  "25",
+    "quotaRemaining":  "24",
+    "response":  {
+                     "offers":  [
+                                    {
+                                        "product_id":  17590,
+                                        "name":  "Rose Kyllingebrystfilet",
+                                        "brand":  "Rose",
+                                        "image_url":  "https://www.nemlig.com/scommerce/images/kyllingebrystfilet.jpg?i=P9n09ddb/5064235",
+                                        "gtins":  [
+                                                      "5760725238434"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5760725238434"
+                                                        ],
+                                        "chain_gtins_source":  "matched",
+                                        "chain_slug":  "nemlig",
+                                        "chain_name":  "Nemlig",
+                                        "chain_logo_url":  "https://prej.dk/logos/nemlig.webp",
+                                        "price":  5000,
+                                        "normal_price":  8275,
+                                        "discount_pct":  40,
+                                        "unit":  "g",
+                                        "quantity":  650,
+                                        "unit_price":  7692,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-18",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "650 g",
+                                        "unit_price_label":  "76,92 kr/kg"
+                                    },
+                                    {
+                                        "product_id":  65607,
+                                        "name":  "De Danske Familiegårde Hel kylling i stegepose",
+                                        "brand":  null,
+                                        "image_url":  "https://www.nemlig.com/scommerce/images/hel-kylling-i-stegepose.jpg?i=-PT_U3Qb/5068836",
+                                        "gtins":  [
+                                                      "6507528"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "6507528"
+                                                        ],
+                                        "chain_gtins_source":  "matched",
+                                        "chain_slug":  "nemlig",
+                                        "chain_name":  "Nemlig",
+                                        "chain_logo_url":  "https://prej.dk/logos/nemlig.webp",
+                                        "price":  7595,
+                                        "normal_price":  7995,
+                                        "discount_pct":  5,
+                                        "unit":  "g",
+                                        "quantity":  1350,
+                                        "unit_price":  5626,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-18",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "1,4 kg",
+                                        "unit_price_label":  "56,26 kr/kg"
+                                    },
+                                    {
+                                        "product_id":  70602,
+                                        "name":  "Toft Røgeri Røget Hamburgerryg",
+                                        "brand":  null,
+                                        "image_url":  "https://www.nemlig.com/scommerce/images/roeget-hamburgerryg.jpg?i=nZQm76Bd/5017144",
+                                        "gtins":  [
+
+                                                  ],
+                                        "chain_gtins":  [
+
+                                                        ],
+                                        "chain_gtins_source":  null,
+                                        "chain_slug":  "nemlig",
+                                        "chain_name":  "Nemlig",
+                                        "chain_logo_url":  "https://prej.dk/logos/nemlig.webp",
+                                        "price":  6995,
+                                        "normal_price":  7551,
+                                        "discount_pct":  7,
+                                        "unit":  "g",
+                                        "quantity":  1000,
+                                        "unit_price":  6995,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-18",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "1 kg",
+                                        "unit_price_label":  "69,95 kr/kg"
+                                    }
+                                ],
+                     "total":  77,
+                     "page":  1,
+                     "limit":  3,
+                     "as_of":  "2026-10-18"
+                 }
+}

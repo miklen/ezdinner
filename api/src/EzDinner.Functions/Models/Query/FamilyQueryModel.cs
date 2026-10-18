@@ -14,6 +14,7 @@ namespace EzDinner.Functions.Models.Query
         public Guid Id { get; set; }
         public string? Name { get; set; }
         public List<FamilyMemberQueryModel> FamilyMembers { get; set; } = new List<FamilyMemberQueryModel>();
+        public IReadOnlyList<string> GroceryStores { get; set; } = Array.Empty<string>();
     }
 
     public class FamilyMemberQueryModel

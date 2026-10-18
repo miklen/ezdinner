@@ -41,6 +41,14 @@ public static class DishRecommendationEvidenceFactory
             {
                 dish.DishId, dish.Name,
                 roles = dish.Roles.Select(role => role.ToString()), dish.Sources,
+                dish.SemanticOfferBonus,
+                groceryOffers = dish.GroceryOffers.Select(offer => new
+                {
+                    offer.OfferId, offer.Ingredient, offer.StoreId, offer.ProductName, offer.Price, offer.ReferencePrice,
+                    offer.DiscountFraction, offer.Relationship, offer.Conditions,
+                    usableUntil = NodaTime.Text.InstantPattern.ExtendedIso.Format(offer.UsableUntil),
+                    buyBy = offer.ValidThrough?.ToString("yyyy-MM-dd", null)
+                }),
                 dish.Candidate.Rating, dish.Candidate.WishVotes, dish.Candidate.IsWished,
                 lastServed = dish.Candidate.Usage.LastServed?.ToString("yyyy-MM-dd", null),
                 dish.Candidate.Usage.ServingCount, dish.Candidate.Usage.TypicalSpacingDays,

@@ -15,20 +15,34 @@ public sealed record DishRecommendationRequest(LocalDate SelectedMonday, LocalDa
 public sealed record DishRecommendationSource(string Reference, string Text);
 public sealed record DishRecommendationEvidence(Guid DishId, string Name,
     IReadOnlyList<DishRole> Roles, IReadOnlyList<DishRecommendationSource> Sources,
-    DishRecommendationCandidateValueObject Candidate);
+    DishRecommendationCandidateValueObject Candidate)
+{
+    public IReadOnlyList<GroceryOpportunity> GroceryOffers { get; init; } = [];
+    public double GroceryOfferPoints { get; init; }
+    public double SemanticOfferBonus => 0.05 * GroceryOfferPoints / 10;
+}
 public sealed record RecommendationDinnerContext(LocalDate Date, IReadOnlyList<Guid> DishIds, string? OptOutReason);
 public sealed record DishRecommendationContext(IReadOnlyList<DishRecommendationEvidence> Dishes,
-    IReadOnlyList<RecommendationDinnerContext> Dinners);
+    IReadOnlyList<RecommendationDinnerContext> Dinners)
+{
+    public IReadOnlyList<string> GroceryStoreIds { get; init; } = [];
+}
 
 public sealed record RecommendationExplanation(string Text, RecommendationEvidenceKind Kind,
     IReadOnlyList<string> SourceReferences);
 public sealed record RecommendedDish(Guid DishId, string Name,
     DishRecommendationCandidateValueObject Signals,
     IReadOnlyList<DishRecommendationReasonValueObject> HistoricalReasons,
-    IReadOnlyList<RecommendationExplanation> Explanations, IReadOnlyList<string> Limitations);
+    IReadOnlyList<RecommendationExplanation> Explanations, IReadOnlyList<string> Limitations)
+{
+    public IReadOnlyList<GroceryOpportunity> GroceryOffers { get; init; } = [];
+}
 public sealed record DishRecommendationResult(RecommendationOutcome Outcome,
     IReadOnlyList<RecommendedDish> Dishes, IReadOnlyList<string> ActiveConstraints,
-    string ContextSummary, string? Message);
+    string ContextSummary, string? Message)
+{
+    public GroceryCoverage? GroceryCoverage { get; init; }
+}
 
 public sealed record RecommendationProviderMatch(Guid DishId, double Suitability,
     IReadOnlyList<RecommendationExplanation> Explanations, IReadOnlyList<string> Limitations);

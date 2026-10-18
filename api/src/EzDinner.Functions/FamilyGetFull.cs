@@ -1,4 +1,6 @@
 using System;
+using EzDinner.Application.Commands.Families;
+using EzDinner.Functions.Models.Query;
 using AutoMapper;
 using EzDinner.Authorization.Core;
 using EzDinner.Query.Core.FamilyQueries;
@@ -16,13 +18,15 @@ namespace EzDinner.Functions
         private readonly IFamilyQueryService _familyService;
         private readonly IMapper _mapper;
         private readonly IAuthzService _authz;
+        private readonly IGroceryStoreCatalog _stores;
 
-        public FamilyGetFull(ILogger<FamilyGetFull> logger, IMapper mapper, IAuthzService authz, IFamilyQueryService familyService)
+        public FamilyGetFull(ILogger<FamilyGetFull> logger, IMapper mapper, IAuthzService authz, IFamilyQueryService familyService, IGroceryStoreCatalog stores)
         {
             _logger = logger;
             _familyService = familyService;
             _mapper = mapper;
             _authz = authz;
+            _stores = stores;
         }
 
         [Function(nameof(FamilyGetFull))]
@@ -34,7 +38,8 @@ namespace EzDinner.Functions
             var userId = Guid.Parse(req.HttpContext.User.GetNameIdentifierId() ?? "");
             if (!_authz.Authorize(userId.ToString(), familyId, Resources.Family, Actions.Read)) return new UnauthorizedResult();
             var family = await _familyService.GetFamilyDetailsAsync(Guid.Parse(familyId));
-            return new OkObjectResult(family);
+            if (family is null) return new NotFoundObjectResult("FAMILY_NOT_FOUND");
+            return new OkObjectResult(new FamilyDetailsQueryModel(family, await _stores.GetStoresAsync(req.HttpContext.RequestAborted)));
         }
     }
 }

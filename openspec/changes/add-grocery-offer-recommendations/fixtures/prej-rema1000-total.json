@@ -1,0 +1,44 @@
+{
+    "requestPath":  "/v1/offers?chain=rema1000\u0026limit=1\u0026page=1",
+    "retrievedAt":  "2026-10-18T12:10:05.4128093Z",
+    "elapsedMilliseconds":  1443,
+    "status":  200,
+    "quotaLimit":  "25",
+    "quotaRemaining":  "21",
+    "response":  {
+                     "offers":  [
+                                    {
+                                        "product_id":  24,
+                                        "name":  "Faxe Kondi",
+                                        "brand":  "Faxe Kondi",
+                                        "image_url":  "https://digitalassets.sallinggroup.com/image/upload/e_trim:2/b_white,c_pad,e_sharpen:80,f_auto,q_auto,w_690,h_690/58334663-038a-4ce0-9f7f-4e1c53d546b7",
+                                        "gtins":  [
+                                                      "5741000123591"
+                                                  ],
+                                        "chain_gtins":  [
+                                                            "5741000123591"
+                                                        ],
+                                        "chain_gtins_source":  "chain",
+                                        "chain_slug":  "rema1000",
+                                        "chain_name":  "Rema 1000",
+                                        "chain_logo_url":  "https://prej.dk/logos/rema1000.webp",
+                                        "price":  1200,
+                                        "normal_price":  1600,
+                                        "discount_pct":  25,
+                                        "unit":  "ml",
+                                        "quantity":  1500,
+                                        "unit_price":  800,
+                                        "offer_starts":  null,
+                                        "offer_ends":  "2026-10-23",
+                                        "source":  "scraped",
+                                        "multi_buy":  null,
+                                        "quantity_label":  "1,5 L",
+                                        "unit_price_label":  "8,00 kr/L"
+                                    }
+                                ],
+                     "total":  188,
+                     "page":  1,
+                     "limit":  1,
+                     "as_of":  "2026-10-18"
+                 }
+}

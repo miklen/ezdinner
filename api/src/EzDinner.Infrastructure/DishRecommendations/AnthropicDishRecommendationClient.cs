@@ -45,6 +45,7 @@ public sealed class AnthropicDishRecommendationClient(IDishRecommendationComplet
         All reason text, limitations, summary, and message must use the supplied locale (en or da).
         Apply every active constraint and cumulative request turn unless explicitly removed in current constraints.
         Suitability precedes history. Do not propose dinners or dates or any mutation. Do not invent IDs or names.
+        Each dish may include server-computed groceryOffers and semanticOfferBonus. Consider suitability + semanticOfferBonus before choosing each shortlist, including finalist comparisons. Return suitability for user fit ONLY, excluding the bonus: the server adds it once. Offers cannot override explicit dietary, role, or exclusion constraints, or make an unsuitable dish eligible. Do not invent offer references or repeat prices, discounts, deadlines, or product links in prose; the UI renders supplied structured offer facts separately. Inferred dish-to-ingredient relationships remain Inference even when an offer price is factual.
         The supplied dishes may be one batch of a larger catalog. Evaluate every supplied dish against the same intent. Score suitability on an absolute 0-to-1 scale against the request, not relative to the other dishes in this batch; scores are compared across batches. Return the strongest matches from this batch without assuming it is the entire family catalog.
         Interpret potato pairing as a pairing request, not a requirement that the main contains potatoes.
         Use saved recipe steps and family notes to assess preparation and adaptations. Quick metadata alone cannot prove no preparation.
@@ -78,7 +79,7 @@ public sealed class AnthropicDishRecommendationClient(IDishRecommendationComplet
         if (response.Length > 32_000) throw new DishRecommendationProviderException("MALFORMED_PROVIDER_RESPONSE");
         try
         {
-            return JsonSerializer.Deserialize<RecommendationProviderResult>(UnwrapJsonFence(response), JsonOptions)
+            return JsonSerializer.Deserialize<RecommendationProviderResult>(DishRecommendationJsonResponse.UnwrapFence(response), JsonOptions)
                 ?? throw new DishRecommendationProviderException("MALFORMED_PROVIDER_RESPONSE");
         }
         catch (JsonException exception)
@@ -92,13 +93,4 @@ public sealed class AnthropicDishRecommendationClient(IDishRecommendationComplet
         }
     }
 
-    private static string UnwrapJsonFence(string response)
-    {
-        var trimmed = response.Trim();
-        var firstLineEnd = trimmed.IndexOf('\n');
-        if (firstLineEnd < 0 || !trimmed.EndsWith("\n```", StringComparison.Ordinal)) return response;
-        var opening = trimmed[..firstLineEnd].TrimEnd('\r');
-        if (opening is not ("```json" or "```")) return response;
-        return trimmed[(firstLineEnd + 1)..^3].Trim();
-    }
 }

@@ -8,11 +8,13 @@ namespace EzDinner.Core.Aggregates.FamilyAggregate
     public class Family : AggregateRoot<Guid>
     {
         private readonly List<FamilyMember> _familyMembers;
+        private GroceryStoreSelectionValueObject _groceryStores;
 
         public Guid OwnerId => _familyMembers.FirstOrDefault(w => w.IsOwner)?.Id
             ?? throw new InvalidOperationException("Family has no owner.");
         public string Name { get; private set; }
         public IEnumerable<FamilyMember> FamilyMembers => _familyMembers;
+        public IReadOnlyList<string> GroceryStores => _groceryStores.StoreIds;
 
         public DateTime CreatedDate { get; }
         public DateTime UpdatedDate { get; private set; }
@@ -29,12 +31,21 @@ namespace EzDinner.Core.Aggregates.FamilyAggregate
         /// <param name="familyMembers"></param>
         /// <param name="createdDate"></param>
         /// <param name="updatedDate"></param>
-        public Family(Guid id, string name, List<FamilyMember> familyMembers, DateTime createdDate, DateTime updatedDate) : base(id)
+        public Family(Guid id, string name, List<FamilyMember> familyMembers, DateTime createdDate, DateTime updatedDate, IEnumerable<string>? groceryStores = null) : base(id)
         {
             Name = name;
             _familyMembers = familyMembers;
             CreatedDate = createdDate;
             UpdatedDate = updatedDate;
+            _groceryStores = new GroceryStoreSelectionValueObject(groceryStores ?? Array.Empty<string>());
+        }
+
+        public void ReplaceGroceryStores(IEnumerable<string> storeIds, IEnumerable<string> availableStoreIds)
+        {
+            var replacement = _groceryStores.Replace(storeIds, availableStoreIds);
+            if (_groceryStores.Equals(replacement)) return;
+            _groceryStores = replacement;
+            UpdatedDate = DateTime.UtcNow;
         }
 
         public static Family CreateNew(Guid ownerId, string name)

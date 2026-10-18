@@ -5,7 +5,7 @@ namespace EzDinner.Query.Core.DishRecommendationQueries;
 
 public sealed class DishRecommendationQuery(DishRecommendationContextAssembler assembler,
     DishRecommendationService automatic, ResurfacingRule resurfacing,
-    IDishRecommendationLlmClient provider, DishRecommendationLimits limits)
+    IDishRecommendationLlmClient provider, DishRecommendationLimits limits, GroceryRecommendationEnrichment? groceries = null)
 {
     public async Task<DishRecommendationResult> RecommendAsync(Guid familyId, DishRecommendationRequest request, CancellationToken cancellationToken)
     {
@@ -17,24 +17,34 @@ public sealed class DishRecommendationQuery(DishRecommendationContextAssembler a
             dish.Name.Contains(request.NameFilter.Trim(), StringComparison.OrdinalIgnoreCase) &&
             (request.Role is null || dish.Roles.Contains(request.Role.Value) ||
                 (request.Role == DishRole.Main && dish.Candidate.IsUnclassified))).ToArray();
+        GroceryCoverage? coverage = null;
+        if (groceries is not null)
+        {
+            var enriched = await groceries.EnrichAsync(familyId, context.GroceryStoreIds, available, cancellationToken);
+            available = enriched.Dishes.ToArray();
+            coverage = enriched.Coverage;
+        }
         if (request.Mode == RecommendationMode.Automatic || (request.Mode == RecommendationMode.More && request.Turns.Count == 0 && constraints.Length == 0))
         {
             var ranked = automatic.Recommend(available.Select(dish => dish.Candidate), planningDate,
-                request.ExcludedDishIds, limits.MaximumResults, request.Role);
+                request.ExcludedDishIds, limits.MaximumResults, request.Role,
+                available.ToDictionary(dish => dish.DishId, dish => dish.GroceryOfferPoints));
+            var opportunities = available.ToDictionary(dish => dish.DishId, dish => dish.GroceryOffers);
             var matches = ranked.Select(result => new RecommendedDish(result.Candidate.DishId, result.Candidate.Name,
-                result.Candidate, result.Reasons, [], [])).ToArray();
-            return new(matches.Length > 0 ? RecommendationOutcome.Matches : EmptyOutcome(request), matches, constraints, string.Join("; ", constraints), null);
+                result.Candidate, result.Reasons, [], []) { GroceryOffers = opportunities[result.Candidate.DishId] }).ToArray();
+            return new(matches.Length > 0 ? RecommendationOutcome.Matches : EmptyOutcome(request), matches, constraints, string.Join("; ", constraints), null)
+                { GroceryCoverage = coverage };
         }
-        if (available.Length == 0) return new(EmptyOutcome(request), [], constraints, string.Join("; ", constraints), null);
+        if (available.Length == 0) return new(EmptyOutcome(request), [], constraints, string.Join("; ", constraints), null) { GroceryCoverage = coverage };
         var semanticContext = context with { Dishes = available };
         var response = await RecommendCatalogAsync(request, semanticContext, cancellationToken);
         var canonical = available.ToDictionary(dish => dish.DishId);
-        var results = response.Matches.OrderByDescending(match => match.Suitability)
+        var results = response.Matches.OrderByDescending(match => match.Suitability + canonical[match.DishId].SemanticOfferBonus)
             .ThenByDescending(match => resurfacing.Score(canonical[match.DishId].Candidate, planningDate).Score)
             .ThenBy(match => match.DishId).Take(limits.MaximumResults)
             .Select(match => BuildMatch(match, canonical[match.DishId], planningDate)).ToArray();
         var outcome = response.Outcome == RecommendationOutcome.NoMatch ? EmptyOutcome(request) : response.Outcome;
-        return new(outcome, results, constraints, response.ContextSummary, response.Message);
+        return new(outcome, results, constraints, response.ContextSummary, response.Message) { GroceryCoverage = coverage };
     }
 
     private async Task<RecommendationProviderResult> RecommendCatalogAsync(DishRecommendationRequest request,
@@ -73,7 +83,8 @@ public sealed class DishRecommendationQuery(DishRecommendationContextAssembler a
     }
 
     private RecommendedDish BuildMatch(RecommendationProviderMatch match, DishRecommendationEvidence evidence, NodaTime.LocalDate planningDate)
-        => new(evidence.DishId, evidence.Name, evidence.Candidate, resurfacing.Score(evidence.Candidate, planningDate).Reasons, match.Explanations, match.Limitations);
+        => new(evidence.DishId, evidence.Name, evidence.Candidate, resurfacing.Score(evidence.Candidate, planningDate).Reasons, match.Explanations, match.Limitations)
+            { GroceryOffers = evidence.GroceryOffers };
 
     private static RecommendationOutcome EmptyOutcome(DishRecommendationRequest request)
         => request.Mode == RecommendationMode.More ? RecommendationOutcome.Exhausted : RecommendationOutcome.NoMatch;
@@ -97,9 +108,12 @@ public sealed class DishRecommendationQuery(DishRecommendationContextAssembler a
             if (request.Role is not null && !dish.Roles.Contains(request.Role.Value) && !(request.Role == DishRole.Main && dish.Candidate.IsUnclassified))
                 throw new DishRecommendationProviderException("INVALID_PROVIDER_ROLE");
             var references = dish.Sources.Select(source => source.Reference).ToHashSet(StringComparer.Ordinal);
+            var inferredOffers = dish.GroceryOffers.Where(offer => offer.Relationship == "Inference")
+                .Select(offer => $"{dish.DishId}:grocery:{offer.OfferId}").ToHashSet(StringComparer.Ordinal);
             if (match.Explanations.Any(reason => reason is null || !Enum.IsDefined(reason.Kind) || string.IsNullOrWhiteSpace(reason.Text) ||
                 reason.Text.Length > 2_000 || reason.SourceReferences is null ||
                 (reason.Kind == RecommendationEvidenceKind.Fact && reason.SourceReferences.Count == 0) ||
+                (reason.Kind == RecommendationEvidenceKind.Fact && reason.SourceReferences.Any(inferredOffers.Contains)) ||
                 reason.SourceReferences.Any(reference => !references.Contains(reference))))
                 throw new DishRecommendationProviderException("UNSUPPORTED_PROVIDER_EVIDENCE");
         }

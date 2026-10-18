@@ -14,6 +14,8 @@ import PlanningWeekOverview from './PlanningWeekOverview.vue'
 import PlanningAssignmentPicker from './PlanningAssignmentPicker.vue'
 
 const app = useAppStore()
+const familiesStore = useFamiliesStore()
+const groceryStores = computed(() => familiesStore.activeFamily?.id === app.activeFamilyId ? familiesStore.activeFamily.groceryStores ?? [] : null)
 const { $msal } = useNuxtApp()
 const repository = useRepositories()
 const { t, locale } = useI18n()
@@ -43,7 +45,7 @@ watch([planning.feedback, planning.notice], ([feedback, notice]) => {
   dismissFeedback?.()
 }, { flush: 'sync' })
 onDeactivated(() => dismissFeedback?.())
-const recommendations = useDishRecommendations({ family, account, monday: planning.monday, target: planning.selectedDate, locale, repository: repository.dishRecommendations })
+const recommendations = useDishRecommendations({ family, account, monday: planning.monday, target: planning.selectedDate, locale, storeIds: groceryStores, repository: repository.dishRecommendations })
 const entries = computed<PlanningDish[]>(() => dishes.value.filter(dish => !dish.isArchived).map(dish => ({ dish, stats: stats.value[dish.id], wishVotes: wishes.value.find(wish => wish.dishId === dish.id)?.voteCount })))
 const explorationStore = useDishExplorationPreferencesStore()
 const explorationScope = computed(() => account.value && family.value ? JSON.stringify([account.value, family.value]) : null)
@@ -141,7 +143,7 @@ onScopeDispose(() => { catalogGeneration++; dismissFeedback?.() })
     <div class="workspace-layout">
       <main class="workspace-exploration">
         <v-alert v-if="catalogError" type="error">{{ t('weekPlanning.catalogFailed') }} <v-btn @click="loadCatalog()">{{ t('weekPlanning.retry') }}</v-btn></v-alert>
-        <RecommendationExplorer :key="explorationScope" :loading="catalogLoading" :state="recommendations.state.value" :entries="suggested" :constraints="recommendations.constraints.value" :role="recommendations.role.value" :name-filter="recommendations.nameFilter.value" :scope-decision-required="recommendations.scopeDecisionRequired.value" :stale="recommendations.staleContext.value" :scoped-day="recommendations.scopedDay.value" :planned="planned" :target="planning.selectedDate.value" :busy="!planning.canMutate.value" @ask="recommendations.submit('request', $event)" @more="recommendations.submit('more')" @refresh="recommendations.submit(recommendations.constraints.value.length ? 'request' : 'automatic')" @retry="recommendations.retry" @reset="resetRequest" @constraints="recommendations.constraints.value = $event" @role="recommendations.role.value = $event" @name-filter="recommendations.nameFilter.value = $event" @scope="recommendations.decideScope" @assign="assign" @other-date="openPicker" @dismiss="recommendations.dismiss" />
+        <RecommendationExplorer :key="explorationScope" :loading="catalogLoading" :state="recommendations.state.value" :coverage="recommendations.coverage.value" :refresh-required="recommendations.refreshRequired.value" :stale-locale="recommendations.staleLocale.value" :selection-changed="recommendations.selectionChanged.value" :entries="suggested" :constraints="recommendations.constraints.value" :role="recommendations.role.value" :name-filter="recommendations.nameFilter.value" :scope-decision-required="recommendations.scopeDecisionRequired.value" :stale="recommendations.staleContext.value" :scoped-day="recommendations.scopedDay.value" :planned="planned" :target="planning.selectedDate.value" :busy="!planning.canMutate.value" @ask="recommendations.submit('request', $event)" @more="recommendations.submit('more')" @refresh="recommendations.submit(recommendations.constraints.value.length ? 'request' : 'automatic')" @retry="recommendations.retry" @reset="resetRequest" @constraints="recommendations.constraints.value = $event" @role="recommendations.role.value = $event" @name-filter="recommendations.nameFilter.value = $event" @scope="recommendations.decideScope" @assign="assign" @other-date="openPicker" @dismiss="recommendations.dismiss" />
         <DishExplorer :loading="catalogLoading" :entries="exploration.visible.value" :preferences="exploration.preferences.value" :planned="planned" :target="planning.selectedDate.value" :busy="!planning.canMutate.value" :cuisines="cuisines" @update="exploration.update" @assign="assign" @other-date="openPicker" />
       </main>
       <aside class="workspace-week" :class="{ 'workspace-week--open': mobileOverview }">

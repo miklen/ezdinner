@@ -28,4 +28,8 @@
     <ProjectReference Include="..\EzDinner.Query.Core\EzDinner.Query.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="GroceryRecommendations/prej-chains.json" />
+  </ItemGroup>
+
 </Project>

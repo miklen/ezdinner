@@ -7,15 +7,23 @@ public sealed class DishRecommendationService(ResurfacingRule resurfacing)
 {
     public IReadOnlyList<DishRecommendationScoreValueObject> Recommend(
         IEnumerable<DishRecommendationCandidateValueObject> candidates, LocalDate planningDate,
-        IReadOnlySet<Guid> exclusions, int limit = 6, DishRole? role = DishRole.Main)
+        IReadOnlySet<Guid> exclusions, int limit = 6, DishRole? role = DishRole.Main,
+        IReadOnlyDictionary<Guid, double>? offerPoints = null)
     {
         if (limit is < 1 or > 20) throw new ArgumentOutOfRangeException(nameof(limit));
         return candidates.Where(candidate => !exclusions.Contains(candidate.DishId))
             .Where(candidate => role is null || candidate.Roles.Contains(role.Value) || (role == DishRole.Main && candidate.IsUnclassified))
             .Select(candidate => resurfacing.Score(candidate, planningDate))
-            .OrderByDescending(result => result.Score)
+            .OrderByDescending(result => result.Score + OfferPoints(result.Candidate.DishId, offerPoints))
             .ThenBy(result => result.Candidate.Name, StringComparer.Ordinal)
             .ThenBy(result => result.Candidate.DishId)
             .Take(limit).ToArray();
+    }
+
+    private static double OfferPoints(Guid dishId, IReadOnlyDictionary<Guid, double>? points)
+    {
+        if (points is null || !points.TryGetValue(dishId, out var bonus)) return 0;
+        if (!double.IsFinite(bonus) || bonus is < 0 or > 10) throw new ArgumentException("INVALID_OFFER_POINTS");
+        return bonus;
     }
 }

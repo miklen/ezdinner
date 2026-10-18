@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,9 +25,45 @@ namespace EzDinner.Infrastructure
             _container = _client.GetContainer(configuration.GetValue<string>("CosmosDb:Database"), CONTAINER);
         }
 
-        public Task SaveAsync(Family family)
+        public async Task SaveAsync(Family family)
         {
-            return _container.UpsertItemAsync(family);
+            try
+            {
+                await PatchFamilyAsync(family);
+            }
+            catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            {
+                await CreateFamilyAsync(family);
+            }
+        }
+
+        private Task PatchFamilyAsync(Family family) => _container.PatchItemAsync<Family>(family.Id.ToString(), new PartitionKey(family.PartitionKey.ToString()),
+            new[] { PatchOperation.Set("/name", family.Name), PatchOperation.Set("/familyMembers", family.FamilyMembers),
+                PatchOperation.Set("/ownerId", family.OwnerId), PatchOperation.Set("/updatedDate", family.UpdatedDate) });
+
+        private async Task CreateFamilyAsync(Family family)
+        {
+            try
+            {
+                await _container.CreateItemAsync(family, new PartitionKey(family.PartitionKey.ToString()));
+            }
+            catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.Conflict)
+            {
+                await PatchFamilyAsync(family);
+            }
+        }
+
+        public async Task SaveGroceryStoresAsync(Family family)
+        {
+            try
+            {
+                await _container.PatchItemAsync<Family>(family.Id.ToString(), new PartitionKey(family.PartitionKey.ToString()),
+                    new[] { PatchOperation.Set("/groceryStores", family.GroceryStores), PatchOperation.Set("/updatedDate", family.UpdatedDate) });
+            }
+            catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new KeyNotFoundException("FAMILY_NOT_FOUND", exception);
+            }
         }
 
         public async Task<IEnumerable<FamilyDetails>> GetFamiliesDetailsAsync(Guid userId)

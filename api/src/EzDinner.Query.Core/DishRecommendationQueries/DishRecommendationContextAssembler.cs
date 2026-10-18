@@ -3,11 +3,12 @@ using EzDinner.Core.Aggregates.DishAggregate;
 using EzDinner.Core.Aggregates.WishlistAggregate;
 using EzDinner.Core.DomainServices.DishRecommendations;
 using NodaTime;
+using EzDinner.Core.Aggregates.FamilyAggregate;
 
 namespace EzDinner.Query.Core.DishRecommendationQueries;
 
 public sealed class DishRecommendationContextAssembler(IDishRepository dishes,
-    IDinnerRepository dinners, IWishlistRepository wishes, IClock clock)
+    IDinnerRepository dinners, IWishlistRepository wishes, IClock clock, IFamilyRepository? families = null)
 {
     public async Task<DishRecommendationContext> AssembleAsync(Guid familyId, LocalDate monday, CancellationToken cancellationToken)
     {
@@ -31,7 +32,8 @@ public sealed class DishRecommendationContextAssembler(IDishRepository dishes,
         var evidence = canonical.Select(dish => BuildEvidence(dish, candidates[dish.Id])).ToArray();
         var window = history.Where(dinner => dinner.Date >= monday.PlusDays(-2) && dinner.Date <= monday.PlusDays(6))
             .Select(dinner => new RecommendationDinnerContext(dinner.Date, dinner.Menu.Select(item => item.DishId).ToArray(), dinner.OptOut?.Reason)).ToArray();
-        return new(evidence, window);
+        var family = families is null ? null : await families.GetFamily(familyId).WaitAsync(cancellationToken);
+        return new(evidence, window) { GroceryStoreIds = family?.GroceryStores ?? [] };
     }
 
     private static DishRecommendationEvidence BuildEvidence(Dish dish, DishRecommendationCandidateValueObject candidate)

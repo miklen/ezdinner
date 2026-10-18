@@ -99,6 +99,8 @@ namespace EzDinner.Functions
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(WishlistRepository.CONTAINER, "/familyId"));
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(WishStatsRepository.CONTAINER, "/familyId"));
             await db.CreateContainerIfNotExistsAsync(new ContainerProperties(EzDinner.Infrastructure.RatingReminders.RatingRemindersRepository.ContainerName, "/id"));
+            _logger.LogInformation("Migrating grocery recommendation cache collection");
+            await EzDinner.Infrastructure.GroceryRecommendations.GroceryRecommendationCacheMigration.EnsureAsync(db);
             return db;
         }
 

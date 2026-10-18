@@ -3,8 +3,9 @@ import { computed } from 'vue'
 import { DateTime } from 'luxon'
 import DishCard from '~/components/Dish/DishCard.vue'
 import DishRating from '~/components/Dish/DishRating.vue'
+import GroceryOfferReasons from './GroceryOfferReasons.vue'
 import type { PlanningDish } from '~/types/week-planning'
-const props = defineProps<{ entry: PlanningDish; assignedDates: string[]; target: string | null; busy?: boolean }>()
+const props = defineProps<{ entry: PlanningDish; assignedDates: string[]; target: string | null; busy?: boolean; offerNow?: number }>()
 const emit = defineEmits<{ assign: [dishId: string]; otherDate: [dishId: string]; dismiss: [dishId: string] }>()
 const { t, locale } = useI18n()
 const rating = computed(() => {
@@ -37,6 +38,7 @@ const targetLabel = computed(() => props.target ? DateTime.fromISO(props.target)
       <p v-for="(reason, index) in entry.recommendation.historicalReasons" :key="`history-${index}`">{{ t(`weekPlanning.reasons.${reason.kind}`, { value: reason.value }) }}</p>
       <p v-for="(reason, index) in entry.recommendation.explanations" :key="`explanation-${index}`">{{ reason.text }} <small>{{ t(`weekPlanning.evidence.${reason.kind}`) }}</small></p>
       <p v-for="limitation in entry.recommendation.limitations" :key="limitation" class="planning-card__limitation">{{ limitation }}</p>
+      <GroceryOfferReasons v-if="entry.recommendation.groceryOffers?.length" :offers="entry.recommendation.groceryOffers" :now="offerNow ?? Date.now()" />
     </div>
     <p v-if="assignedDates.length" class="planning-card__assigned">{{ t('weekPlanning.assignedDates', { dates: datesLabel }) }}</p>
     </template>
