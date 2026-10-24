@@ -47,3 +47,11 @@ Scope update: all Prej `/v1/chains` records are selectable, with border-trade/fl
 - [x] 6.2 From `web`, run Nuxt preparation when needed, frontend tests, lint, and build (`npx.cmd nuxt prepare`, `npm.cmd test`, `npm.cmd run lint`, `npm.cmd run build`); verify existing recommendation/planning/navigation suites still pass alongside the focused family/offer cases, recording any actual blockers.
 - [x] 6.3 Compare the rendered family store section and enriched recommendation cards against existing equivalents on desktop and mobile, in English and Danish, including long labels, keyboard focus, loading/error/partial states, buy-before expiry, navigation and assignment. Record browser evidence and any limitation; automated tests alone do not complete visual acceptance.
 - [ ] 6.4 Verify permitted live coverage for both requested retailers, the source attribution requirements, shared daily cache reuse, and a complete owner-selection -> family-member recommendation -> dish inspection -> assignment loop. Record deployment/rollback steps and verify the feature flag removes optional offer influence without changing saved dinners; do not mark complete with either retailer unverified unless scope is explicitly changed.
+
+## 7. Recover production grocery acquisition
+
+- [x] 7.1 Diagnose production timeouts/rate limits and empty REMA cache publication; record evidence and normalization diagnostics without claiming an unverified REMA rejection cause.
+- [x] 7.2 Persist API-key-wide Prej cooldowns with monotonic conditional writes, honor retry headers/daily exhaustion, and stop failed pagination while preserving the first failure.
+- [x] 7.3 Align configurable refresh/source deadlines and separate ingredient-inference time; cover slow acquisition, cancellation, reset boundaries and restart behavior with regression tests.
+- [x] 7.4 Complete backend unit verification, integration-project build, independent code review and strict spec validation; record real Cosmos/live-source limitations.
+- [ ] 7.5 Verify real Cosmos quota persistence, a full production acquisition and subsequent cache reuse after deployment and quota reset; inspect the REMA normalization breakdown.

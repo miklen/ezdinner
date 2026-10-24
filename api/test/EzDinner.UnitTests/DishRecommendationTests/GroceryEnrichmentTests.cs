@@ -74,6 +74,27 @@ public class GroceryEnrichmentTests
     }
 
     [Fact]
+    public async Task Source_acquisition_has_its_own_budget_before_ingredient_inference()
+    {
+        var chicken = Evidence("Chicken");
+        var available = new GroceryOffersResult(
+            [new("offer", "rema1000", "chicken", "Chicken", "chicken", 90, 100, null,
+                clock.GetCurrentInstant(), null, new LocalDate(2026, 10, 21))],
+            new(GroceryCoverageStatus.Fresh, clock.GetCurrentInstant(), ["rema1000"], []),
+            new Dictionary<string, string> { ["rema1000"] = "REMA 1000" });
+        offers.Setup(reader => reader.ReadAsync(It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+            .Returns(async (IReadOnlyList<string> _, CancellationToken token) =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(31), token);
+                return available;
+            });
+        var result = await new GroceryRecommendationEnrichment(offers.Object, profiles.Object, clock)
+            .EnrichAsync(family.Id, ["rema1000"], [chicken], default);
+        Assert.Equal(GroceryCoverageStatus.Fresh, result.Coverage.Status);
+        Assert.Single(Assert.Single(result.Dishes).GroceryOffers);
+    }
+
+    [Fact]
     public async Task ColdProfilesTakingLongerThanTenSecondsStillEnrichRecommendations()
     {
         var chicken = Evidence("Chicken");

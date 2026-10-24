@@ -28,13 +28,20 @@ public static class DishRecommendationRegistration
         services.AddScoped<IDishRecommendationLlmClient, AnthropicDishRecommendationClient>();
         var groceries = new GroceryRecommendationOptions();
         configuration.GetSection("GroceryRecommendations").Bind(groceries);
-        if (groceries.MaximumPages is < 1 or > 50 || groceries.MaximumOffers is < 1 or > 5_000)
+        if (groceries.MaximumPages is < 1 or > 50 || groceries.MaximumOffers is < 1 or > 5_000 ||
+            groceries.RefreshTimeoutSeconds is < 1 or > 90 || groceries.SourceTimeoutSeconds > 120 ||
+            groceries.SourceTimeoutSeconds < groceries.RefreshTimeoutSeconds + 5)
             throw new InvalidOperationException("INVALID_GROCERY_LIMITS");
         services.AddSingleton(groceries);
-        services.AddHttpClient<PrejHttpClient>().ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        services.AddSingleton<PrejRateLimitMemory>();
+        services.AddTransient<PrejRateLimitHandler>();
+        services.AddHttpClient<PrejHttpClient>()
+            .AddHttpMessageHandler<PrejRateLimitHandler>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddSingleton<CosmosGroceryRecommendationCache>();
         services.AddSingleton<IGroceryRecommendationCache>(provider => provider.GetRequiredService<CosmosGroceryRecommendationCache>());
         services.AddSingleton<IGrocerySnapshotStore>(provider => provider.GetRequiredService<CosmosGroceryRecommendationCache>());
+        services.AddSingleton<IPrejRateLimitStore>(provider => provider.GetRequiredService<CosmosGroceryRecommendationCache>());
         services.AddSingleton<GrocerySnapshotRefresh>();
         services.AddSingleton<IGroceryStoreCatalog, PrejGroceryStoreCatalog>();
         services.AddSingleton<PrejGroceryOfferSource>();

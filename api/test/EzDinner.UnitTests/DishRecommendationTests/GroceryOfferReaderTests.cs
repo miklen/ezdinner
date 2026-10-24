@@ -13,6 +13,17 @@ namespace EzDinner.UnitTests.DishRecommendationTests;
 
 public class GroceryOfferReaderTests
 {
+    [Fact]
+    public async Task Cold_acquisition_can_finish_after_the_previous_six_and_nine_second_deadlines()
+    {
+        using var fixture = new ReaderFixture();
+        fixture.Transport.ResponseDelay = TimeSpan.FromSeconds(11);
+        fixture.Transport.Response = request => JsonResponse(request.RequestUri.AbsolutePath == "/v1/offers" ? OfferFixture() : ProductFixture());
+        var result = await fixture.Reader.ReadAsync(new[] { "rema1000" }, default);
+        Assert.Single(result.Offers);
+        Assert.Equal(GroceryCoverageStatus.Fresh, result.Coverage.Status);
+        Assert.Contains(Scope("rema1000"), fixture.Cache.PublishedScopes);
+    }
     private static readonly Instant Now = Instant.FromUtc(2026, 10, 18, 8, 0);
 
     [Theory]
@@ -255,10 +266,13 @@ public class GroceryOfferReaderTests
     private sealed class RecordingTransport(Func<HttpRequestMessage, HttpResponseMessage> response) : HttpMessageHandler
     {
         public ConcurrentBag<string> Paths { get; } = new();
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        public TimeSpan ResponseDelay { get; set; }
+        public Func<HttpRequestMessage, HttpResponseMessage> Response { get; set; } = response;
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Paths.Add(request.RequestUri.PathAndQuery);
-            return Task.FromResult(response(request));
+            if (Paths.Count == 1) await Task.Delay(ResponseDelay, cancellationToken);
+            return Response(request);
         }
     }
 

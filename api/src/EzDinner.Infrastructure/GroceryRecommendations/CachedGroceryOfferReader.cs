@@ -19,10 +19,10 @@ public sealed class CachedGroceryOfferReader(PrejGroceryOfferSource source, Groc
         var now = clock.GetCurrentInstant();
         if (ids.Length == 0 || !options.Enabled)
             return new([], new(GroceryCoverageStatus.Disabled, now, ids, ["source-disabled"]), new Dictionary<string, string>());
-        var stores = await catalog.GetStoresAsync(cancellationToken);
-        var names = stores.ToDictionary(store => store.Id, store => store.Name);
         using var sourceBudget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        sourceBudget.CancelAfter(TimeSpan.FromSeconds(9));
+        sourceBudget.CancelAfter(TimeSpan.FromSeconds(options.SourceTimeoutSeconds));
+        var stores = await catalog.GetStoresAsync(sourceBudget.Token);
+        var names = stores.ToDictionary(store => store.Id, store => store.Name);
         var responses = await Task.WhenAll(ids.Select(async id =>
         {
             if (!options.CanAcquire || !names.ContainsKey(id))
@@ -38,8 +38,9 @@ public sealed class CachedGroceryOfferReader(PrejGroceryOfferSource source, Groc
                     ?? throw new InvalidOperationException("INVALID_OFFER_CACHE")).ToArray();
                 var offers = pages.SelectMany(page => page.Offers).Select(offer => offer.ToDomain()).ToArray();
                 if (offers.Any(offer => offer.StoreId != id)) throw new InvalidOperationException("WRONG_OFFER_SCOPE");
-                var usable = offers.Where(offer => offer.IsUsable(now)).ToArray();
-                var stale = read.IsStale || offers.Any(offer => offer.ObservedAt + Duration.FromHours(48) <= now);
+                var evaluatedAt = clock.GetCurrentInstant();
+                var usable = offers.Where(offer => offer.IsUsable(evaluatedAt)).ToArray();
+                var stale = read.IsStale || offers.Any(offer => offer.ObservedAt + Duration.FromHours(48) <= evaluatedAt);
                 var status = pages.Any(page => page.IsPartial) ? GroceryCoverageStatus.Partial
                     : stale ? GroceryCoverageStatus.Stale : GroceryCoverageStatus.Fresh;
                 return new StoreRead(usable, status, stale);

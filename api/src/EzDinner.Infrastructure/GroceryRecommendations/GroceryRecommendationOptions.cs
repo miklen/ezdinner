@@ -7,6 +7,8 @@ public sealed class GroceryRecommendationOptions
     public string? ApiKey { get; set; }
     public int MaximumPages { get; set; } = 50;
     public int MaximumOffers { get; set; } = 5_000;
+    public int RefreshTimeoutSeconds { get; set; } = 45;
+    public int SourceTimeoutSeconds { get; set; } = 60;
 
     public bool CanAcquire => Enabled && !string.IsNullOrWhiteSpace(ApiKey);
 }

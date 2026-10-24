@@ -15,15 +15,15 @@ public sealed class GroceryRecommendationEnrichment(IGroceryOfferReader offers,
         var now = clock.GetCurrentInstant();
         if (ids.Length == 0 || dishes.Count == 0)
             return new(dishes, new(ids.Length == 0 ? GroceryCoverageStatus.Disabled : GroceryCoverageStatus.Unknown, now, ids, []));
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        deadline.CancelAfter(TimeSpan.FromSeconds(30));
         GroceryOffersResult observed;
-        try { observed = await offers.ReadAsync(ids, deadline.Token).WaitAsync(deadline.Token); }
+        try { observed = await offers.ReadAsync(ids, cancellationToken).WaitAsync(cancellationToken); }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception)
         { return new(dishes, new(GroceryCoverageStatus.Unavailable, now, ids, ["source-unavailable"])); }
         var qualifying = observed.Offers.Where(offer => ids.Contains(offer.StoreId, StringComparer.Ordinal) && offer.IsUsable(clock.GetCurrentInstant())).ToArray();
         if (qualifying.Length == 0) return new(dishes, observed.Coverage with { StoreIds = ids });
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(TimeSpan.FromSeconds(30));
         DishIngredientProfilesResult ingredients;
         try { ingredients = await profiles.ReadAsync(familyId, dishes, deadline.Token).WaitAsync(cancellationToken); }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }

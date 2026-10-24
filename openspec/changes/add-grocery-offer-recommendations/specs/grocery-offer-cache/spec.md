@@ -44,6 +44,30 @@ Public offer observations SHALL be cached persistently across application restar
 - **WHEN** a persisted head has no published version for its latest attempt and no cooldown field
 - **THEN** the next request may claim recovery without a migration or manual cache deletion
 
+### Requirement: Acquisition respects the shared provider quota and aligned deadlines
+Every outbound Prej request SHALL honor a persisted cooldown scoped by a non-secret identifier of its API key. HTTP 429 SHALL defer requests until the provider's usable Retry-After deadline. Zero remaining daily quota, including on a successful final request, SHALL block subsequent requests until at least the next UTC midnight. A 429 without a usable deadline SHALL conservatively defer until the next UTC midnight. Concurrent updates SHALL NOT shorten an existing block. The block SHALL survive application restart and apply to all store/catalog requests using that key within the configured cache database. Separate environments sharing a key SHALL consume the same provider quota; separate cache databases SHALL NOT be represented as sharing request reservations.
+
+Acquisition SHALL use a configurable refresh deadline nested within a longer total source-read deadline. Ingredient inference SHALL receive its own bounded deadline after acquisition. A failed page SHALL cancel in-flight and queued pagination without replacing the original failure with sibling cancellation, and incomplete results SHALL NOT be published.
+
+#### Scenario: Exhausted key is reused for another store after restart
+- **WHEN** a response reports zero remaining daily requests and the application restarts
+- **THEN** a recommendation request for another store using the same key and cache database does not call Prej before the persisted reset
+- **AND** existing cached evidence remains subject to its ordinary freshness rules
+
+#### Scenario: Burst limit has an earlier reset
+- **WHEN** Prej returns 429 with remaining daily calls and a usable Retry-After value
+- **THEN** requests are deferred until that deadline, accepting either seconds or an HTTP date
+- **AND** the response does not force an unnecessary wait until the next day
+
+#### Scenario: A page fails while other pages are queued
+- **WHEN** one paginated request fails
+- **THEN** in-flight page requests are cancelled and queued requests do not start
+- **AND** acquisition reports the first failure and retains the previous complete snapshot
+
+#### Scenario: Valid acquisition takes longer than the previous six-second deadline
+- **WHEN** a complete validated snapshot arrives within the configured refresh and total source-read deadlines
+- **THEN** it can be published and used without an earlier unrelated ingredient-inference deadline cancelling it
+
 ### Requirement: Freshness and promotional validity are independent
 The system SHALL assess both the source observation's age and the promotional period before allowing an offer boost. Fetching an old source observation SHALL NOT make it fresh. Known end dates SHALL be inclusive Danish calendar dates. Future-start and expired offers SHALL NOT boost current shopping recommendations. A dated observation SHALL contribute for no more than 48 hours from its source observation time, and retained observations after a failed refresh SHALL be marked as potentially outdated. An offer without a known end date SHALL contribute only on its source observation's Danish calendar day and SHALL be labeled as having unknown expiry. The pure domain assessment SHALL derive an exclusive `usableUntil` as the earlier of observation plus 48 hours and the start of the Danish day after the promotional end; for unknown expiry, that day boundary SHALL instead follow the observation date. Returned opportunities SHALL expose this instant without presenting it as a known promotional end. At or after the cutoff an opportunity SHALL NOT contribute. Danish boundaries SHALL respect Europe/Copenhagen daylight-saving rules.
 

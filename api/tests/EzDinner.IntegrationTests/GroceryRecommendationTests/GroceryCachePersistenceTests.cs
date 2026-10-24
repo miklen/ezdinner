@@ -12,6 +12,26 @@ namespace EzDinner.IntegrationTests.GroceryRecommendationTests;
 public class GroceryCachePersistenceTests(StartupFixture startup) : IClassFixture<StartupFixture>
 {
     [Fact]
+    public Task Rate_limit_survives_restart_and_concurrent_updates_preserve_the_longest_deadline() => InScope(async (container, scope) =>
+    {
+        var clock = SystemClock.Instance;
+        var first = new CosmosGroceryRecommendationCache(container, clock);
+        var second = new CosmosGroceryRecommendationCache(container, clock);
+        var now = clock.GetCurrentInstant().ToDateTimeUtc();
+        var later = now.AddHours(12);
+        await Task.WhenAll(first.ExtendRateLimitAsync(scope, now.AddMinutes(2), default),
+            second.ExtendRateLimitAsync(scope, later, default));
+        var restarted = new CosmosGroceryRecommendationCache(container, clock);
+        Assert.Equal(later, await restarted.ReadRateLimitAsync(scope, default));
+        await restarted.ExtendRateLimitAsync(scope, now.AddMinutes(5), default);
+        Assert.Equal(later, await first.ReadRateLimitAsync(scope, default));
+        Assert.Null(await restarted.ReadRateLimitAsync(scope + ":other-key", default));
+        var persisted = await container.ReadItemAsync<JObject>("rate-limit", new PartitionKey(scope));
+        Assert.Equal(-1, persisted.Resource.Value<int>("ttl"));
+        Assert.Equal(scope, persisted.Resource.Value<string>("scopeKey"));
+    });
+
+    [Fact]
     public Task Competing_instances_share_cooldown_and_restart_can_recover_failed_day() => InScope(async (container, scope) =>
     {
         var clock = new AdjustableClock(SystemClock.Instance.GetCurrentInstant());

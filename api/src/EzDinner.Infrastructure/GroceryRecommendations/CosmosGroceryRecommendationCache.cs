@@ -6,7 +6,7 @@ using NodaTime;
 
 namespace EzDinner.Infrastructure.GroceryRecommendations;
 
-public sealed class CosmosGroceryRecommendationCache : IGroceryRecommendationCache, IGrocerySnapshotStore
+public sealed class CosmosGroceryRecommendationCache : IGroceryRecommendationCache, IGrocerySnapshotStore, IPrejRateLimitStore
 {
     public const string ContainerName = "GroceryRecommendationCache";
     public static readonly Duration FailedAttemptCooldown = Duration.FromMinutes(5);
@@ -92,6 +92,31 @@ public sealed class CosmosGroceryRecommendationCache : IGroceryRecommendationCac
             new ItemRequestOptions { IfMatchEtag = claim.ETag }, cancellationToken);
     }
 
+    public async Task<DateTime?> ReadRateLimitAsync(string scope, CancellationToken cancellationToken) =>
+        (await ReadAsync<RateLimitState>(scope, "rate-limit", cancellationToken))?.Resource.RetryAfter;
+
+    public async Task ExtendRateLimitAsync(string scope, DateTime retryAfter, CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var prior = await ReadAsync<RateLimitState>(scope, "rate-limit", cancellationToken);
+            if (prior is not null && prior.Resource.RetryAfter >= retryAfter) return;
+            var state = new RateLimitState("rate-limit", scope, retryAfter, -1);
+            try
+            {
+                if (prior is null)
+                    await container.CreateItemAsync(state, new PartitionKey(scope), cancellationToken: cancellationToken);
+                else
+                    await container.ReplaceItemAsync(state, "rate-limit", new PartitionKey(scope),
+                        new ItemRequestOptions { IfMatchEtag = prior.ETag }, cancellationToken);
+                return;
+            }
+            catch (CosmosException exception) when (exception.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed)
+            { }
+        }
+        throw new InvalidOperationException("PREJ_RATE_LIMIT_WRITE_CONTENTION");
+    }
+
     private async Task<ItemResponse<T>?> ReadAsync<T>(string scope, string id, CancellationToken cancellationToken)
     {
         try { return await container.ReadItemAsync<T>(id, new PartitionKey(scope), cancellationToken: cancellationToken); }
@@ -101,4 +126,5 @@ public sealed class CosmosGroceryRecommendationCache : IGroceryRecommendationCac
     public sealed record CachePage(string Id, string ScopeKey, string Payload, DateTime ExpiresAt, int Ttl);
     public sealed record SnapshotHead(string Id, string ScopeKey, string AttemptDay, string AttemptId,
         string? Version, int PageCount, DateTime? RetrievedAt, int Ttl, DateTime? RetryAfter = null);
+    public sealed record RateLimitState(string Id, string ScopeKey, DateTime RetryAfter, int Ttl);
 }

@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Runtime.ExceptionServices;
 using EzDinner.Core.DomainServices.DishRecommendations;
+using Microsoft.Extensions.Logging;
 using NodaTime;
 using NodaTime.Text;
 
@@ -20,7 +22,8 @@ public sealed record StoredGroceryOffer(string Reference, string StoreId, string
 
 public sealed record StoredGroceryOfferPage(StoredGroceryOffer[] Offers, bool IsPartial);
 
-public sealed class PrejGroceryOfferSource(PrejHttpClient client, GroceryRecommendationOptions options)
+public sealed class PrejGroceryOfferSource(PrejHttpClient client, GroceryRecommendationOptions options,
+    ILogger<PrejGroceryOfferSource>? logger = null)
 {
     public async Task<IReadOnlyList<string>> AcquireAsync(string storeId, CancellationToken cancellationToken)
     {
@@ -34,16 +37,34 @@ public sealed class PrejGroceryOfferSource(PrejHttpClient client, GroceryRecomme
         var asOf = first.RootElement.GetProperty("as_of").GetString();
         var rows = ReadPage(first.RootElement, 1, limit, total, asOf);
         using var concurrency = new SemaphoreSlim(4);
-        var rest = await Task.WhenAll(Enumerable.Range(2, pageCount - 1).Select(async page =>
+        using var pagesCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        ExceptionDispatchInfo? firstFailure = null;
+        var pending = Enumerable.Range(2, pageCount - 1).Select(async page =>
         {
-            await concurrency.WaitAsync(cancellationToken);
+            await concurrency.WaitAsync(pagesCancellation.Token);
             try
             {
-                using var response = await client.GetAsync(Path(storeId, page), cancellationToken);
+                pagesCancellation.Token.ThrowIfCancellationRequested();
+                using var response = await client.GetAsync(Path(storeId, page), pagesCancellation.Token);
                 return ReadPage(response.RootElement, page, limit, total, asOf);
             }
+            catch (Exception exception)
+            {
+                if (!cancellationToken.IsCancellationRequested &&
+                    Interlocked.CompareExchange(ref firstFailure, ExceptionDispatchInfo.Capture(exception), null) is null)
+                    pagesCancellation.Cancel();
+                throw;
+            }
             finally { concurrency.Release(); }
-        }));
+        }).ToArray();
+        List<JsonElement>[] rest;
+        try { rest = await Task.WhenAll(pending); }
+        catch
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            firstFailure?.Throw();
+            throw;
+        }
         rows.AddRange(rest.SelectMany(page => page));
         if (rows.Count != total || rows.Select(row => row.GetProperty("product_id").GetInt64()).Distinct().Count() != total)
             throw new InvalidOperationException("PREJ_INCOMPLETE_SNAPSHOT");
@@ -57,63 +78,97 @@ public sealed class PrejGroceryOfferSource(PrejHttpClient client, GroceryRecomme
         }
         var offers = new List<StoredGroceryOffer>();
         var partial = false;
+        var exclusions = new Dictionary<string, int>(StringComparer.Ordinal);
+        var examples = new Dictionary<string, long>(StringComparer.Ordinal);
         if (products.Count != total || rows.Any(row => !products.ContainsKey(row.GetProperty("product_id").GetInt64())))
             throw new InvalidOperationException("PREJ_INCOMPLETE_PRODUCT_SNAPSHOT");
         foreach (var row in rows)
         {
             var id = row.GetProperty("product_id").GetInt64();
             var product = products[id];
-            var normalized = Normalize(storeId, row, product);
+            var normalized = Normalize(storeId, row, product, reason =>
+            {
+                exclusions[reason] = exclusions.GetValueOrDefault(reason) + 1;
+                examples.TryAdd(reason, id);
+            });
             if (normalized.Offer is not null) offers.Add(normalized.Offer);
             partial |= normalized.IsPartial;
         }
+        logger?.Log(partial && offers.Count == 0 ? LogLevel.Warning : LogLevel.Information,
+            "Grocery normalization for {StoreId}: {RawOfferCount} source offers, {NormalizedOfferCount} normalized, partial: {IsPartial}; exclusions: {Exclusions}; example product IDs: {ExclusionExamples}",
+            storeId, rows.Count, offers.Count, partial, JsonSerializer.Serialize(exclusions), JsonSerializer.Serialize(examples));
         return offers.Chunk(100).DefaultIfEmpty([])
             .Select(page => JsonSerializer.Serialize(new StoredGroceryOfferPage(page, partial))).ToArray();
     }
 
-    public static (StoredGroceryOffer? Offer, bool IsPartial) Normalize(string storeId, JsonElement offer, JsonElement product)
+    public static (StoredGroceryOffer? Offer, bool IsPartial) Normalize(string storeId, JsonElement offer,
+        JsonElement product, Action<string>? recordExclusion = null)
     {
+        var stage = "offer";
+        var field = "chain_slug";
+        JsonElement Read(JsonElement row, string name)
+        {
+            field = name;
+            return row.GetProperty(name);
+        }
+        (StoredGroceryOffer?, bool) Exclude(string reason, bool partial)
+        {
+            recordExclusion?.Invoke(reason);
+            return (null, partial);
+        }
         try
         {
-            if (offer.GetProperty("chain_slug").GetString() != storeId) return (null, true);
-            var price = offer.GetProperty("price").GetDecimal();
-            var normal = offer.GetProperty("normal_price");
-            if (normal.ValueKind == JsonValueKind.Null || price <= 0 || normal.GetDecimal() <= price) return (null, false);
-            if (offer.GetProperty("multi_buy").ValueKind != JsonValueKind.Null) return (null, false);
-            if (offer.GetProperty("unit").ValueKind != JsonValueKind.String ||
-                offer.GetProperty("quantity").ValueKind != JsonValueKind.Number || offer.GetProperty("quantity").GetDecimal() <= 0)
-                return (null, true);
-            var matches = product.GetProperty("prices").EnumerateArray().Where(row =>
-                row.GetProperty("chain_slug").GetString() == storeId &&
-                row.GetProperty("price").GetDecimal() == price &&
-                row.GetProperty("unit").GetRawText() == offer.GetProperty("unit").GetRawText() &&
-                row.GetProperty("quantity").GetRawText() == offer.GetProperty("quantity").GetRawText() &&
-                row.GetProperty("offer_ends").GetRawText() == offer.GetProperty("offer_ends").GetRawText() &&
-                row.GetProperty("offer_starts").GetRawText() == offer.GetProperty("offer_starts").GetRawText()).ToArray();
-            if (matches.Length != 1) return (null, true);
+            if (Read(offer, "chain_slug").GetString() != storeId) return Exclude("wrong-chain", true);
+            var price = Read(offer, "price").GetDecimal();
+            var normal = Read(offer, "normal_price");
+            if (normal.ValueKind == JsonValueKind.Null) return Exclude("missing-reference-price", false);
+            if (price <= 0) return Exclude("invalid-offer-price", false);
+            if (normal.GetDecimal() <= price) return Exclude("no-discount", false);
+            if (Read(offer, "multi_buy").ValueKind != JsonValueKind.Null) return Exclude("multi-buy", false);
+            if (Read(offer, "unit").ValueKind != JsonValueKind.String ||
+                Read(offer, "quantity").ValueKind != JsonValueKind.Number || Read(offer, "quantity").GetDecimal() <= 0)
+                return Exclude("invalid-package", true);
+            stage = "price-observation-join";
+            var matches = Read(product, "prices").EnumerateArray().Where(row =>
+                Read(row, "chain_slug").GetString() == storeId &&
+                Read(row, "price").GetDecimal() == price &&
+                Read(row, "unit").GetRawText() == Read(offer, "unit").GetRawText() &&
+                Read(row, "quantity").GetRawText() == Read(offer, "quantity").GetRawText() &&
+                Read(row, "offer_ends").GetRawText() == Read(offer, "offer_ends").GetRawText() &&
+                Read(row, "offer_starts").GetRawText() == Read(offer, "offer_starts").GetRawText()).ToArray();
+            if (matches.Length == 0) return Exclude("observation-not-found", true);
+            if (matches.Length != 1) return Exclude("ambiguous-observations", true);
+            stage = "identity";
             // AI-linked identities and conflicting package sizes are not comparable price evidence.
-            if (matches[0].GetProperty("ai_matched").GetBoolean() ||
-                product.GetProperty("id").GetInt64() != offer.GetProperty("product_id").GetInt64() ||
-                product.GetProperty("unit").GetString() != offer.GetProperty("unit").GetString() ||
-                product.GetProperty("quantity").GetDecimal() != offer.GetProperty("quantity").GetDecimal() ||
-                HasConflictingPackage(product, offer)) return (null, true);
-            var observed = matches[0].GetProperty("last_seen_date").GetString();
-            if (observed is null || !LocalDatePattern.Iso.Parse(observed).Success) return (null, true);
-            var name = offer.GetProperty("name").GetString();
+            if (Read(matches[0], "ai_matched").GetBoolean()) return Exclude("ai-matched-identity", true);
+            if (Read(product, "id").GetInt64() != Read(offer, "product_id").GetInt64()) return Exclude("product-id-mismatch", true);
+            if (Read(product, "unit").GetString() != Read(offer, "unit").GetString()) return Exclude("product-unit-mismatch", true);
+            if (Read(product, "quantity").GetDecimal() != Read(offer, "quantity").GetDecimal()) return Exclude("product-quantity-mismatch", true);
+            stage = "package-description";
+            field = "description";
+            if (HasConflictingPackage(product, offer)) return Exclude("conflicting-package-description", true);
+            stage = "observation";
+            var observed = Read(matches[0], "last_seen_date").GetString();
+            if (observed is null || !LocalDatePattern.Iso.Parse(observed).Success) return Exclude("invalid-observation-date", true);
+            stage = "ingredient";
+            var name = Read(offer, "name").GetString();
             var ingredient = Ingredient(name);
-            if (ingredient is null || name is null) return (null, false);
-            var start = offer.GetProperty("offer_starts").GetString();
-            var end = offer.GetProperty("offer_ends").GetString();
+            if (ingredient is null || name is null) return Exclude("unsupported-ingredient", false);
+            stage = "offer-dates";
+            var start = Read(offer, "offer_starts").GetString();
+            var end = Read(offer, "offer_ends").GetString();
             if ((start is not null && !LocalDatePattern.Iso.Parse(start).Success) ||
-                (end is not null && !LocalDatePattern.Iso.Parse(end).Success)) return (null, true);
-            var id = offer.GetProperty("product_id").GetInt64().ToString(System.Globalization.CultureInfo.InvariantCulture);
+                (end is not null && !LocalDatePattern.Iso.Parse(end).Success)) return Exclude("invalid-offer-dates", true);
+            var id = Read(offer, "product_id").GetInt64().ToString(System.Globalization.CultureInfo.InvariantCulture);
+            stage = "domain-validation";
+            field = "normalized-offer";
             var normalized = new StoredGroceryOffer($"prej:{storeId}:{id}", storeId, id, name, ingredient,
                 price / 100, normal.GetDecimal() / 100, observed, start, end, ["chain-price"]);
             _ = normalized.ToDomain();
             return (normalized, false);
         }
         catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException or ArgumentException or FormatException)
-        { return (null, true); }
+        { return Exclude($"invalid-source-field:{stage}:{field}:{exception.GetType().Name}", true); }
     }
 
     private static string Path(string storeId, int page) =>

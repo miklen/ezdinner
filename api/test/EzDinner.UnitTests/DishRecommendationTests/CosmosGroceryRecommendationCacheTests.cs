@@ -12,6 +12,7 @@ using NodaTime.Testing;
 using Xunit;
 using CachePage = EzDinner.Infrastructure.GroceryRecommendations.CosmosGroceryRecommendationCache.CachePage;
 using SnapshotHead = EzDinner.Infrastructure.GroceryRecommendations.CosmosGroceryRecommendationCache.SnapshotHead;
+using RateLimitState = EzDinner.Infrastructure.GroceryRecommendations.CosmosGroceryRecommendationCache.RateLimitState;
 
 namespace EzDinner.UnitTests.DishRecommendationTests;
 
@@ -29,10 +30,69 @@ public class CosmosGroceryRecommendationCacheTests
             .ThrowsAsync(Failure(HttpStatusCode.NotFound));
         _container.Setup(container => container.ReadItemAsync<CachePage>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(Failure(HttpStatusCode.NotFound));
+        _container.Setup(container => container.ReadItemAsync<RateLimitState>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(Failure(HttpStatusCode.NotFound));
         _container.Setup(container => container.CreateItemAsync(It.IsAny<SnapshotHead>(), It.IsAny<PartitionKey?>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Response(Head(), "created-etag"));
         _container.Setup(container => container.ReplaceItemAsync(It.IsAny<SnapshotHead>(), "head", It.IsAny<PartitionKey?>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Response(Head(), "replaced-etag"));
+    }
+
+    [Fact]
+    public async Task Initial_rate_limit_is_persisted_in_its_key_partition_without_expiry()
+    {
+        var reset = FutureRetry();
+        await _cache.ExtendRateLimitAsync("prej:quota:keyhash", reset, default);
+        _container.Verify(container => container.CreateItemAsync(
+            It.Is<RateLimitState>(state => state.Id == "rate-limit" && state.ScopeKey == "prej:quota:keyhash" &&
+                state.RetryAfter == reset && state.Ttl == -1), new PartitionKey("prej:quota:keyhash"),
+            It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Shorter_rate_limit_never_overwrites_a_later_reset()
+    {
+        var state = new RateLimitState("rate-limit", Scope, Future(), -1);
+        _container.Setup(container => container.ReadItemAsync<RateLimitState>("rate-limit", new PartitionKey(Scope),
+            It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(Response(state));
+        Assert.Equal(state.RetryAfter, await _cache.ReadRateLimitAsync(Scope, default));
+        await _cache.ExtendRateLimitAsync(Scope, FutureRetry(), default);
+        _container.Verify(container => container.ReplaceItemAsync(It.IsAny<RateLimitState>(), It.IsAny<string>(),
+            It.IsAny<PartitionKey?>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Racing_rate_limit_extension_reloads_the_winner_and_preserves_its_later_reset()
+    {
+        var earlier = new RateLimitState("rate-limit", Scope, _clock.GetCurrentInstant().ToDateTimeUtc(), -1);
+        var later = earlier with { RetryAfter = Future() };
+        _container.SetupSequence(container => container.ReadItemAsync<RateLimitState>("rate-limit", new PartitionKey(Scope),
+                It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Response(earlier, "old-etag")).ReturnsAsync(Response(later, "winner-etag"));
+        _container.Setup(container => container.ReplaceItemAsync(It.IsAny<RateLimitState>(), "rate-limit", new PartitionKey(Scope),
+                It.Is<ItemRequestOptions>(options => options.IfMatchEtag == "old-etag"), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(Failure(HttpStatusCode.PreconditionFailed));
+        await _cache.ExtendRateLimitAsync(Scope, FutureRetry(), default);
+        _container.Verify(container => container.ReplaceItemAsync(It.IsAny<RateLimitState>(), "rate-limit", It.IsAny<PartitionKey?>(),
+            It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+        _container.Verify(container => container.ReadItemAsync<RateLimitState>("rate-limit", new PartitionKey(Scope),
+            It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Concurrent_initial_rate_limit_creation_preserves_the_winning_longer_block()
+    {
+        _container.SetupSequence(container => container.ReadItemAsync<RateLimitState>("rate-limit", new PartitionKey(Scope),
+                It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(Failure(HttpStatusCode.NotFound))
+            .ReturnsAsync(Response(new RateLimitState("rate-limit", Scope, Future(), -1)));
+        _container.Setup(container => container.CreateItemAsync(It.IsAny<RateLimitState>(), new PartitionKey(Scope),
+            It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>())).ThrowsAsync(Failure(HttpStatusCode.Conflict));
+        await _cache.ExtendRateLimitAsync(Scope, FutureRetry(), default);
+        _container.Verify(container => container.CreateItemAsync(It.IsAny<RateLimitState>(), It.IsAny<PartitionKey?>(),
+            It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+        _container.Verify(container => container.ReplaceItemAsync(It.IsAny<RateLimitState>(), It.IsAny<string>(),
+            It.IsAny<PartitionKey?>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]
@@ -273,6 +333,8 @@ public class CosmosGroceryRecommendationCacheTests
         Assert.Equal(page, serializer.FromStream<CachePage>(stream));
         var head = Head();
         Assert.Equal(head, serializer.FromStream<SnapshotHead>(serializer.ToStream(head)));
+        var rateLimit = new RateLimitState("rate-limit", Scope, FutureRetry(), -1);
+        Assert.Equal(rateLimit, serializer.FromStream<RateLimitState>(serializer.ToStream(rateLimit)));
     }
 
     private DateTime Future() => _clock.GetCurrentInstant().Plus(Duration.FromDays(7)).ToDateTimeUtc();
